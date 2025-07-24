@@ -1,10 +1,18 @@
 import React from 'react'
+import { Routes, Route } from 'react-router-dom'
+
+//public routes
+import Login from './screens/Login'
+import Signup from './screens/Signup'
+import HomePage from './screens/HomePage'
 
 function App() {
   return (
-    <>
-      <h1 className="text-3xl font-bold text-red-800">Vite + React</h1>
-    </>
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+    </Routes>
   )
 }
 
