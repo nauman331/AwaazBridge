@@ -240,7 +240,7 @@ const HomePage: React.FC = () => {
                         Simple, Transparent Pricing
                     </h2>
                     <div className="grid md:grid-cols-3 gap-8">
-                        {pricingPlans.map((plan, idx) => (
+                        {pricingPlans.map((plan) => (
                             <div
                                 key={plan.name}
                                 className={`rounded-xl p-8 flex flex-col items-center text-center shadow-sm border transition-all ${plan.highlight
