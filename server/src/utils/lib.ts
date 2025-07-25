@@ -27,3 +27,8 @@ export const hashPassword = (password: string): Promise<string> => {
 export const comparePassword = (password: string, hash: string): Promise<boolean> => {
     return bcrypt.compare(password, hash);
 }
+export const otpExpiresAt = (): Date => {
+    const date = new Date();
+    date.setMinutes(date.getMinutes() + 10);
+    return date;
+}

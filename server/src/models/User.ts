@@ -18,7 +18,7 @@ const userSchema = new Schema<IUser>({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ["Admin", "Manager", "Finance Officer", "Viewer"], required: true },
-    companyId: { type: Schema.Types.ObjectId, ref: "Company", required: true },
+    companyId: { type: Schema.Types.ObjectId, ref: "Company" },
     otp: { type: String, required: true },
     otpExpiresAt: { type: Date, required: true },
     isActive: { type: Boolean, default: true },
