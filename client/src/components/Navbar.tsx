@@ -13,7 +13,6 @@ const Navbar: React.FC = () => {
     const location = useLocation()
     const [menuOpen, setMenuOpen] = React.useState(false)
 
-    // Close menu on route change
     React.useEffect(() => {
         setMenuOpen(false)
     }, [location.pathname])
