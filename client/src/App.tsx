@@ -6,7 +6,7 @@ import Login from './screens/Login'
 import Signup from './screens/Signup'
 import HomePage from './screens/HomePage'
 
-function App() {
+const App: React.FC = () => {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
