@@ -8,9 +8,16 @@ import http from "http";
 import { Server } from "socket.io";
 import { SocketConnection } from "./sockets/SocketConnection";
 import connectDB from "./config/connectDB";
+import authRoutes from "./routes/auth.route"
 
 app.use(cors());
 app.use(express.json());
+
+app.get("/", (req, res)=> {
+    res.json({msg: "Routes Working Perfectly"})
+})
+
+app.use("/api/v1/auth", authRoutes);
 
 connectDB()
 

@@ -1,5 +1,18 @@
 import jwt, {JwtPayload} from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import { sendEmail } from "../services/sendEmail";
+import { emailTemplates } from "../utils/constants";
+
+export const sendOTPEmail = async (email: string, name: string, otp: string): Promise<boolean> => {
+    const subject = "Your FinanceFire OTP Code";
+    const html = emailTemplates.OTPTemplate({ subject, name, otp });
+    try {
+        await sendEmail(email, subject, html);
+        return true;
+    } catch {
+        return false;
+    }
+};
 
 export const generateOTP = (): string =>  Math.floor(100000 + Math.random() * 900000).toString();
 
