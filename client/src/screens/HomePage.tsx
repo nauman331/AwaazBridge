@@ -14,6 +14,7 @@ import {
     MessageCircle,
     Star,
 } from "lucide-react"
+import DashboardImg from "../assets/Dashboard.png"
 
 const features = [
     {
@@ -177,12 +178,7 @@ const HomePage: React.FC = () => {
                     </div>
                     {/* Illustration (optional) */}
                     <div className="flex-1 hidden md:flex justify-center">
-                        {/* Placeholder for future illustration or dashboard screenshot */}
-                        <div className="w-80 h-64 rounded-xl bg-gradient-to-tr from-[#FF6B00]/20 to-[#FF9F1C]/10 flex items-center justify-center border border-[#FF9F1C]/30">
-                            <span className="text-2xl text-[#FF6B00] font-bold opacity-60">
-                                Your Dashboard Here
-                            </span>
-                        </div>
+                        <img src={DashboardImg} alt="Dashboard Preview" className="w-full h-full object-cover rounded-xl" />
                     </div>
                 </div>
             </section>
