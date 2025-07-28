@@ -1,7 +1,7 @@
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { NavLink, useLocation } from "react-router-dom"
-import logo1 from "../assets/logo1.png"
+import Logo from "./Logo"
 
 const navLinks = [
     { name: "Features", href: "features" },
@@ -23,8 +23,7 @@ const Navbar: React.FC = () => {
             <div className="mx-auto w-full max-w-7xl px-4 flex items-center justify-between h-16">
                 {/* Logo */}
                 <NavLink to="/" className="flex items-center font-bold text-xl tracking-tight">
-                    <img src={logo1} alt="Logo" className="w-10 h-10" />
-                    <span className="sr-only sm:not-sr-only">FinanceFire</span>
+                    <Logo />
                 </NavLink>
                 {/* Navigation */}
                 <nav className="hidden md:flex gap-8 ml-8">
