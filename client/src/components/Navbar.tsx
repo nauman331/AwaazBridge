@@ -4,10 +4,11 @@ import { NavLink, useLocation } from "react-router-dom"
 import Logo from "./Logo"
 
 const navLinks = [
-    { name: "Features", href: "features" },
-    { name: "Pricing", href: "pricing" },
-    { name: "About", href: "about" },
-    { name: "Contact", href: "contact" },
+    { name: "Home", href: "/" },
+    { name: "About Us", href: "/about-us" },
+    { name: "Contact Us", href: "/contact-us" },
+    { name: "Privacy Policy", href: "/privacy-policy" },
+    { name: "Terms of Service", href: "/terms-of-service" },
 ]
 
 const Navbar: React.FC = () => {
