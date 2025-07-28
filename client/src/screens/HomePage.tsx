@@ -144,21 +144,6 @@ const HomePage: React.FC = () => {
                 <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-10">
                     {/* Logo/Illustration */}
                     <div className="flex-1 flex flex-col items-center md:items-start">
-                        <span className="mb-6">
-                            {/* Inline SVG logo */}
-                            <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                                <defs>
-                                    <linearGradient id="flame" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
-                                        <stop stopColor="#FF6B00" />
-                                        <stop offset="1" stopColor="#FF9F1C" />
-                                    </linearGradient>
-                                </defs>
-                                <path d="M32 8C32 8 44 20 44 32C44 41.9411 36.9411 49 27 49C17.0589 49 10 41.9411 10 32C10 20 32 8 32 8Z" fill="url(#flame)" />
-                                <rect x="26" y="28" width="4" height="13" rx="2" fill="#fff" />
-                                <rect x="32" y="22" width="4" height="19" rx="2" fill="#fff" />
-                                <rect x="38" y="34" width="4" height="7" rx="2" fill="#fff" />
-                            </svg>
-                        </span>
                         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
                             Ignite Your Finance Operations
                         </h1>
