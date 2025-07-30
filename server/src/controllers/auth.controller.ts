@@ -1,3 +1,4 @@
+import { GoogleLogin } from '@react-oauth/google';
 import { User, IUser } from "../models/User";
 import { Request, Response } from "express";
 import { generateOTP, hashPassword, signToken, comparePassword, otpExpiresAt } from "../utils/lib";
@@ -72,7 +73,7 @@ const login = async (req: Request, res: Response): Promise<Response> => {
         if (!user)
             return res.status(404).json({ message: "User not found" });
 
-        if (!(await comparePassword(password, user.password)))
+        if (!(await comparePassword(password, user.password ?? "")))
             return res.status(401).json({ message: "Invalid Password" });
 
         if (!user.isActive)
@@ -138,4 +139,44 @@ const resetPassword = async (req: Request, res: Response): Promise<Response> => 
     }
 };
 
-export { registerUser, verifyOTP, login, requestPasswordReset, resetPassword };
+const GoogleLoginController = async (req: Request, res: Response): Promise<Response> => {
+    try {
+        const {access_token} = req.body;
+        if (!access_token) {
+            return res.status(400).json({ message: "Access token is required" });
+        }
+    const googleRes = await fetch(
+        `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${access_token}`,
+        {
+            headers: {
+                Authorization: `Bearer ${access_token}`,
+            },
+        }
+    );
+        if (!googleRes.ok) {
+            return res.status(400).json({ message: "Failed to fetch user info from Google" });
+        }
+        const { sub: googleId, name, email, picture } = await googleRes.json();
+        if (!email) {
+            return res.status(400).json({ message: "Google account does not have an email" });
+        }
+        let user = await User.findOne({ email });
+        if (!user) {
+            user = new User({
+                name,
+                email,
+                picture,
+                role: "Viewer",
+                googleId,
+                isActive: true,
+            });
+            await user.save();
+        }
+        const token = signToken({ userId: (user._id as string | { toString(): string }).toString(), role: user.role });
+        return res.status(200).json({ token, userId: user._id, role: user.role });
+    } catch (error) {
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export { registerUser, verifyOTP, login, requestPasswordReset, resetPassword, GoogleLoginController };

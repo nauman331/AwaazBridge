@@ -6,8 +6,17 @@ import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import { Mail, Lock } from "lucide-react"
 import Logo from "@/components/Logo"
+import { useGoogleLogin } from '@react-oauth/google';
 
 const Login: React.FC = () => {
+    const handleGoogleLogin = useGoogleLogin({
+        onSuccess: (credentialResponse) => {
+            console.log('Google Login Success:', credentialResponse);
+        },
+        onError: () => {
+            console.log('Google Login Failed');
+        }
+    });
     return (
         <div className="flex flex-col min-h-screen bg-white text-[#002B5B] dark:bg-[#002B5B] dark:text-white">
             <Navbar />
@@ -58,9 +67,9 @@ const Login: React.FC = () => {
                     {/* Google Button */}
                     <Button
                         type="button"
-                        className="w-full flex items-center justify-center gap-2 bg-white border border-[#ddd] text-[#444] font-semibold shadow-sm hover:bg-[#f7f7f7] dark:bg-[#223355] dark:text-[#FF9F1C] dark:border-[#FF9F1C]/40 rounded-lg py-2 text-base"
+                        className="w-full cursor-pointer flex items-center justify-center gap-2 bg-white border border-[#ddd] text-[#444] font-semibold shadow-sm hover:bg-[#f7f7f7] dark:bg-[#223355] dark:text-[#FF9F1C] dark:border-[#FF9F1C]/40 rounded-lg py-2 text-base"
                         size="lg"
-                    // onClick={handleGoogleLogin}
+                        onClick={() => handleGoogleLogin()}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" className="w-5 h-5 mr-1">
                             <g>
