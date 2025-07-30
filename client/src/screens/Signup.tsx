@@ -7,11 +7,15 @@ import Footer from "@/components/Footer"
 import { User, Mail, Lock } from "lucide-react"
 import Logo from "@/components/Logo"
 import { useGoogleLogin } from '@react-oauth/google';
+import useSubmit from "@/hooks/useSubmit"
 
 const Signup: React.FC = () => {
+    const { submit, loading, error, data } = useSubmit({ url: "auth/google-login" });
+
     const handleGoogleSignup = useGoogleLogin({
-        onSuccess: (credentialResponse) => {
+        onSuccess: async (credentialResponse) => {
             console.log('Google Sign Up Success:', credentialResponse);
+            await submit({ method: "POST", bodyData: { access_token: credentialResponse?.access_token }, isAuth: false });
         },
         onError: () => {
             console.log('Google Sign Up Failed');

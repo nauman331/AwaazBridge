@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import express, { Express } from "express";
 const app : Express = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
@@ -10,7 +10,12 @@ import { SocketConnection } from "./sockets/SocketConnection";
 import connectDB from "./config/connectDB";
 import authRoutes from "./routes/auth.route"
 
-app.use(cors());
+const corsoptions = {
+    origin: process.env.CLIENT_URL,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+};
+
+app.use(cors(corsoptions));
 app.use(express.json());
 
 app.get("/", (req, res)=> {
