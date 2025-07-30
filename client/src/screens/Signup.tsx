@@ -6,8 +6,17 @@ import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import { User, Mail, Lock } from "lucide-react"
 import Logo from "@/components/Logo"
+import { useGoogleLogin } from '@react-oauth/google';
 
 const Signup: React.FC = () => {
+    const handleGoogleSignup = useGoogleLogin({
+        onSuccess: (credentialResponse) => {
+            console.log('Google Sign Up Success:', credentialResponse);
+        },
+        onError: () => {
+            console.log('Google Sign Up Failed');
+        }
+    });
     return (
         <div className="flex flex-col min-h-screen bg-white text-[#002B5B] dark:bg-[#002B5B] dark:text-white">
             <Navbar />
@@ -68,9 +77,9 @@ const Signup: React.FC = () => {
                     {/* Google Button */}
                     <Button
                         type="button"
-                        className="w-full flex items-center justify-center gap-2 bg-white border border-[#ddd] text-[#444] font-semibold shadow-sm hover:bg-[#f7f7f7] dark:bg-[#223355] dark:text-[#FF9F1C] dark:border-[#FF9F1C]/40 rounded-lg py-2 text-base"
+                        className="w-full cursor-pointer flex items-center justify-center gap-2 bg-white border border-[#ddd] text-[#444] font-semibold shadow-sm hover:bg-[#f7f7f7] dark:bg-[#223355] dark:text-[#FF9F1C] dark:border-[#FF9F1C]/40 rounded-lg py-2 text-base"
                         size="lg"
-                    // onClick={handleGoogleSignup}
+                        onClick={() => handleGoogleSignup()}
                     >
                         {/* Google logo using Lucide's LogIn icon for demo, replace with Google logo if needed */}
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" className="w-5 h-5 mr-1">
