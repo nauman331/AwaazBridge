@@ -1,4 +1,3 @@
-import { GoogleLogin } from '@react-oauth/google';
 import { User, IUser } from "../models/User";
 import { Request, Response } from "express";
 import { generateOTP, hashPassword, signToken, comparePassword, otpExpiresAt } from "../utils/lib";
@@ -178,5 +177,20 @@ const GoogleLoginController = async (req: Request, res: Response): Promise<Respo
         return res.status(500).json({ message: "Internal server error" });
     }
 }
+const getProfile = async (req: Request, res: Response): Promise<Response> => {
+    try {
+        const userID: string = (req as Request & { userId: string }).userId;
+        if (!userID) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        const user = await User.findById(userID).select("-password -otp -otpExpiresAt");
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        return res.status(200).json(user);
+    } catch (error) {
+        return res.status(500).json({ message: "Internal server error" });
+    }
+};
 
-export { registerUser, verifyOTP, login, requestPasswordReset, resetPassword, GoogleLoginController };
+export { registerUser, verifyOTP, login, requestPasswordReset, resetPassword, GoogleLoginController, getProfile };

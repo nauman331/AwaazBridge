@@ -4,7 +4,7 @@ export interface IUser extends Document {
     name: string;
     email: string;
     password?: string;
-    role: "Admin" | "Manager" | "Finance Officer" | "Viewer";
+    role: "Admin" | "Manager" | "Finance Officer" | "Viewer" | "Vendor";
     companyId: mongoose.Types.ObjectId;
     otp: string | null;
     otpExpiresAt: Date | null;
@@ -19,7 +19,7 @@ const userSchema = new Schema<IUser>({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, default: null, minlength: 6 },
-    role: { type: String, enum: ["Admin", "Manager", "Finance Officer", "Viewer"], required: true, default: "Viewer" },
+    role: { type: String, enum: ["Admin", "Manager", "Finance Officer", "Viewer", "Vendor"], required: true, default: "Viewer" },
     companyId: { type: Schema.Types.ObjectId, ref: "Company" },
     otp: { type: String, default: null },
     otpExpiresAt: { type: Date, default: null },
