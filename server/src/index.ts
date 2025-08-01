@@ -13,11 +13,12 @@ import authRoutes from "./routes/auth.route"
 const corsoptions = {
     origin: process.env.CLIENT_URL,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    credentials: true,
 };
 
 app.use(cors(corsoptions));
 app.use(express.json());
-
+app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
     res.json({ msg: "Routes Working Perfectly" })
 })
@@ -31,6 +32,7 @@ const io = new Server(server, {
     cors: {
         origin: process.env.CLIENT_URL,
         methods: ["GET", "POST"],
+        credentials: true,
     },
 })
 
