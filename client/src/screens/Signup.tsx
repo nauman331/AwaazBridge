@@ -9,8 +9,9 @@ import Logo from "@/components/Logo"
 import { useGoogleLogin } from '@react-oauth/google';
 import useSubmit from "@/hooks/useSubmit"
 
+
 const Signup: React.FC = () => {
-    const { submit, loading, error, data } = useSubmit({ url: "auth/google-login" });
+    const { submit, loading, data } = useSubmit({ url: "auth/google-login" });
 
     const handleGoogleSignup = useGoogleLogin({
         onSuccess: async (credentialResponse) => {
@@ -68,8 +69,9 @@ const Signup: React.FC = () => {
                             type="submit"
                             className="w-full bg-gradient-to-r from-[#FF6B00] to-[#FF9F1C] text-white font-bold border-0 shadow-lg hover:brightness-110 rounded-lg text-base py-2"
                             size="lg"
+                            disabled={loading}
                         >
-                            Sign Up
+                            {loading ? "Loading..." : "Sign Up"}
                         </Button>
                     </form>
                     {/* Divider */}
@@ -83,9 +85,9 @@ const Signup: React.FC = () => {
                         type="button"
                         className="w-full cursor-pointer flex items-center justify-center gap-2 bg-white border border-[#ddd] text-[#444] font-semibold shadow-sm hover:bg-[#f7f7f7] dark:bg-[#223355] dark:text-[#FF9F1C] dark:border-[#FF9F1C]/40 rounded-lg py-2 text-base"
                         size="lg"
+                        disabled={loading}
                         onClick={() => handleGoogleSignup()}
                     >
-                        {/* Google logo using Lucide's LogIn icon for demo, replace with Google logo if needed */}
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" className="w-5 h-5 mr-1">
                             <g>
                                 <path fill="#4285F4" d="M31.68 16.364c0-1.09-.098-2.13-.28-3.13H16v5.93h8.7c-.37 2.01-1.48 3.72-3.16 4.86v4h5.1c2.98-2.75 4.74-6.8 4.74-11.66z" />
@@ -94,7 +96,7 @@ const Signup: React.FC = () => {
                                 <path fill="#EA4335" d="M16 6.36c2.35 0 4.46.81 6.12 2.39l4.59-4.59C23.95 1.43 20.32 0 16 0 9.74 0 4.34 3.64 1.7 8.51l5.2 4.21c1.28-3.84 4.87-6.7 9.1-6.7z" />
                             </g>
                         </svg>
-                        Continue with Google
+                        {loading ? "Loading..." : "Continue with Google"}
                     </Button>
                     {/* Already have account */}
                     <div className="flex justify-center mt-6 text-sm">
