@@ -1,4 +1,4 @@
-import jwt, {JwtPayload} from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { sendEmail } from "../services/sendEmail";
 import { emailTemplates } from "../utils/constants";
@@ -14,13 +14,13 @@ export const sendOTPEmail = async (email: string, name: string, otp: string): Pr
     }
 };
 
-export const generateOTP = (): string =>  Math.floor(100000 + Math.random() * 900000).toString();
+export const generateOTP = (): string => Math.floor(100000 + Math.random() * 900000).toString();
 
-export const signToken = (user: {userId: string, role: string}): string => {
+export const signToken = (user: { userId: string, role: string }): string => {
     return jwt.sign(
-      user,
-      process.env.JWT_SECRET as any || "little_low_secret",
-      { expiresIn: process.env.JWT_EXPIRATION as any || "7d" }
+        user,
+        process.env.JWT_SECRET as any || "little_low_secret",
+        { expiresIn: process.env.JWT_EXPIRATION as any || "7d" }
     );
 }
 
