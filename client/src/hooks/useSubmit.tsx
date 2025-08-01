@@ -6,7 +6,6 @@ import { toast } from "sonner"
 const useSubmit = ({ url }: { url: string }) => {
     const { token } = useSelector((state: any) => state.auth);
     const [loading, setLoading] = React.useState(false);
-    const [data, setData] = React.useState<any | null>(null);
 
     const submit = async ({ method = "POST", bodyData, isAuth = false }: { method: string, bodyData: any, isAuth: boolean }) => {
         setLoading(true);
@@ -20,21 +19,16 @@ const useSubmit = ({ url }: { url: string }) => {
                 body: JSON.stringify(bodyData),
             });
             const responseData = await response.json();
-            setData(responseData);
-
             if (!response.ok) {
                 toast(responseData.errors[0].message || responseData.message || "An error occurred");
             }
-
-            const data = await response.json();
-            console.log("Submission successful:", data);
         } catch (err) {
         } finally {
             setLoading(false);
         }
     };
 
-    return { submit, loading, data };
+    return { submit, loading, };
 };
 
 export default useSubmit;

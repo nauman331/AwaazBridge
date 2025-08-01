@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import express, { Express } from "express";
-const app : Express = express();
+const app: Express = express();
 const PORT = process.env.PORT || 5000;
 import cors from "cors";
 import http from "http";
@@ -18,8 +18,8 @@ const corsoptions = {
 app.use(cors(corsoptions));
 app.use(express.json());
 
-app.get("/", (req, res)=> {
-    res.json({msg: "Routes Working Perfectly"})
+app.get("/", (req, res) => {
+    res.json({ msg: "Routes Working Perfectly" })
 })
 
 app.use("/api/v1/auth", authRoutes);
