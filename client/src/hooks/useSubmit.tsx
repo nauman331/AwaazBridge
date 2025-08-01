@@ -20,7 +20,7 @@ const useSubmit = ({ url }: { url: string }) => {
             });
             const responseData = await response.json();
             if (!response.ok) {
-                toast(responseData.errors[0].message || responseData.message || "An error occurred");
+                toast.error(responseData.errors[0].message || responseData.message || "An error occurred");
             }
         } catch (err) {
         } finally {

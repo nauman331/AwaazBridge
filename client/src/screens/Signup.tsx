@@ -29,7 +29,7 @@ const Signup: React.FC = () => {
     const Register: SubmitHandler<FormData> = async (data) => {
         const response = await FormSubmit({ bodyData: data, method: "POST", isAuth: false }) as unknown as { ok?: boolean };
         if (response?.ok) {
-            toast("Registration successful! Please check your email to verify your account.");
+            toast.success("Registration successful! Please check your email to verify your account.");
             navigate("/verify-otp")
         }
     }
@@ -39,7 +39,7 @@ const Signup: React.FC = () => {
             await submit({ method: "POST", bodyData: { access_token: credentialResponse?.access_token }, isAuth: false });
         },
         onError: () => {
-            console.log('Google Sign Up Failed');
+            toast.error("Google Sign Up failed. Please try again.");
         }
     });
     return (
@@ -65,6 +65,7 @@ const Signup: React.FC = () => {
                                 className="pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg focus:ring-2 focus:ring-[#FF9F1C]/40 transition-all"
                                 {...register("name", { required: "Name is required" })}
                             />
+                            {errors.name && <span className="text-red-500 text-xs mt-1">{errors.name.message}</span>}
                         </div>
                         <div className="relative">
                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#FF9F1C]" />
@@ -74,6 +75,7 @@ const Signup: React.FC = () => {
                                 className="pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg focus:ring-2 focus:ring-[#FF9F1C]/40 transition-all"
                                 {...register("email", { required: "Email is required" })}
                             />
+                            {errors.email && <span className="text-red-500 text-xs mt-1">{errors.email.message}</span>}
                         </div>
                         <div className="relative">
                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#FF9F1C]" />
@@ -83,6 +85,7 @@ const Signup: React.FC = () => {
                                 className="pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg focus:ring-2 focus:ring-[#FF9F1C]/40 transition-all"
                                 {...register("password", { required: "Password is required" })}
                             />
+                            {errors.password && <span className="text-red-500 text-xs mt-1">{errors.password.message}</span>}
                         </div>
                         <Button
                             type="submit"
