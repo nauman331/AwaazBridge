@@ -133,25 +133,25 @@ const resetPassword = async (req: Request, res: Response): Promise<Response> => 
 
         return res.status(200).json({ message: "Password reset successfully" });
     } catch (error: any) {
-        console.error("Reset password error:", error); 
+        console.error("Reset password error:", error);
         return res.status(500).json({ message: "Internal server error", error: error?.message });
     }
 };
 
 const GoogleLoginController = async (req: Request, res: Response): Promise<Response> => {
     try {
-        const {access_token} = req.body;
+        const { access_token } = req.body;
         if (!access_token) {
             return res.status(400).json({ message: "Access token is required" });
         }
-    const googleRes = await fetch(
-        `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${access_token}`,
-        {
-            headers: {
-                Authorization: `Bearer ${access_token}`,
-            },
-        }
-    );
+        const googleRes = await fetch(
+            `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${access_token}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                },
+            }
+        );
         if (!googleRes.ok) {
             return res.status(400).json({ message: "Failed to fetch user info from Google" });
         }

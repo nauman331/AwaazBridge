@@ -23,7 +23,7 @@ const useSubmit = ({ url }: { url: string }) => {
             setData(responseData);
 
             if (!response.ok) {
-                toast(responseData.errors[0] || responseData.message || "An error occurred");
+                toast(responseData.errors[0].message || responseData.message || "An error occurred");
             }
 
             const data = await response.json();
