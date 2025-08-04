@@ -4,88 +4,92 @@ import { Link } from "react-router-dom"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import {
-    FileText,
-    BarChart3,
-    Wallet,
+    BookOpen,
+    Video,
     Users,
-    ShieldCheck,
-    Rocket,
+    MessageSquare,
+    GraduationCap,
+    Calendar,
     CheckCircle2,
-    MessageCircle,
     Star,
+    Clock,
 } from "lucide-react"
 import DashboardImg from "../assets/Dashboard.png"
 
 const features = [
     {
-        title: "Automated Invoicing",
-        desc: "Send, track, and manage invoices with ease. Let FinanceFire handle the paperwork so you can focus on growth.",
-        icon: <FileText className="w-8 h-8 text-[#FF6B00]" />,
+        title: "Interactive Online Classes",
+        desc: "Conduct live classes with video conferencing, screen sharing, and interactive whiteboards for engaging learning experiences.",
+        icon: <Video className="w-8 h-8 text-[#FF6B00]" />,
     },
     {
-        title: "Expense Tracking",
-        desc: "Monitor spending in real-time, categorize expenses, and get actionable insights to optimize your budget.",
-        icon: <Wallet className="w-8 h-8 text-[#FF9F1C]" />,
+        title: "Course Management",
+        desc: "Create, organize, and manage courses with assignments, quizzes, and learning materials in one centralized platform.",
+        icon: <BookOpen className="w-8 h-8 text-[#FF9F1C]" />,
     },
     {
-        title: "Smart Budgeting",
-        desc: "Set budgets, get alerts, and let our AI-powered tools help you stay on track and reach your goals.",
-        icon: <BarChart3 className="w-8 h-8 text-[#FF6B00]" />,
+        title: "Student Progress Tracking",
+        desc: "Monitor student performance with detailed analytics, grade tracking, and personalized learning insights.",
+        icon: <GraduationCap className="w-8 h-8 text-[#FF6B00]" />,
     },
     {
-        title: "Team Collaboration",
-        desc: "Invite your team, assign roles, and collaborate securely on all financial operations.",
+        title: "Communication Hub",
+        desc: "Connect teachers and students through real-time messaging, discussion forums, and announcement systems.",
+        icon: <MessageSquare className="w-8 h-8 text-[#FF9F1C]" />,
+    },
+    {
+        title: "Class Scheduling",
+        desc: "Efficiently schedule classes, manage timetables, and send automated reminders to students and teachers.",
+        icon: <Calendar className="w-8 h-8 text-[#FF6B00]" />,
+    },
+    {
+        title: "Collaborative Learning",
+        desc: "Foster teamwork with group projects, peer-to-peer learning, and collaborative study spaces.",
         icon: <Users className="w-8 h-8 text-[#FF9F1C]" />,
-    },
-    {
-        title: "Bank-Grade Security",
-        desc: "Your data is encrypted and protected with industry-leading security standards.",
-        icon: <ShieldCheck className="w-8 h-8 text-[#FF6B00]" />,
-    },
-    {
-        title: "Fast Onboarding",
-        desc: "Get started in minutes with our intuitive setup and helpful onboarding guides.",
-        icon: <Rocket className="w-8 h-8 text-[#FF9F1C]" />,
     },
 ]
 
 const pricingPlans = [
     {
-        name: "Starter",
-        price: "$0",
-        period: "/mo",
+        name: "Student",
+        price: "Free",
+        period: "",
         features: [
-            "Unlimited invoices",
-            "Basic expense tracking",
-            "1 team member",
-            "Email support",
+            "Access to enrolled courses",
+            "Join live classes",
+            "Submit assignments",
+            "Chat with teachers",
+            "Basic progress tracking",
         ],
-        cta: "Get Started",
+        cta: "Sign Up as Student",
         highlight: false,
     },
     {
-        name: "Pro",
-        price: "$29",
+        name: "Teacher",
+        price: "$19",
         period: "/mo",
         features: [
-            "All Starter features",
+            "Create unlimited courses",
+            "Host live classes",
             "Advanced analytics",
-            "Unlimited team members",
-            "Priority support",
-            "Smart budgeting tools",
+            "Grade management",
+            "Student communication tools",
+            "Assignment creation",
         ],
-        cta: "Start Free Trial",
+        cta: "Start Teaching Today",
         highlight: true,
     },
     {
-        name: "Enterprise",
+        name: "Institution",
         price: "Custom",
         period: "",
         features: [
-            "All Pro features",
-            "Dedicated account manager",
-            "Custom integrations",
-            "Premium onboarding",
+            "All Teacher features",
+            "Multi-teacher management",
+            "Custom branding",
+            "Advanced reporting",
+            "Priority support",
+            "SSO integration",
         ],
         cta: "Contact Sales",
         highlight: false,
@@ -94,44 +98,44 @@ const pricingPlans = [
 
 const testimonials = [
     {
-        name: "Sarah Lee",
-        company: "Acme Corp",
-        text: "FinanceFire transformed our finance workflow. The automation and insights are game-changers!",
+        name: "Sarah Johnson",
+        company: "Mathematics Teacher",
+        text: "EduFire revolutionized my online teaching. Students are more engaged and my class management is so much easier!",
         avatar: "https://randomuser.me/api/portraits/women/44.jpg",
         rating: 5,
     },
     {
-        name: "James Patel",
-        company: "Startupify",
-        text: "We scaled our business without worrying about manual invoicing or expense tracking. Highly recommended.",
+        name: "David Chen",
+        company: "Computer Science Student",
+        text: "The interactive features and seamless video classes make learning from home feel just like being in a real classroom.",
         avatar: "https://randomuser.me/api/portraits/men/32.jpg",
         rating: 5,
     },
     {
-        name: "Maria Gomez",
-        company: "AgencyPro",
-        text: "The budgeting tools and team features are perfect for agencies. Support is fast and helpful.",
+        name: "Dr. Emily Rodriguez",
+        company: "University Professor",
+        text: "Perfect platform for hybrid learning. The analytics help me understand each student's progress better than ever.",
         avatar: "https://randomuser.me/api/portraits/women/68.jpg",
-        rating: 4,
+        rating: 5,
     },
 ]
 
 const faqs = [
     {
-        q: "Is there a free trial?",
-        a: "Yes! You can try all Pro features free for 14 days. No credit card required.",
+        q: "Is EduFire suitable for all education levels?",
+        a: "Yes! EduFire works great for K-12, higher education, professional training, and corporate learning programs.",
     },
     {
-        q: "Can I upgrade or downgrade anytime?",
-        a: "Absolutely. You can change your plan at any time from your dashboard.",
+        q: "Can I use EduFire for free?",
+        a: "Students can join and access courses for free. Teachers get a 14-day free trial of all premium features.",
     },
     {
-        q: "Is my financial data secure?",
-        a: "Yes, we use bank-grade encryption and regular security audits to keep your data safe.",
+        q: "How many students can join a live class?",
+        a: "Our platform supports up to 1000 students in a single live class with optimal performance.",
     },
     {
-        q: "Do you offer support?",
-        a: "Our support team is available 24/7 via email and chat for all plans.",
+        q: "Is technical support available?",
+        a: "Yes, we provide 24/7 technical support for all users, with priority support for paid plans.",
     },
 ]
 
@@ -142,28 +146,36 @@ const HomePage: React.FC = () => {
             {/* Hero Section */}
             <section className="w-full bg-gradient-to-b from-[#FFF7F0] to-white dark:from-[#002B5B] dark:to-[#0a1a33] pt-16 pb-24">
                 <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-10">
-                    {/* Logo/Illustration */}
                     <div className="flex-1 flex flex-col items-center md:items-start">
                         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
-                            Ignite Your Finance Operations
+                            Ignite Your Learning Journey
                         </h1>
                         <p className="text-lg md:text-xl text-[#444] dark:text-[#e0e6ef] mb-8 max-w-xl">
-                            Automate invoices, expenses, budgets and boost your team’s productivity with{" "}
+                            Transform education with interactive online classes, seamless communication, and powerful learning tools. Welcome to{" "}
                             <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] to-[#FF9F1C]">
-                                FinanceFire
+                                EduFire
                             </span>.
                         </p>
-                        <Button
-                            asChild
-                            size="lg"
-                            className="px-8 bg-gradient-to-r from-[#FF6B00] to-[#FF9F1C] text-white border-0 shadow-lg hover:brightness-110"
-                        >
-                            <Link to="/signup">Start Free Trial</Link>
-                        </Button>
+                        <div className="flex gap-4">
+                            <Button
+                                asChild
+                                size="lg"
+                                className="px-8 bg-gradient-to-r from-[#FF6B00] to-[#FF9F1C] text-white border-0 shadow-lg hover:brightness-110"
+                            >
+                                <Link to="/signup">Start Learning Free</Link>
+                            </Button>
+                            <Button
+                                asChild
+                                variant="outline"
+                                size="lg"
+                                className="px-8 border-[#FF6B00] text-[#FF6B00] hover:bg-[#FF6B00] hover:text-white"
+                            >
+                                <Link to="/login">Sign In</Link>
+                            </Button>
+                        </div>
                     </div>
-                    {/* Illustration (optional) */}
                     <div className="flex-1 hidden md:flex justify-center">
-                        <img src={DashboardImg} alt="Dashboard Preview" className="w-full h-full object-cover rounded-xl" />
+                        <img src={DashboardImg} alt="EduFire Learning Dashboard" className="w-full h-full object-cover rounded-xl" />
                     </div>
                 </div>
             </section>
@@ -172,7 +184,7 @@ const HomePage: React.FC = () => {
             <section id="features" className="w-full py-20 bg-white dark:bg-[#0a1a33]">
                 <div className="max-w-7xl mx-auto px-4">
                     <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">
-                        Why Choose FinanceFire?
+                        Everything You Need for Modern Education
                     </h2>
                     <div className="grid md:grid-cols-3 gap-8">
                         {features.map((feature, idx) => (
@@ -193,23 +205,23 @@ const HomePage: React.FC = () => {
                 </div>
             </section>
 
-            {/* Highlights Section */}
+            {/* Stats Section */}
             <section className="w-full py-12 bg-gradient-to-r from-[#FF6B00]/10 to-[#FF9F1C]/10 dark:from-[#223355] dark:to-[#112244]">
                 <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-3 gap-8 text-center">
                     <div className="flex flex-col items-center">
-                        <CheckCircle2 className="w-10 h-10 text-[#FF6B00] mb-2" />
-                        <span className="font-bold text-2xl">99.99% Uptime</span>
-                        <span className="text-[#444] dark:text-[#cfd8e3]">Reliable and always available</span>
+                        <GraduationCap className="w-10 h-10 text-[#FF6B00] mb-2" />
+                        <span className="font-bold text-2xl">50,000+</span>
+                        <span className="text-[#444] dark:text-[#cfd8e3]">Active Students</span>
                     </div>
                     <div className="flex flex-col items-center">
-                        <MessageCircle className="w-10 h-10 text-[#FF9F1C] mb-2" />
-                        <span className="font-bold text-2xl">24/7 Support</span>
-                        <span className="text-[#444] dark:text-[#cfd8e3]">Real humans, real fast</span>
+                        <Clock className="w-10 h-10 text-[#FF9F1C] mb-2" />
+                        <span className="font-bold text-2xl">10,000+</span>
+                        <span className="text-[#444] dark:text-[#cfd8e3]">Hours of Learning</span>
                     </div>
                     <div className="flex flex-col items-center">
                         <Star className="w-10 h-10 text-[#FF6B00] mb-2" />
-                        <span className="font-bold text-2xl">4.9/5 Rating</span>
-                        <span className="text-[#444] dark:text-[#cfd8e3]">Loved by 1,000+ teams</span>
+                        <span className="font-bold text-2xl">4.9/5</span>
+                        <span className="text-[#444] dark:text-[#cfd8e3]">Student Satisfaction</span>
                     </div>
                 </div>
             </section>
@@ -218,7 +230,7 @@ const HomePage: React.FC = () => {
             <section id="pricing" className="w-full py-20 bg-[#FFF7F0] dark:bg-[#112244]">
                 <div className="max-w-7xl mx-auto px-4">
                     <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">
-                        Simple, Transparent Pricing
+                        Choose Your Learning Path
                     </h2>
                     <div className="grid md:grid-cols-3 gap-8">
                         {pricingPlans.map((plan) => (
@@ -249,7 +261,7 @@ const HomePage: React.FC = () => {
                                     asChild
                                     size="lg"
                                 >
-                                    {plan.name === "Enterprise" ? (
+                                    {plan.name === "Institution" ? (
                                         <a href="#contact">{plan.cta}</a>
                                     ) : (
                                         <Link to="/signup">{plan.cta}</Link>
@@ -264,7 +276,7 @@ const HomePage: React.FC = () => {
             {/* Testimonials Section */}
             <section className="w-full py-20 bg-white dark:bg-[#0a1a33]">
                 <div className="max-w-7xl mx-auto px-4">
-                    <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">What Our Customers Say</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">What Our Community Says</h2>
                     <div className="grid md:grid-cols-3 gap-8">
                         {testimonials.map((t, idx) => (
                             <div key={idx} className="rounded-xl bg-[#FFF7F0] dark:bg-[#112244] p-8 shadow-sm flex flex-col items-center text-center">
@@ -301,16 +313,16 @@ const HomePage: React.FC = () => {
             {/* Call to Action Section */}
             <section className="w-full py-20 bg-gradient-to-r from-[#FF6B00] to-[#FF9F1C] text-white text-center">
                 <div className="max-w-3xl mx-auto px-4">
-                    <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Ignite Your Finances?</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Transform Education?</h2>
                     <p className="mb-8 text-lg">
-                        Join 1,000+ teams using FinanceFire to automate, optimize, and grow. Start your free trial today!
+                        Join thousands of students and teachers already using EduFire to create amazing learning experiences.
                     </p>
                     <Button
                         asChild
                         size="lg"
                         className="px-8 bg-white text-[#FF6B00] font-bold border-0 shadow-lg hover:brightness-110"
                     >
-                        <Link to="/signup">Start Free Trial</Link>
+                        <Link to="/signup">Get Started Today</Link>
                     </Button>
                 </div>
             </section>
@@ -319,18 +331,15 @@ const HomePage: React.FC = () => {
             <section id="about" className="w-full py-20 bg-white dark:bg-[#0a1a33]">
                 <div className="max-w-4xl mx-auto px-4 text-center">
                     <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                        About FinanceFire
+                        About EduFire
                     </h2>
                     <p className="text-lg text-[#444] dark:text-[#cfd8e3] mb-4">
-                        FinanceFire is a modern fintech SaaS platform built to empower
-                        businesses of all sizes. Our mission is to simplify financial
-                        operations, automate the boring stuff, and help you focus on what
-                        matters: growth.
+                        EduFire is a comprehensive educational platform designed to bridge the gap between traditional and modern learning.
+                        Our mission is to make quality education accessible, interactive, and engaging for everyone.
                     </p>
                     <p className="text-lg text-[#444] dark:text-[#cfd8e3]">
-                        Trusted by startups, agencies, and enterprises worldwide, FinanceFire
-                        delivers secure, scalable, and user-friendly tools for managing your
-                        company’s finances.
+                        Whether you're a student looking to enhance your learning experience or a teacher wanting to create impactful courses,
+                        EduFire provides all the tools you need to succeed in the digital age.
                     </p>
                 </div>
             </section>
@@ -338,10 +347,9 @@ const HomePage: React.FC = () => {
             {/* Contact Section */}
             <section id="contact" className="w-full py-20 bg-[#FFF7F0] dark:bg-[#112244]">
                 <div className="max-w-3xl mx-auto px-4 text-center">
-                    <h2 className="text-3xl md:text-4xl font-bold mb-6">Contact Us</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold mb-6">Get in Touch</h2>
                     <p className="mb-8 text-[#444] dark:text-[#cfd8e3]">
-                        Have questions or want a custom demo? Reach out and our team will
-                        get back to you within 1 business day.
+                        Have questions about EduFire or need help getting started? Our education specialists are here to help.
                     </p>
                     <form className="grid gap-4 max-w-xl mx-auto">
                         <input
@@ -356,8 +364,14 @@ const HomePage: React.FC = () => {
                             className="rounded px-4 py-3 border border-[#FF9F1C] focus:outline-none focus:ring-2 focus:ring-[#FF6B00] bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white"
                             required
                         />
+                        <select className="rounded px-4 py-3 border border-[#FF9F1C] focus:outline-none focus:ring-2 focus:ring-[#FF6B00] bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white">
+                            <option value="">I am a...</option>
+                            <option value="student">Student</option>
+                            <option value="teacher">Teacher</option>
+                            <option value="institution">Institution Representative</option>
+                        </select>
                         <textarea
-                            placeholder="How can we help?"
+                            placeholder="How can we help you?"
                             rows={4}
                             className="rounded px-4 py-3 border border-[#FF9F1C] focus:outline-none focus:ring-2 focus:ring-[#FF6B00] bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white"
                             required

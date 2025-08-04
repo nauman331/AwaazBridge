@@ -8,7 +8,8 @@ const registerUser = async (req: Request, res: Response): Promise<Response> => {
         const { name, email, password, role }: IUser = req.body;
         if (!name || !email || !password || !role)
             return res.status(400).json({ message: "All fields are required", isOk: false });
-
+        if (role !== "Student" && role !== "Teacher")
+            return res.status(400).json({ message: "Invalid role", isOk: false });
         if (await User.findOne({ email }))
             return res.status(400).json({ message: "User already exists", isOk: false });
 
@@ -140,7 +141,7 @@ const resetPassword = async (req: Request, res: Response): Promise<Response> => 
 
 const GoogleLoginController = async (req: Request, res: Response): Promise<Response> => {
     try {
-        const { access_token } = req.body;
+        const { access_token, role } = req.body;
         if (!access_token) {
             return res.status(400).json({ message: "Access token is required", isOk: false });
         }
@@ -161,11 +162,13 @@ const GoogleLoginController = async (req: Request, res: Response): Promise<Respo
         }
         let user = await User.findOne({ email });
         if (!user) {
+            // Use provided role or default to "Student"
+            const userRole = role || "Student";
             user = new User({
                 name,
                 email,
                 picture,
-                role: "Viewer",
+                role: userRole,
                 googleId,
                 isActive: true,
             });

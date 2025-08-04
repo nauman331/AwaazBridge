@@ -1,4 +1,4 @@
-import {z} from "zod";
+import { z } from "zod";
 
 export const loginSchema = z.object({
     email: z.string().email("Invalid email format"),
@@ -9,7 +9,7 @@ export const registerSchema = z.object({
     name: z.string().min(1, "Name is required"),
     email: z.string().email("Invalid email format"),
     password: z.string().min(6, "Password must be at least 6 characters long"),
-    role: z.enum(["Admin","Manager", "Finance Officer", "Viewer"], "Role is required"),
+    role: z.enum(["Admin", "Student", "Teacher"], "Role is required"),
 })
 
 export const verifyOTPSchema = z.object({

@@ -12,10 +12,10 @@ const quickLinks = [
 ]
 
 const resourcesLinks = [
-    { name: "Blog", to: "/blog" },
+    { name: "Learning Resources", to: "/resources" },
     { name: "Help Center", to: "/help" },
-    { name: "Pricing", to: "/pricing" },
-    { name: "Careers", to: "/careers" },
+    { name: "Teacher Support", to: "/teacher-support" },
+    { name: "Student Guide", to: "/student-guide" },
 ]
 
 const socialLinks = [
@@ -34,7 +34,7 @@ const Footer: React.FC = () => (
                     <Logo />
                 </NavLink>
                 <p className="text-muted-foreground text-sm">
-                    FinanceFire empowers modern businesses with smart financial tools, insights, and resources to grow and thrive in a competitive world.
+                    EduFire empowers students and teachers with cutting-edge educational technology, interactive learning tools, and comprehensive course management solutions.
                 </p>
                 <div className="flex gap-3 mt-3">
                     {socialLinks.map(link => (
@@ -87,7 +87,7 @@ const Footer: React.FC = () => (
                 <ul className="text-sm flex flex-col gap-2">
                     <li className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-muted-foreground" />
-                        123 Business Ave, Suite 456<br />New York, NY 10001
+                        123 Education Blvd, Suite 456<br />Learning City, NY 10001
                     </li>
                     <li className="flex items-center gap-2">
                         <Phone className="w-4 h-4 text-muted-foreground" />
@@ -95,17 +95,17 @@ const Footer: React.FC = () => (
                     </li>
                     <li className="flex items-center gap-2">
                         <Mail className="w-4 h-4 text-muted-foreground" />
-                        <a href="mailto:support@financefire.com" className="hover:text-primary transition-colors">support@financefire.com</a>
+                        <a href="mailto:support@edufire.com" className="hover:text-primary transition-colors">support@edufire.com</a>
                     </li>
                 </ul>
             </div>
         </div>
         <div className="max-w-7xl mx-auto px-4 mt-10 border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="text-muted-foreground text-xs text-center md:text-left">
-                &copy; {new Date().getFullYear()} FinanceFire. All rights reserved.
+                &copy; {new Date().getFullYear()} EduFire. All rights reserved.
             </div>
             <div className="text-muted-foreground text-xs text-center md:text-right">
-                Built with <span aria-label="love" role="img">❤️</span> for modern businesses.
+                Built with <span aria-label="love" role="img">❤️</span> for modern education.
             </div>
         </div>
     </footer>

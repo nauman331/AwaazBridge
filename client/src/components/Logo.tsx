@@ -1,11 +1,18 @@
 import React from "react"
-import logo1 from "../assets/logo1.png"
+import { GraduationCap } from "lucide-react"
+import { cn } from "@/lib/utils"
 
-const Logo: React.FC<{ className?: string }> = React.memo(({ className }) => (
-    <span className={`flex items-center ${className || ""}`}>
-        <img src={logo1} alt="FinanceFire Logo" className="w-10 h-10" />
-        <span className="font-bold text-xl tracking-tight text-[#002B5B] dark:text-white">FinanceFire</span>
-    </span>
+interface LogoProps {
+    className?: string
+}
+
+const Logo: React.FC<LogoProps> = React.memo(({ className }) => (
+    <div className={cn("flex items-center gap-2", className)}>
+        <GraduationCap className="w-8 h-8 text-[#FF6B00]" />
+        <span className="font-black text-2xl text-[#FF6B00] dark:text-[#FF9F1C] tracking-tight">
+            EduFire
+        </span>
+    </div>
 ))
 
 export default Logo
