@@ -1,34 +1,44 @@
-import { useState, useCallback } from "react";
+import React from "react";
 import { useSelector } from "react-redux";
 import { backendUrl } from "@/utils/exports";
 
-const useFetch = ({ url }: { url: string }) => {
+const useFetch = ({ url, autoFetch = false, isAuth = false }: {
+    url: string;
+    autoFetch?: boolean;
+    isAuth?: boolean;
+}) => {
     const { token } = useSelector((state: any) => state.auth);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [data, setData] = useState<any | null>(null);
+    const [loading, setLoading] = React.useState(false);
+    const [error, setError] = React.useState<string | null>(null);
+    const [data, setData] = React.useState<any | null>(null);
 
-    const fetchData = useCallback(async ({ isAuth = false }: { isAuth?: boolean } = {}) => {
+    const fetchData = async ({ isAuth: fetchIsAuth = isAuth }: { isAuth?: boolean } = {}) => {
         setLoading(true);
         setError(null);
         try {
             const response = await fetch(`${backendUrl}${url}`, {
                 headers: {
                     "Content-Type": "application/json",
-                    ...(isAuth && token && { "Authorization": `Bearer ${token}` }),
+                    ...(fetchIsAuth && { "Authorization": `Bearer ${token}` }),
                 },
             });
-            const resData = await response.json();
-            if (!response.ok || !resData.isOk) {
-                throw new Error(resData.message || "Network response was not ok");
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
             }
-            setData(resData);
+            const responseData = await response.json();
+            setData(responseData);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "An error occurred");
+            setError("An error occurred");
         } finally {
             setLoading(false);
         }
-    }, [url, token]);
+    };
+
+    React.useEffect(() => {
+        if (autoFetch) {
+            fetchData({ isAuth });
+        }
+    }, [autoFetch, isAuth, token]);
 
     return { fetchData, loading, error, data };
 };
