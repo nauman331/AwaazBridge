@@ -1,8 +1,12 @@
 import React from 'react'
+import { Outlet } from 'react-router-dom'
 
 const StudentLayout: React.FC = () => {
   return (
-    <div>StudentLayout</div>
+    <div>
+      <h1>Student Dashboard</h1>
+      <Outlet />
+    </div>
   )
 }
 
