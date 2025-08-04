@@ -11,7 +11,8 @@ import useSubmit from "@/hooks/useSubmit"
 import { useForm } from "react-hook-form"
 import type { SubmitHandler } from "react-hook-form"
 import { toast } from "sonner"
-
+import { useDispatch } from "react-redux"
+import { setToken } from "../store/slices/authSlice"
 
 type FormData = {
     name: string;
@@ -23,6 +24,7 @@ type FormData = {
 
 const Signup: React.FC = () => {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const [selectedRole, setSelectedRole] = useState<"Student" | "Teacher" | "">("");
     const { register, handleSubmit, formState: { errors }, setValue } = useForm<FormData>();
     const { submit, loading } = useSubmit({ url: "auth/google-login" });
@@ -51,15 +53,22 @@ const Signup: React.FC = () => {
                 toast.error("Please select your role before using Google signup");
                 return;
             }
-            console.log('Google Sign Up Success:', credentialResponse);
+            console.log('Google Authentication Success:', credentialResponse);
             const response = await submit({ method: "POST", bodyData: { access_token: credentialResponse?.access_token, role: selectedRole }, isAuth: false });
             if (response?.isOk) {
-                toast.success("Google Sign Up successful! Please check your email to verify your account.");
-                navigate("/profile");
+                dispatch(setToken(response.token));
+                toast.success("Google Authentication successful! Please check your email to verify your account.");
+                if (response?.role === "Student") {
+                    navigate("/student");
+                } else if (response?.role === "Teacher") {
+                    navigate("/teacher");
+                } else if (response?.role === "Admin") {
+                    navigate("/admin");
+                }
             }
         },
         onError: () => {
-            toast.error("Google Sign Up failed. Please try again.");
+            toast.error("Google Authentication failed. Please try again.");
         }
     });
 

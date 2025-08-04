@@ -1,34 +1,35 @@
-import React from "react";
+import { useState, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { backendUrl } from "@/utils/exports";
 
 const useFetch = ({ url }: { url: string }) => {
     const { token } = useSelector((state: any) => state.auth);
-    const [loading, setLoading] = React.useState(false);
-    const [error, setError] = React.useState<string | null>(null);
-    const [data, setData] = React.useState<any | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [data, setData] = useState<any | null>(null);
 
-    const fetchData = async ({ isAuth = false }: { isAuth: boolean }) => {
+    const fetchData = useCallback(async ({ isAuth = false }: { isAuth?: boolean } = {}) => {
         setLoading(true);
         setError(null);
         try {
             const response = await fetch(`${backendUrl}${url}`, {
                 headers: {
                     "Content-Type": "application/json",
-                    ...(isAuth && { "Authorization": `Bearer ${token}` }),
+                    ...(isAuth && token && { "Authorization": `Bearer ${token}` }),
                 },
             });
             const resData = await response.json();
-            if (!resData.isOk) {
-                throw new Error("Network response was not ok");
+            if (!response.ok || !resData.isOk) {
+                throw new Error(resData.message || "Network response was not ok");
             }
             setData(resData);
         } catch (err) {
-            setError("An error occurred");
+            setError(err instanceof Error ? err.message : "An error occurred");
         } finally {
             setLoading(false);
         }
-    };
+    }, [url, token]);
+
     return { fetchData, loading, error, data };
 };
 
