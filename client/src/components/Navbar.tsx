@@ -2,6 +2,7 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { NavLink, useLocation } from "react-router-dom"
 import Logo from "./Logo"
+import { useSelector } from "react-redux"
 
 const navLinks = [
     { name: "Home", href: "/" },
@@ -12,6 +13,7 @@ const navLinks = [
 ]
 
 const Navbar: React.FC = () => {
+    const { token, userdata } = useSelector((state: any) => state.auth);
     const location = useLocation()
     const [menuOpen, setMenuOpen] = React.useState(false)
 
@@ -40,10 +42,21 @@ const Navbar: React.FC = () => {
                 </nav>
                 {/* CTA & Hamburger */}
                 <div className="flex items-center gap-2">
-                    {location.pathname !== "/signup" && (
-                        <Button asChild className="hidden md:inline-flex font-semibold px-5 py-2 rounded-lg shadow-sm">
-                            <NavLink to="/signup">Get Started</NavLink>
-                        </Button>
+                    {token && userdata ? (
+                        <div className="hidden md:flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+                            <img
+                                src={userdata.picture}
+                                alt="Profile"
+                                className="w-8 h-8 rounded-full object-cover"
+                            />
+                            <span className="text-sm font-semibold text-muted-foreground">Profile</span>
+                        </div>
+                    ) : (
+                        location.pathname !== "/signup" && (
+                            <Button asChild className="hidden md:inline-flex font-semibold px-5 py-2 rounded-lg shadow-sm">
+                                <NavLink to="/signup">Get Started</NavLink>
+                            </Button>
+                        )
                     )}
                     {/* Hamburger for mobile */}
                     <button
@@ -79,10 +92,21 @@ const Navbar: React.FC = () => {
                             </NavLink>
                         ))}
                         <div className="my-2" />
-                        {location.pathname !== "/signup" && (
-                            <Button asChild className="w-full font-semibold px-5 py-2 rounded-lg shadow-sm">
-                                <NavLink to="/signup">Get Started</NavLink>
-                            </Button>
+                        {token && userdata ? (
+                            <div className="flex items-center gap-2 w-full cursor-pointer hover:bg-muted transition-colors py-2 px-3 rounded">
+                                <img
+                                    src={userdata.picture}
+                                    alt="Profile"
+                                    className="w-8 h-8 rounded-full object-cover"
+                                />
+                                <span className="text-base font-medium text-muted-foreground">Profile</span>
+                            </div>
+                        ) : (
+                            location.pathname !== "/signup" && (
+                                <Button asChild className="w-full font-semibold px-5 py-2 rounded-lg shadow-sm">
+                                    <NavLink to="/signup">Get Started</NavLink>
+                                </Button>
+                            )
                         )}
                     </nav>
                 </div>
