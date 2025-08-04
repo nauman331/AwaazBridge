@@ -9,9 +9,9 @@ export const validateRequest = (schema: any) => {
             next();
         } catch (err) {
             if (err instanceof ZodError) {
-                res.status(401).json({ error: err.issues });
+                res.status(401).json({ error: err.issues, isOk: false });
             } else {
-                res.status(500).json({ error: "Internal Server Error" });
+                res.status(500).json({ error: "Internal Server Error", isOk: false });
             }
         }
     }

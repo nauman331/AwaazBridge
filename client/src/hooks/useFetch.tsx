@@ -18,11 +18,11 @@ const useFetch = ({ url }: { url: string }) => {
                     ...(isAuth && { "Authorization": `Bearer ${token}` }),
                 },
             });
-            if (!response.ok) {
+            const resData = await response.json();
+            if (!resData.isOk) {
                 throw new Error("Network response was not ok");
             }
-            const responseData = await response.json();
-            setData(responseData);
+            setData(resData);
         } catch (err) {
             setError("An error occurred");
         } finally {

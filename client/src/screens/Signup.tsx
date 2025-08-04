@@ -27,16 +27,21 @@ const Signup: React.FC = () => {
     const { submit, loading } = useSubmit({ url: "auth/google-login" });
     const { submit: FormSubmit, loading: FormLoading } = useSubmit({ url: "auth/register" });
     const Register: SubmitHandler<FormData> = async (data) => {
-        const response = await FormSubmit({ bodyData: data, method: "POST", isAuth: false }) as unknown as { ok?: boolean };
-        if (response?.ok) {
+        const response = await FormSubmit({ bodyData: { ...data, role: "Viewer" }, method: "POST", isAuth: false });
+        if (response?.isOk) {
             toast.success("Registration successful! Please check your email to verify your account.");
-            navigate("/verify-otp")
+            navigate("/verify-otp");
         }
     }
     const handleGoogleSignup = useGoogleLogin({
         onSuccess: async (credentialResponse) => {
             console.log('Google Sign Up Success:', credentialResponse);
-            await submit({ method: "POST", bodyData: { access_token: credentialResponse?.access_token }, isAuth: false });
+            const response = await submit({ method: "POST", bodyData: { access_token: credentialResponse?.access_token }, isAuth: false });
+            if (response?.isOk) {
+                toast.success("Google Sign Up successful! Please check your email to verify your account.");
+                navigate("/profile");
+            }
+
         },
         onError: () => {
             toast.error("Google Sign Up failed. Please try again.");

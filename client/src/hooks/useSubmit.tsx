@@ -19,10 +19,13 @@ const useSubmit = ({ url }: { url: string }) => {
                 body: JSON.stringify(bodyData),
             });
             const responseData = await response.json();
-            if (!response.ok) {
-                toast.error(responseData.errors[0].message || responseData.message || "An error occurred");
+            if (!responseData.isOk) {
+                toast.error(responseData.error?.[0]?.message || responseData.message || "An error occurred");
             }
+            return responseData;
         } catch (err) {
+            toast.error("Network error occurred");
+            return null;
         } finally {
             setLoading(false);
         }

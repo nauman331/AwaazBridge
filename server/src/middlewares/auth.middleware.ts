@@ -17,7 +17,8 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
         const authroizationHeader = req.headers.authorization;
         if (!authroizationHeader || !authroizationHeader.startsWith("Bearer ")) {
             return res.status(401).json({
-                message: "Authorization header is missing or invalid"
+                message: "Authorization header is missing or invalid",
+                isOk: false
             });
         }
 
@@ -25,13 +26,15 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
         const decoded = verifyToken(token);
         if (!decoded) {
             return res.status(401).json({
-                message: "Invalid token"
+                message: "Invalid token",
+                isOk: false
             });
         }
         const user = await User.findById(decoded.userId);
         if (!user || !user.isActive) {
             return res.status(404).json({
-                message: "Invalid user or user is not active"
+                message: "Invalid user or user is not active",
+                isOk: false
             });
         }
         req.userId = user._id;
@@ -40,7 +43,8 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
 
     } catch (error) {
         return res.status(500).json({
-            message: "Internal Server Error"
+            message: "Internal Server Error",
+            isOk: false
         });
     }
 };
@@ -49,7 +53,8 @@ export const checkRole = (roles: string[]) => {
     return (req: Request, res: Response, next: NextFunction) => {
         if (!req.user || !roles.includes(req.user.role)) {
             return res.status(403).json({
-                message: "Forbidden: You do not have the required role"
+                message: "Forbidden: You do not have the required role",
+                isOk: false
             });
         }
         next();
