@@ -1,23 +1,59 @@
 import React from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import { Mail, Lock } from "lucide-react"
 import Logo from "@/components/Logo"
 import { useGoogleLogin } from '@react-oauth/google';
-// import { useDispatch } from "react-redux"
+import { useDispatch } from "react-redux"
+import { setToken } from "../store/slices/authSlice"
+import useSubmit from "@/hooks/useSubmit"
+import { useForm } from "react-hook-form"
+import type { SubmitHandler } from "react-hook-form"
+import { toast } from "sonner"
 
+
+type FormData = {
+    email: string;
+    password: string;
+}
 
 const Login: React.FC = () => {
-    // const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const { register, handleSubmit, formState: { errors }, setValue } = useForm<FormData>();
+    const { submit, loading } = useSubmit({ url: "auth/google-login" });
+    const { submit: FormSubmit, loading: FormLoading } = useSubmit({ url: "auth/login" });
+
+    const Login: SubmitHandler<FormData> = async (data) => {
+
+        const response = await FormSubmit({ bodyData: data, method: "POST", isAuth: false });
+        if (response?.isOk) {
+            toast.success("Login successful!");
+            navigate("/");
+        }
+    }
+
     const handleGoogleLogin = useGoogleLogin({
-        onSuccess: (credentialResponse) => {
-            console.log('Google Login Success:', credentialResponse);
+        onSuccess: async (credentialResponse) => {
+            console.log('Google Authentication Success:', credentialResponse);
+            const response = await submit({ method: "POST", bodyData: { access_token: credentialResponse?.access_token }, isAuth: false });
+            if (response?.isOk) {
+                dispatch(setToken(response.token));
+                toast.success("Google Authentication successful! Please check your email to verify your account.");
+                if (response?.role === "Student") {
+                    navigate("/student");
+                } else if (response?.role === "Teacher") {
+                    navigate("/teacher");
+                } else if (response?.role === "Admin") {
+                    navigate("/admin");
+                }
+            }
         },
         onError: () => {
-            console.log('Google Login Failed');
+            toast.error("Google Authentication failed. Please try again.");
         }
     });
     return (
@@ -32,7 +68,9 @@ const Login: React.FC = () => {
                         Welcome back to <span className="font-semibold text-[#FF6B00] dark:text-[#FF9F1C]">FinanceFire</span>
                     </p>
                     {/* Form */}
-                    <form className="space-y-4 w-full">
+                    <form
+                        onSubmit={handleSubmit(Login)}
+                        className="space-y-4 w-full">
                         <div className="relative">
                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#FF9F1C]" />
                             <Input
@@ -54,11 +92,12 @@ const Login: React.FC = () => {
                             />
                         </div>
                         <Button
+                            disabled={loading || FormLoading}
                             type="submit"
                             className="w-full bg-gradient-to-r from-[#FF6B00] to-[#FF9F1C] text-white font-bold border-0 shadow-lg hover:brightness-110 rounded-lg text-base py-2"
                             size="lg"
                         >
-                            Login
+                            {loading || FormLoading ? "Loading..." : "Login"}
                         </Button>
                     </form>
                     {/* Divider */}
@@ -69,6 +108,7 @@ const Login: React.FC = () => {
                     </div>
                     {/* Google Button */}
                     <Button
+                        disabled={loading || FormLoading}
                         type="button"
                         className="w-full cursor-pointer flex items-center justify-center gap-2 bg-white border border-[#ddd] text-[#444] font-semibold shadow-sm hover:bg-[#f7f7f7] dark:bg-[#223355] dark:text-[#FF9F1C] dark:border-[#FF9F1C]/40 rounded-lg py-2 text-base"
                         size="lg"
@@ -82,7 +122,7 @@ const Login: React.FC = () => {
                                 <path fill="#EA4335" d="M16 6.36c2.35 0 4.46.81 6.12 2.39l4.59-4.59C23.95 1.43 20.32 0 16 0 9.74 0 4.34 3.64 1.7 8.51l5.2 4.21c1.28-3.84 4.87-6.7 9.1-6.7z" />
                             </g>
                         </svg>
-                        Continue with Google
+                        {loading || FormLoading ? "Loading..." : "Continue with Google"}
                     </Button>
                     {/* Links */}
                     <div className="flex justify-between mt-6 text-sm w-full">
