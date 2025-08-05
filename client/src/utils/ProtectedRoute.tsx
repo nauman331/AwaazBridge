@@ -21,17 +21,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
             toast.info("You are already authenticated. Redirecting to your profile.");
             const role = userdata?.role;
             if (role === "Admin" && !location.pathname.includes("/admin")) {
-                navigate("/admin/profile", { replace: true });
+                navigate("/admin", { replace: true });
             } else if (role === "Student" && !location.pathname.includes("/student")) {
-                navigate("/student/profile", { replace: true });
+                navigate("/student", { replace: true });
             } else if (role === "Teacher" && !location.pathname.includes("/teacher")) {
-                navigate("/teacher/profile", { replace: true });
+                navigate("/teacher", { replace: true });
             }
             return;
         }
 
         // Check if user is trying to access protected route without authentication
-        if (!token && !isPublicRoute) {
+        if (!token && (location.pathname.includes("/student") || location.pathname.includes("/teacher") || location.pathname.includes("/admin"))) {
             toast.error("Please login to access this page.");
             navigate("/login", { replace: true });
             return;
