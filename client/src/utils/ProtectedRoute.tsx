@@ -6,10 +6,9 @@ import { useNavigate } from "react-router-dom";
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
-    allowedRoles?: string[];
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const { token, userdata } = useSelector((state: any) => state.auth);
@@ -18,52 +17,47 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
     const isPublicRoute = publicRoutes.includes(location.pathname);
 
     useEffect(() => {
-        // If user is authenticated and trying to access public routes, redirect to dashboard
         if (token && isPublicRoute) {
             toast.info("You are already authenticated. Redirecting to your profile.");
             const role = userdata?.role;
-            if (role === "Admin") {
+            if (role === "Admin" && !location.pathname.includes("/admin")) {
                 navigate("/admin/profile", { replace: true });
-            } else if (role === "Student") {
+            } else if (role === "Student" && !location.pathname.includes("/student")) {
                 navigate("/student/profile", { replace: true });
-            } else if (role === "Teacher") {
+            } else if (role === "Teacher" && !location.pathname.includes("/teacher")) {
                 navigate("/teacher/profile", { replace: true });
             }
             return;
         }
 
-        // Role-based access control
-        if (token && allowedRoles && allowedRoles.length > 0) {
-            const userRole = userdata?.role;
-            if (!allowedRoles.includes(userRole)) {
-                toast.error("You don't have permission to access this page.");
-                // Redirect to appropriate dashboard based on role
-                if (userRole === "Admin") {
-                    navigate("/admin/profile", { replace: true });
-                } else if (userRole === "Student") {
-                    navigate("/student/profile", { replace: true });
-                } else if (userRole === "Teacher") {
-                    navigate("/teacher/profile", { replace: true });
-                } else {
-                    navigate("/login", { replace: true });
-                }
+        // Check if user is trying to access protected route without authentication
+        if (!token && !isPublicRoute) {
+            toast.error("Please login to access this page.");
+            navigate("/login", { replace: true });
+            return;
+        }
+
+        // Check role-based access based on current path
+        if (token && !isPublicRoute && userdata?.role) {
+            const userRole = userdata.role;
+            const currentPath = location.pathname;
+
+            // Check if user is trying to access wrong role's routes
+            if (userRole === "Admin" && (currentPath.startsWith("/student") || currentPath.startsWith("/teacher"))) {
+                toast.error("Access denied. Redirecting to your dashboard.");
+                navigate("/", { replace: true });
+                return;
+            } else if (userRole === "Student" && (currentPath.startsWith("/admin") || currentPath.startsWith("/teacher"))) {
+                toast.error("Access denied. Redirecting to your dashboard.");
+                navigate("/", { replace: true });
+                return;
+            } else if (userRole === "Teacher" && (currentPath.startsWith("/admin") || currentPath.startsWith("/student"))) {
+                toast.error("Access denied. Redirecting to your dashboard.");
+                navigate("/", { replace: true });
                 return;
             }
         }
-    }, [token, userdata, location.pathname, navigate, isPublicRoute, allowedRoles]);
-
-    // Don't render children during redirects
-    if ((token && isPublicRoute) || (!token && !isPublicRoute)) {
-        return null;
-    }
-
-    // Role-based access control check (additional safety)
-    if (allowedRoles && allowedRoles.length > 0 && token) {
-        const userRole = userdata?.role;
-        if (!allowedRoles.includes(userRole)) {
-            return null;
-        }
-    }
+    }, [token, userdata, location.pathname, navigate, isPublicRoute]);
 
     return <>{children}</>;
 }
