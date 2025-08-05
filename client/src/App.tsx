@@ -27,7 +27,7 @@ const TermsOfService = lazy(() => import('./screens/TermsOfService'))
 const StudentProfile = lazy(() => import('./screens/Student/Profile'))
 
 //admin routes
-const AdminProfile = lazy(() => import('./screens/Admin/profile'))
+const AdminProfile = lazy(() => import('./screens/Admin/Profile'))
 
 // teacher routes
 const TeacherProfile = lazy(() => import('./screens/Teacher/Profile'))
