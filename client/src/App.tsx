@@ -7,9 +7,9 @@ import StudentLayout from './Layouts/StudentLayout'
 
 //extras
 import Loader from './components/Loader';
-import useFetch from './hooks/useFetch'
 import { useDispatch } from 'react-redux'
 import { setUserdata } from "./store/slices/authSlice"
+import useFetch from './hooks/useFetch';
 
 //public routes
 import ProtectedRoute from './utils/ProtectedRoute';
@@ -35,17 +35,13 @@ const TeacherProfile = lazy(() => import('./screens/Teacher/Profile'))
 
 const App: React.FC = () => {
   const dispatch = useDispatch();
-  const { loading, data } = useFetch({
-    url: 'auth/profile',
-    autoFetch: true,
-    isAuth: true
-  });
+  const { isPending, data: userData } = useFetch('auth/profile', true, "profile");
 
-  if (loading) {
-    return <Loader />;
+  if (isPending) {
+    return <Loader />
   }
-  if (data?.isOk) {
-    dispatch(setUserdata(data));
+  if (userData?.isOk) {
+    dispatch(setUserdata(userData))
   }
 
   return (

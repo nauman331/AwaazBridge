@@ -6,71 +6,29 @@ import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import { User, Mail, Lock, GraduationCap, Users } from "lucide-react"
 import Logo from "@/components/Logo"
-import { useGoogleLogin } from '@react-oauth/google';
-import useSubmit from "@/hooks/useSubmit"
-import { useForm } from "react-hook-form"
-import type { SubmitHandler } from "react-hook-form"
-import { toast } from "sonner"
-import { useDispatch } from "react-redux"
-import { setToken } from "../store/slices/authSlice"
+// import { useGoogleLogin } from '@react-oauth/google';
+// import { useForm } from "react-hook-form"
+// import type { SubmitHandler } from "react-hook-form"
+// import { toast } from "sonner"
+// import { useDispatch } from "react-redux"
+// import { setToken } from "../store/slices/authSlice"
 
-type FormData = {
-    name: string;
-    email: string;
-    password: string;
-    role: "Student" | "Teacher";
-}
+// type FormData = {
+//     name: string;
+//     email: string;
+//     password: string;
+//     role: "Student" | "Teacher";
+// }
 
 
 const Signup: React.FC = () => {
-    const navigate = useNavigate();
-    const dispatch = useDispatch();
+    // const navigate = useNavigate();
+    // const dispatch = useDispatch();
     const [selectedRole, setSelectedRole] = useState<"Student" | "Teacher" | "">("");
-    const { register, handleSubmit, formState: { errors }, setValue } = useForm<FormData>();
-    const { submit, loading } = useSubmit({ url: "auth/google-login" });
-    const { submit: FormSubmit, loading: FormLoading } = useSubmit({ url: "auth/register" });
-
-    const Register: SubmitHandler<FormData> = async (data) => {
-        if (!selectedRole) {
-            toast.error("Please select your role (Student or Teacher)");
-            return;
-        }
-        const response = await FormSubmit({ bodyData: { ...data, role: selectedRole }, method: "POST", isAuth: false });
-        if (response?.isOk) {
-            toast.success("Registration successful! Please check your email to verify your account.");
-            navigate("/verify-otp");
-        }
-    }
 
     const handleRoleSelect = (role: "Student" | "Teacher") => {
         setSelectedRole(role);
-        setValue("role", role);
     }
-
-    const handleGoogleSignup = useGoogleLogin({
-        onSuccess: async (credentialResponse) => {
-            if (!selectedRole) {
-                toast.error("Please select your role before using Google signup");
-                return;
-            }
-            console.log('Google Authentication Success:', credentialResponse);
-            const response = await submit({ method: "POST", bodyData: { access_token: credentialResponse?.access_token, role: selectedRole }, isAuth: false });
-            if (response?.isOk) {
-                dispatch(setToken(response.token));
-                toast.success("Google Authentication successful! Please check your email to verify your account.");
-                if (response?.role === "Student") {
-                    navigate("/student");
-                } else if (response?.role === "Teacher") {
-                    navigate("/teacher");
-                } else if (response?.role === "Admin") {
-                    navigate("/admin");
-                }
-            }
-        },
-        onError: () => {
-            toast.error("Google Authentication failed. Please try again.");
-        }
-    });
 
     return (
         <div className="flex flex-col min-h-screen bg-white text-[#002B5B] dark:bg-[#002B5B] dark:text-white">
@@ -137,17 +95,13 @@ const Signup: React.FC = () => {
                     {selectedRole && (
                         <>
                             <form
-                                onSubmit={handleSubmit(Register)}
                                 className="space-y-4 w-full">
                                 <div className="relative">
                                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#FF9F1C]" />
                                     <Input
                                         type="text"
                                         placeholder="Full Name"
-                                        className="pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg focus:ring-2 focus:ring-[#FF9F1C]/40 transition-all"
-                                        {...register("name", { required: "Name is required" })}
-                                    />
-                                    {errors.name && <span className="text-red-500 text-xs mt-1">{errors.name.message}</span>}
+                                        className="pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg focus:ring-2 focus:ring-[#FF9F1C]/40 transition-all" />
                                 </div>
                                 <div className="relative">
                                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#FF9F1C]" />
@@ -155,9 +109,7 @@ const Signup: React.FC = () => {
                                         type="email"
                                         placeholder="Email"
                                         className="pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg focus:ring-2 focus:ring-[#FF9F1C]/40 transition-all"
-                                        {...register("email", { required: "Email is required" })}
                                     />
-                                    {errors.email && <span className="text-red-500 text-xs mt-1">{errors.email.message}</span>}
                                 </div>
                                 <div className="relative">
                                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#FF9F1C]" />
@@ -165,17 +117,14 @@ const Signup: React.FC = () => {
                                         type="password"
                                         placeholder="Password"
                                         className="pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg focus:ring-2 focus:ring-[#FF9F1C]/40 transition-all"
-                                        {...register("password", { required: "Password is required" })}
                                     />
-                                    {errors.password && <span className="text-red-500 text-xs mt-1">{errors.password.message}</span>}
                                 </div>
                                 <Button
                                     type="submit"
                                     className="w-full bg-gradient-to-r from-[#FF6B00] to-[#FF9F1C] text-white font-bold border-0 shadow-lg hover:brightness-110 rounded-lg text-base py-2"
                                     size="lg"
-                                    disabled={loading || FormLoading}
                                 >
-                                    {loading || FormLoading ? "Creating Account..." : `Join as ${selectedRole}`}
+                                    {`Join as ${selectedRole}`}
                                 </Button>
                             </form>
 
@@ -189,8 +138,6 @@ const Signup: React.FC = () => {
                                 type="button"
                                 className="w-full cursor-pointer flex items-center justify-center gap-2 bg-white border border-[#ddd] text-[#444] font-semibold shadow-sm hover:bg-[#f7f7f7] dark:bg-[#223355] dark:text-[#FF9F1C] dark:border-[#FF9F1C]/40 rounded-lg py-2 text-base"
                                 size="lg"
-                                disabled={loading || FormLoading}
-                                onClick={() => handleGoogleSignup()}
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" className="w-5 h-5 mr-1">
                                     <g>
@@ -200,7 +147,7 @@ const Signup: React.FC = () => {
                                         <path fill="#EA4335" d="M16 6.36c2.35 0 4.46.81 6.12 2.39l4.59-4.59C23.95 1.43 20.32 0 16 0 9.74 0 4.34 3.64 1.7 8.51l5.2 4.21c1.28-3.84 4.87-6.7 9.1-6.7z" />
                                     </g>
                                 </svg>
-                                {loading || FormLoading ? "Loading..." : `Continue with Google`}
+                                Continue with Google
                             </Button>
                         </>
                     )}
