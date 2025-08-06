@@ -1,20 +1,20 @@
 import { backendUrl } from "@/utils/exports";
 import { useSelector } from "react-redux";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
-const useFetch = (endpoint: string, isAuth: boolean, querykey: string) => {
+const useSubmit = (endpoint: string, isAuth: boolean, mutationKey: string, formData: any) => {
     const { token } = useSelector((state: any) => state.auth);
-
-    const { isPending, error, data, isSuccess } = useQuery({
-        queryKey: [querykey],
-        queryFn: async () => {
+    const { isPending, error, data, isSuccess } = useMutation({
+        mutationKey: [mutationKey],
+        mutationFn: async () => {
             const response = await fetch(`${backendUrl}${endpoint}`, {
-                method: 'GET',
+                method: 'POST',
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                     ...(isAuth && token && { 'Authorization': `Bearer ${token}` })
-                }
+                },
+                body: JSON.stringify(formData)
             });
 
             if (!response.ok) {
@@ -23,11 +23,8 @@ const useFetch = (endpoint: string, isAuth: boolean, querykey: string) => {
 
             const data = await response.json();
             return data;
-        },
-        enabled: !isAuth || !!token, // Only run query if not auth required OR token exists
+        }
     })
-
     return { isPending, error, data, isSuccess };
 }
-
-export default useFetch;
+export default useSubmit

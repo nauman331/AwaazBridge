@@ -35,12 +35,12 @@ const TeacherProfile = lazy(() => import('./screens/Teacher/Profile'))
 
 const App: React.FC = () => {
   const dispatch = useDispatch();
-  const { isPending, data: userData } = useFetch('auth/profile', true, "profile");
+  const { isPending, data: userData, isSuccess } = useFetch('auth/profile', true, "profile");
 
   if (isPending) {
     return <Loader />
   }
-  if (userData?.isOk) {
+  if (isSuccess && userData) {
     dispatch(setUserdata(userData))
   }
 
