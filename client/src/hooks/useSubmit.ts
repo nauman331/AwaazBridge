@@ -2,11 +2,11 @@ import { backendUrl } from "@/utils/exports";
 import { useSelector } from "react-redux";
 import { useMutation } from "@tanstack/react-query";
 
-const useSubmit = (endpoint: string, isAuth: boolean, mutationKey: string, formData: any) => {
+const useSubmit = (endpoint: string, isAuth: boolean, mutationKey: string) => {
     const { token } = useSelector((state: any) => state.auth);
-    const { isPending, error, data, isSuccess } = useMutation({
+    const { mutate, isPending, error, data, isSuccess } = useMutation({
         mutationKey: [mutationKey],
-        mutationFn: async () => {
+        mutationFn: async (formData: any) => {
             const response = await fetch(`${backendUrl}${endpoint}`, {
                 method: 'POST',
                 credentials: 'include',
@@ -18,13 +18,14 @@ const useSubmit = (endpoint: string, isAuth: boolean, mutationKey: string, formD
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json();
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
             return data;
         }
     })
-    return { isPending, error, data, isSuccess };
+    return { mutate, isPending, error, data, isSuccess };
 }
-export default useSubmit
+export default useSubmit;
