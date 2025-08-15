@@ -15,6 +15,7 @@ import {
     Clock,
 } from "lucide-react"
 import DashboardImg from "../assets/Dashboard.png"
+import { useSelector } from "react-redux"
 
 const features = [
     {
@@ -140,6 +141,8 @@ const faqs = [
 ]
 
 const HomePage: React.FC = () => {
+    const { token } = useSelector((state: any) => state.auth)
+
     return (
         <div className="flex flex-col min-h-screen bg-white text-[#002B5B] dark:bg-[#002B5B] dark:text-white">
             <Navbar />
@@ -162,16 +165,18 @@ const HomePage: React.FC = () => {
                                 size="lg"
                                 className="px-8 bg-gradient-to-r from-[#FF6B00] to-[#FF9F1C] text-white border-0 shadow-lg hover:brightness-110"
                             >
-                                <Link to="/signup">Start Learning Free</Link>
+                                <Link to={token ? "/dashboard" : "/signup"}>{token ? "Go to Dashboard" : "Start Learning Free"}</Link>
                             </Button>
-                            <Button
-                                asChild
-                                variant="outline"
-                                size="lg"
-                                className="px-8 border-[#FF6B00] text-[#FF6B00] hover:bg-[#FF6B00] hover:text-white"
-                            >
-                                <Link to="/login">Sign In</Link>
-                            </Button>
+                            {!token && (
+                                <Button
+                                    asChild
+                                    variant="outline"
+                                    size="lg"
+                                    className="px-8 border-[#FF6B00] text-[#FF6B00] hover:bg-[#FF6B00] hover:text-white"
+                                >
+                                    <Link to="/login">Sign In</Link>
+                                </Button>
+                            )}
                         </div>
                     </div>
                     <div className="flex-1 hidden md:flex justify-center">
@@ -322,7 +327,7 @@ const HomePage: React.FC = () => {
                         size="lg"
                         className="px-8 bg-white text-[#FF6B00] font-bold border-0 shadow-lg hover:brightness-110"
                     >
-                        <Link to="/signup">Get Started Today</Link>
+                        <Link to={token ? "/dashboard" : "/signup"}>{token ? "Go to Dashboard" : "Get Started Today"}</Link>
                     </Button>
                 </div>
             </section>

@@ -23,6 +23,7 @@ const AboutUs = lazy(() => import('./screens/AboutUs'))
 const ContactUs = lazy(() => import('./screens/ContactUs'))
 const PrivacyPolicy = lazy(() => import('./screens/PrivacyPolicy'))
 const TermsOfService = lazy(() => import('./screens/TermsOfService'))
+const NotFound = lazy(() => import('./screens/NotFound'))
 // student routes
 const StudentProfile = lazy(() => import('./screens/Student/Profile'))
 
@@ -75,6 +76,8 @@ const App: React.FC = () => {
               <Route index element={<TeacherProfile />} />
               <Route path="profile" element={<TeacherProfile />} />
             </Route>
+            {/* 404 Not Found Route */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </ProtectedRoute>
       </Suspense>
