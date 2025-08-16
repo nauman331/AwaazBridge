@@ -7,7 +7,7 @@ import StudentLayout from './Layouts/StudentLayout'
 
 //extras
 import Loader from './components/Loader';
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { setUserdata } from "./store/slices/authSlice"
 import useFetch from './hooks/useFetch';
 
@@ -35,10 +35,11 @@ const TeacherProfile = lazy(() => import('./screens/Teacher/Profile'))
 
 
 const App: React.FC = () => {
+  const { token } = useSelector((state: any) => state.auth);
   const dispatch = useDispatch();
   const { isPending, data: userData, isSuccess } = useFetch('auth/profile', true, "profile");
 
-  if (isPending) {
+  if (token && isPending) {
     return <Loader />
   }
   if (isSuccess && userData) {
