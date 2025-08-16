@@ -1,28 +1,27 @@
 import React from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Link } from "react-router-dom"
-// import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import { Mail, Lock } from "lucide-react"
 import Logo from "@/components/Logo"
-// import { useDispatch } from "react-redux"
-// import { useGoogleLogin } from '@react-oauth/google';
-// import { setToken } from "../store/slices/authSlice"
-// import { useForm } from "react-hook-form"
-// import type { SubmitHandler } from "react-hook-form"
-// import { toast } from "sonner"
+import { useDispatch } from "react-redux"
+import { useGoogleLogin } from '@react-oauth/google';
+import { setToken } from "../store/slices/authSlice"
+import { useForm } from "react-hook-form"
+import type { SubmitHandler } from "react-hook-form"
+import { toast } from "sonner"
 
 
-// type FormData = {
-//     email: string;
-//     password: string;
-// }
+type FormData = {
+    email: string;
+    password: string;
+}
 
 const Login: React.FC = () => {
-    // const navigate = useNavigate();
-    // const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     return (
         <div className="flex flex-col min-h-screen bg-white text-[#002B5B] dark:bg-[#002B5B] dark:text-white">

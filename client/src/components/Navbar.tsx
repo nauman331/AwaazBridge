@@ -1,8 +1,9 @@
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { NavLink, useLocation } from "react-router-dom"
+import { NavLink, useLocation, useNavigate } from "react-router-dom"
 import Logo from "./Logo"
 import { useSelector } from "react-redux"
+import { RoleNavigation } from "../utils/Role"
 
 const navLinks = [
     { name: "Home", href: "/" },
@@ -13,6 +14,7 @@ const navLinks = [
 ]
 
 const Navbar: React.FC = () => {
+    const navigate = useNavigate();
     const { token, userdata } = useSelector((state: any) => state.auth);
     const location = useLocation()
     const [menuOpen, setMenuOpen] = React.useState(false)
@@ -43,14 +45,14 @@ const Navbar: React.FC = () => {
                 {/* CTA & Hamburger */}
                 <div className="flex items-center gap-2">
                     {token && userdata ? (
-                        <div className="hidden md:flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+                        <button onClick={() => navigate(RoleNavigation(userdata.role))} className="hidden md:flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
                             <img
                                 src={userdata.picture}
                                 alt="Profile"
                                 className="w-8 h-8 rounded-full object-cover"
                             />
                             <span className="text-sm font-semibold text-muted-foreground">Profile</span>
-                        </div>
+                        </button>
                     ) : (
                         location.pathname !== "/signup" && (
                             <Button asChild className="hidden md:inline-flex font-semibold px-5 py-2 rounded-lg shadow-sm">
@@ -93,14 +95,14 @@ const Navbar: React.FC = () => {
                         ))}
                         <div className="my-2" />
                         {token && userdata ? (
-                            <div className="flex items-center gap-2 w-full cursor-pointer hover:bg-muted transition-colors py-2 px-3 rounded">
+                            <button onClick={() => navigate(RoleNavigation(userdata.role))} className="flex items-center gap-2 w-full cursor-pointer hover:bg-muted transition-colors py-2 px-3 rounded">
                                 <img
                                     src={userdata.picture}
                                     alt="Profile"
                                     className="w-8 h-8 rounded-full object-cover"
                                 />
                                 <span className="text-base font-medium text-muted-foreground">Profile</span>
-                            </div>
+                            </button>
                         ) : (
                             location.pathname !== "/signup" && (
                                 <Button asChild className="w-full font-semibold px-5 py-2 rounded-lg shadow-sm">

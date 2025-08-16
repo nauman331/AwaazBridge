@@ -13,6 +13,7 @@ import { toast } from "sonner"
 import { useDispatch } from "react-redux"
 import { setToken } from "../store/slices/authSlice"
 import useSubmit from "@/hooks/useSubmit"
+import { RoleNavigation } from "../utils/Role"
 
 type FormData = {
     name: string;
@@ -25,7 +26,7 @@ type FormData = {
 
 const Signup: React.FC = () => {
     const { mutate, isPending, error, data, isSuccess } = useSubmit('auth/register', false, 'register');
-    const { mutate: googleLogin, isPending: isGoogleLoginPending, error: googleLoginError, data: googleLoginData, isSuccess: isGoogleLoginSuccess } = useSubmit('/auth/google-login', false, 'google-login');
+    const { mutate: googleLogin, isPending: isGoogleLoginPending, error: googleLoginError, data: googleLoginData, isSuccess: isGoogleLoginSuccess } = useSubmit('auth/google-login', false, 'google-login');
     const { register, handleSubmit, formState: { errors } } = useForm<FormData>()
     const navigate = useNavigate();
     const dispatch = useDispatch();
@@ -43,7 +44,7 @@ const Signup: React.FC = () => {
         if (isSuccess && data) {
             toast.success("Registration successful! Welcome.");
             dispatch(setToken(data.token));
-            navigate('/');
+            navigate(RoleNavigation(selectedRole));
         }
         if (error) {
             toast.error(error.message || "Registration failed. Please try again.");
@@ -60,7 +61,6 @@ const Signup: React.FC = () => {
             if (selectedRole) {
                 googleLogin({ access_token: response.access_token, role: selectedRole });
             } else {
-                // This case should ideally not be hit if the button is only shown after role selection.
                 toast.error("Please select a role before signing in with Google.");
             }
         },
@@ -156,43 +156,43 @@ const Signup: React.FC = () => {
                                 onSubmit={handleSubmit(handleRegister)}
                                 className="space-y-4 w-full">
                                 <div className="relative">
-                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#FF9F1C]" />
+                                    <User className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${errors.name ? 'text-red-500' : 'text-[#FF9F1C]'}`} />
                                     <Input
                                         type="text"
-                                        placeholder="Full Name"
+                                        placeholder={errors.name ? errors.name.message : "Full Name"}
+                                        style={{ border: errors.name && "2px solid red" }}
                                         {...register("name", { required: "Name is required" })}
-                                        className="pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg focus:ring-2 focus:ring-[#FF9F1C]/40 transition-all" />
-                                    {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+                                        className={`pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg transition-all ${errors.name ? 'placeholder:text-red-500' : ''}`} />
                                 </div>
                                 <div className="relative">
-                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#FF9F1C]" />
+                                    <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${errors.email ? 'text-red-500' : 'text-[#FF9F1C]'}`} />
                                     <Input
                                         type="email"
-                                        placeholder="Email"
+                                        placeholder={errors.email ? errors.email.message : "Email"}
+                                        style={{ border: errors.email && "2px solid red" }}
                                         {...register("email", { required: "Email is required" })}
-                                        className="pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg focus:ring-2 focus:ring-[#FF9F1C]/40 transition-all"
+                                        className={`pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg transition-all ${errors.email ? 'placeholder:text-red-500' : ''}`}
                                     />
-                                    {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                                 </div>
                                 <div className="relative">
-                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#FF9F1C]" />
+                                    <Phone className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${errors.phone ? 'text-red-500' : 'text-[#FF9F1C]'}`} />
                                     <Input
                                         type="tel"
-                                        placeholder="Phone"
+                                        placeholder={errors.phone ? errors.phone.message : "Phone"}
+                                        style={{ border: errors.phone && "2px solid red" }}
                                         {...register("phone", { required: "Phone number is required" })}
-                                        className="pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg focus:ring-2 focus:ring-[#FF9F1C]/40 transition-all"
+                                        className={`pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg transition-all ${errors.phone ? 'placeholder:text-red-500' : ''}`}
                                     />
-                                    {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
                                 </div>
                                 <div className="relative">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#FF9F1C]" />
+                                    <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${errors.password ? 'text-red-500' : 'text-[#FF9F1C]'}`} />
                                     <Input
                                         type="password"
-                                        placeholder="Password"
+                                        placeholder={errors.password ? errors.password.message : "Password"}
+                                        style={{ border: errors.password && "2px solid red" }}
                                         {...register("password", { required: "Password is required", minLength: { value: 6, message: "Password must be at least 6 characters" } })}
-                                        className="pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg focus:ring-2 focus:ring-[#FF9F1C]/40 transition-all"
+                                        className={`pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg transition-all ${errors.password ? 'placeholder:text-red-500' : ''}`}
                                     />
-                                    {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
                                 </div>
                                 <Button
                                     type="submit"
