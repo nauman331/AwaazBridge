@@ -81,7 +81,7 @@ const Signup: React.FC = () => {
         if (isGoogleLoginSuccess && googleLoginData) {
             toast.success("Google login successful! Welcome.");
             dispatch(setToken(googleLoginData.token));
-            navigate('/');
+            navigate(RoleNavigation(googleLoginData.role));
         }
         if (googleLoginError) {
             toast.error(googleLoginError.message || "Google login failed. Please try again.");
