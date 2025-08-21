@@ -4,6 +4,8 @@ import { GoogleOAuthProvider } from "@react-oauth/google"
 import { googleClientId } from './utils/exports'
 // layouts
 import StudentLayout from './Layouts/StudentLayout'
+import AdminLayout from './Layouts/AdminLayout'
+import TeacherLayout from './Layouts/TeacherLayout'
 
 //extras
 import Loader from './components/Loader';
@@ -68,12 +70,12 @@ const App: React.FC = () => {
               <Route path="profile" element={<StudentProfile />} />
             </Route>
             {/* Admin Routes */}
-            <Route path='/admin' element={<StudentLayout />} >
+            <Route path='/admin' element={<AdminLayout />} >
               <Route index element={<AdminProfile />} />
               <Route path="profile" element={<AdminProfile />} />
             </Route>
             {/* Teacher Routes */}
-            <Route path='/teacher' element={<StudentLayout />} >
+            <Route path='/teacher' element={<TeacherLayout />} >
               <Route index element={<TeacherProfile />} />
               <Route path="profile" element={<TeacherProfile />} />
             </Route>
