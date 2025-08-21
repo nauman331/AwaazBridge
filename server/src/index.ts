@@ -11,7 +11,7 @@ import connectDB from "./config/connectDB";
 import authRoutes from "./routes/auth.route"
 
 const corsoptions = {
-    origin: process.env.CLIENT_URL,
+    origin: process.env.CLIENT_URL || "https://finance-fire-xuot.vercel.app",
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true,
 };

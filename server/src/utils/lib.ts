@@ -19,18 +19,13 @@ export const generateOTP = (): string => Math.floor(100000 + Math.random() * 900
 export const signToken = (user: { userId: string, role: string }): string => {
     return jwt.sign(
         user,
-        process.env.JWT_SECRET as any || "little_low_secret",
+        process.env.JWT_SECRET as any || "lmWJcEvyovHbX6Gr5gWBdNUBcVvLSX2CuFEcmyNJqd61dvqFlh21CogsqVtsOegSNKKRbidf",
         { expiresIn: process.env.JWT_EXPIRATION as any || "7d" }
     );
 }
 
-export const verifyToken = (token: string): JwtPayload | null => {
-    try {
-        return jwt.verify(token, process.env.JWT_SECRET as any) as JwtPayload;
-    } catch (error) {
-        console.error("Token verification failed:", error);
-        return null;
-    }
+export const verifyToken = (token: string): JwtPayload => {
+    return jwt.verify(token, process.env.JWT_SECRET as any) as JwtPayload;
 }
 
 export const hashPassword = (password: string): Promise<string> => {

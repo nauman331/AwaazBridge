@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 const useFetch = (endpoint: string, isAuth: boolean, querykey: string) => {
     const { token } = useSelector((state: any) => state.auth);
 
-    const { isPending, error, data, isSuccess } = useQuery({
+    const { isPending, error, data, isSuccess, refetch } = useQuery({
         queryKey: [querykey],
         queryFn: async () => {
             const response = await fetch(`${backendUrl}${endpoint}`, {
@@ -27,7 +27,7 @@ const useFetch = (endpoint: string, isAuth: boolean, querykey: string) => {
         enabled: !isAuth || !!token, // Only run query if not auth required OR token exists
     })
 
-    return { isPending, error, data, isSuccess };
+    return { isPending, error, data, isSuccess, refetch };
 }
 
 export default useFetch;

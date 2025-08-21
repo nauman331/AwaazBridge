@@ -23,13 +23,17 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
         }
 
         const token = authroizationHeader.split(" ")[1];
-        const decoded = verifyToken(token);
-        if (!decoded) {
+
+        let decoded;
+        try {
+            decoded = verifyToken(token);
+        } catch (tokenError) {
             return res.status(401).json({
-                message: "Invalid token",
+                message: "Invalid or expired token",
                 isOk: false
             });
         }
+
         const user = await User.findById(decoded.userId);
         if (!user || !user.isActive) {
             return res.status(404).json({
@@ -39,6 +43,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
         }
         req.userId = user._id;
         req.role = user.role;
+        req.user = user;
         next();
 
     } catch (error) {

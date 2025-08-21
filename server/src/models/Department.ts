@@ -1,6 +1,6 @@
 import mongoose, { Document } from "mongoose";
 
-export interface IInstitute extends Document {
+export interface IDepartment extends Document {
     name: string;
     location: string;
     logo: string | null;
@@ -8,7 +8,7 @@ export interface IInstitute extends Document {
     updatedAt: Date;
 }
 
-const instituteSchema = new mongoose.Schema<IInstitute>({
+const departmentSchema = new mongoose.Schema<IDepartment>({
     name: { type: String, required: true },
     location: { type: String, required: true },
     logo: { type: String, default: null },
@@ -16,4 +16,4 @@ const instituteSchema = new mongoose.Schema<IInstitute>({
     updatedAt: { type: Date, default: Date.now },
 }, { timestamps: true });
 
-export const Institute = mongoose.model<IInstitute>("Institute", instituteSchema);
+export const Department = mongoose.model<IDepartment>("Department", departmentSchema);

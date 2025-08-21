@@ -1,16 +1,82 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { User, BookOpen, Calendar, Edit, Settings, Users, Book, Star } from 'lucide-react'
-import { useSelector } from 'react-redux'
+import useFetch from '@/hooks/useFetch'
+import useSubmit from '@/hooks/useSubmit'
+import type { SubmitHandler } from 'react-hook-form';
+import { useForm } from "react-hook-form"
+import { toast } from "sonner"
+import Loader from '@/components/Loader';
+import { useDispatch } from 'react-redux';
+import { setUserdata } from "../../store/slices/authSlice"
+
+type ProfileFormData = {
+    name: string;
+    email: string;
+    phone: string;
+    specialization: string;
+    department: string;
+    experience: number;
+}
 
 const Profile: React.FC = () => {
-    const { userdata } = useSelector((state: any) => state.auth)
-    const [isEditing, setIsEditing] = useState(false)
+    const dispatch = useDispatch();
+    const { isPending, error, data: userdata, refetch } = useFetch('auth/profile', true, "profile");
+    const { isPending: isSubmitting, error: submitError, mutate, isSuccess, data } = useSubmit('auth/profile', true, "updateprofile", "PUT");
+    const { register, handleSubmit, formState: { errors }, setValue, reset } = useForm<ProfileFormData>();
+    const [isEditing, setIsEditing] = useState<boolean>(false)
 
-    const handleSave = () => {
-        setIsEditing(false)
-        // Add API call to save profile data
+    // Set form values when userdata is loaded
+    useEffect(() => {
+        if (userdata) {
+            setValue('name', userdata.name || '');
+            setValue('email', userdata.email || '');
+            setValue('phone', userdata.phone || '');
+            setValue('specialization', userdata.specialization || '');
+            setValue('department', userdata.department || '');
+            setValue('experience', userdata.experience || 0);
+        }
+    }, [userdata, setValue]);
+
+    // Handle successful update
+    useEffect(() => {
+        if (isSuccess) {
+            toast.success("Profile updated successfully!");
+            setIsEditing(false);
+            refetch(); // Refresh the profile data
+        }
+        if (submitError) {
+            toast.error(submitError.message || "Failed to update profile. Please try again.");
+        }
+    }, [isSuccess, submitError, refetch]);
+
+    const handleUpdateProfile: SubmitHandler<ProfileFormData> = async (formData) => {
+        mutate(formData);
+        if (isSuccess) {
+            dispatch(setUserdata(data));
+        }
     }
 
+    const handleCancel = () => {
+        setIsEditing(false);
+        // Reset form to original values
+        if (userdata) {
+            reset({
+                name: userdata.name || '',
+                email: userdata.email || '',
+                phone: userdata.phone || '',
+                specialization: userdata.specialization || '',
+                department: userdata.department || '',
+                experience: userdata.experience || 0
+            });
+        }
+    }
+
+    if (isPending) {
+        return <Loader />
+    }
+    if (error) {
+        return <p className='text-red-500'>Error in getting Profile Refresh!</p>
+    }
     return (
         <div className="min-h-screen bg-[#FFF7F0] dark:bg-[#002B5B] p-4 sm:p-6">
             <div className="max-w-7xl mx-auto">
@@ -28,12 +94,18 @@ const Profile: React.FC = () => {
                                 </div>
                                 <div className="text-white">
                                     <h1 className="text-2xl sm:text-3xl font-bold mb-1">{userdata?.name || ""}</h1>
-                                    <p className="text-green-100 text-lg">{userdata?.position || "Teacher"}</p>
+                                    <p className="text-green-100 text-lg">{userdata?.role || "Teacher"}</p>
                                     <p className="text-sm text-green-200">ID: {userdata?.googleId || ""}</p>
                                 </div>
                             </div>
                             <button
-                                onClick={() => setIsEditing(!isEditing)}
+                                onClick={() => {
+                                    if (isEditing) {
+                                        handleCancel();
+                                    } else {
+                                        setIsEditing(true);
+                                    }
+                                }}
                                 className="bg-white text-green-600 px-4 py-2 rounded-lg hover:bg-green-50 transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg font-medium"
                             >
                                 <Edit size={16} />
@@ -50,74 +122,116 @@ const Profile: React.FC = () => {
                                     <User className="mr-3 text-green-600" size={20} />
                                     Personal Information
                                 </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
-                                    <div>
-                                        <label className="block text-sm font-medium text-[#002B5B] dark:text-[#e0e6ef] mb-2">Full Name</label>
-                                        {isEditing ? (
-                                            <input
-                                                type="text"
-                                                value={userdata?.name || ""}
-                                                className="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white transition-all"
-                                            />
-                                        ) : (
-                                            <p className="text-[#002B5B] dark:text-white py-3 font-medium">{userdata?.name || ""}</p>
-                                        )}
+
+                                <form onSubmit={handleSubmit(handleUpdateProfile)}>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-[#002B5B] dark:text-[#e0e6ef] mb-2">Full Name</label>
+                                            {isEditing ? (
+                                                <input
+                                                    type="text"
+                                                    {...register("name", { required: "Name is required" })}
+                                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white transition-all ${errors.name ? 'border-red-500' : 'border-green-300'}`}
+                                                />
+                                            ) : (
+                                                <p className="text-[#002B5B] dark:text-white py-3 font-medium">{userdata?.name || ""}</p>
+                                            )}
+                                            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-[#002B5B] dark:text-[#e0e6ef] mb-2">Email</label>
+                                            {isEditing ? (
+                                                <input
+                                                    type="email"
+                                                    {...register("email", {
+                                                        required: "Email is required",
+                                                        pattern: {
+                                                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                                                            message: "Invalid email address"
+                                                        }
+                                                    })}
+                                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white transition-all ${errors.email ? 'border-red-500' : 'border-green-300'}`}
+                                                />
+                                            ) : (
+                                                <p className="text-[#002B5B] dark:text-white py-3 font-medium">{userdata?.email || ""}</p>
+                                            )}
+                                            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-[#002B5B] dark:text-[#e0e6ef] mb-2">Phone</label>
+                                            {isEditing ? (
+                                                <input
+                                                    type="tel"
+                                                    {...register("phone")}
+                                                    className="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white transition-all"
+                                                />
+                                            ) : (
+                                                <p className="text-[#002B5B] dark:text-white py-3 font-medium">{userdata?.phone || "Not provided"}</p>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-[#002B5B] dark:text-[#e0e6ef] mb-2">Department</label>
+                                            {isEditing ? (
+                                                <input
+                                                    type="text"
+                                                    {...register("department")}
+                                                    className="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white transition-all"
+                                                />
+                                            ) : (
+                                                <p className="text-[#002B5B] dark:text-white py-3 font-medium">{userdata?.department || "Not specified"}</p>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-[#002B5B] dark:text-[#e0e6ef] mb-2">Specialization</label>
+                                            {isEditing ? (
+                                                <input
+                                                    type="text"
+                                                    {...register("specialization")}
+                                                    className="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white transition-all"
+                                                />
+                                            ) : (
+                                                <p className="text-[#002B5B] dark:text-white py-3 font-medium">{userdata?.specialization || "Not specified"}</p>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-[#002B5B] dark:text-[#e0e6ef] mb-2">Experience (Years)</label>
+                                            {isEditing ? (
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="50"
+                                                    {...register("experience", {
+                                                        valueAsNumber: true,
+                                                        min: { value: 0, message: "Experience cannot be negative" },
+                                                        max: { value: 50, message: "Experience cannot exceed 50 years" }
+                                                    })}
+                                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white transition-all ${errors.experience ? 'border-red-500' : 'border-green-300'}`}
+                                                />
+                                            ) : (
+                                                <p className="text-[#002B5B] dark:text-white py-3 font-medium">{userdata?.experience ? `${userdata.experience} years` : "Not specified"}</p>
+                                            )}
+                                            {errors.experience && <p className="text-red-500 text-sm mt-1">{errors.experience.message}</p>}
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-[#002B5B] dark:text-[#e0e6ef] mb-2">Email</label>
-                                        {isEditing ? (
-                                            <input
-                                                type="email"
-                                                value={userdata?.email || ""}
-                                                className="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white transition-all"
-                                            />
-                                        ) : (
-                                            <p className="text-[#002B5B] dark:text-white py-3 font-medium">{userdata?.email || ""}</p>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-[#002B5B] dark:text-[#e0e6ef] mb-2">Phone</label>
-                                        {isEditing ? (
-                                            <input
-                                                type="tel"
-                                                value={userdata?.phone || ""}
-                                                className="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white transition-all"
-                                            />
-                                        ) : (
-                                            <p className="text-[#002B5B] dark:text-white py-3 font-medium">{userdata?.phone || ""}</p>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-[#002B5B] dark:text-[#e0e6ef] mb-2">Department</label>
-                                        <p className="text-[#002B5B] dark:text-white py-3 font-medium">{userdata?.department || ""}</p>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-[#002B5B] dark:text-[#e0e6ef] mb-2">Specialization</label>
-                                        {isEditing ? (
-                                            <input
-                                                type="text"
-                                                value={userdata?.specialization || ""}
-                                                className="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white transition-all"
-                                            />
-                                        ) : (
-                                            <p className="text-[#002B5B] dark:text-white py-3 font-medium">{userdata?.specialization || ""}</p>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-[#002B5B] dark:text-[#e0e6ef] mb-2">Experience</label>
-                                        <p className="text-[#002B5B] dark:text-white py-3 font-medium">{userdata?.experience || ""}</p>
-                                    </div>
-                                </div>
-                                {isEditing && (
-                                    <div className="mt-6 pt-4 border-t border-green-200">
-                                        <button
-                                            onClick={handleSave}
-                                            className="bg-gradient-to-r from-green-600 to-green-500 text-white px-6 py-3 rounded-lg hover:brightness-110 transition-all duration-200 font-medium shadow-lg"
-                                        >
-                                            Save Changes
-                                        </button>
-                                    </div>
-                                )}
+                                    {isEditing && (
+                                        <div className="mt-6 pt-4 border-t border-green-200 flex gap-3">
+                                            <button
+                                                type="submit"
+                                                disabled={isSubmitting}
+                                                className="bg-gradient-to-r from-green-600 to-green-500 text-white px-6 py-3 rounded-lg hover:brightness-110 transition-all duration-200 font-medium shadow-lg disabled:opacity-50"
+                                            >
+                                                {isSubmitting ? "Saving..." : "Save Changes"}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleCancel}
+                                                className="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-all duration-200 font-medium shadow-lg"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    )}
+                                </form>
                             </div>
 
                             {/* Teaching Stats */}

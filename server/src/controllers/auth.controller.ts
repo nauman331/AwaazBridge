@@ -197,4 +197,40 @@ const getProfile = async (req: Request, res: Response): Promise<Response> => {
     }
 };
 
-export { registerUser, verifyOTP, login, requestPasswordReset, resetPassword, GoogleLoginController, getProfile };
+const updateProfile = async (req: Request, res: Response): Promise<Response> => {
+    try {
+        const userID: string = (req as Request & { userId: string }).userId;
+        if (!userID) {
+            return res.status(401).json({ message: "Unauthorized", isOk: false });
+        }
+        const { name,
+            email,
+            password,
+            Department,
+            picture,
+            phone,
+            experience,
+            address,
+            specialization, }: IUser = req.body;
+        const user = await User.findById(userID);
+        if (!user) {
+            return res.status(404).json({ message: "User not found", isOk: false });
+        }
+        user.name = name || user.name;
+        user.email = email || user.email;
+        user.phone = phone || user.phone;
+        user.address = address || user.address;
+        user.specialization = specialization || user.specialization;
+        user.Department = Department || user.Department;
+        user.picture = picture || user.picture;
+        user.experience = experience || user.experience;
+        user.password = password ? await hashPassword(password) : user.password;
+        await user.save();
+        return res.status(200).json({ message: "Profile updated successfully", isOk: true });
+    } catch (error) {
+        return res.status(500).json({ message: "Internal server error", isOk: false });
+    }
+};
+
+
+export { registerUser, verifyOTP, login, requestPasswordReset, resetPassword, GoogleLoginController, getProfile, updateProfile };

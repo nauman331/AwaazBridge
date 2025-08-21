@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Link, useNavigate } from "react-router-dom"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
-import { User, Mail, Lock, GraduationCap, Users, Phone } from "lucide-react"
+import { User, Mail, Lock, GraduationCap, Users } from "lucide-react"
 import Logo from "@/components/Logo"
 import { useGoogleLogin } from '@react-oauth/google';
 import type { SubmitHandler } from "react-hook-form"
@@ -18,7 +18,6 @@ import { RoleNavigation } from "../utils/Role"
 type FormData = {
     name: string;
     email: string;
-    phone: string;
     password: string;
     role: "Student" | "Teacher";
 }
@@ -172,16 +171,6 @@ const Signup: React.FC = () => {
                                         style={{ border: errors.email && "2px solid red" }}
                                         {...register("email", { required: "Email is required" })}
                                         className={`pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg transition-all ${errors.email ? 'placeholder:text-red-500' : ''}`}
-                                    />
-                                </div>
-                                <div className="relative">
-                                    <Phone className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${errors.phone ? 'text-red-500' : 'text-[#FF9F1C]'}`} />
-                                    <Input
-                                        type="tel"
-                                        placeholder={errors.phone ? errors.phone.message : "Phone"}
-                                        style={{ border: errors.phone && "2px solid red" }}
-                                        {...register("phone", { required: "Phone number is required" })}
-                                        className={`pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg transition-all ${errors.phone ? 'placeholder:text-red-500' : ''}`}
                                     />
                                 </div>
                                 <div className="relative">

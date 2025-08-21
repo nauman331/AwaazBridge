@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { registerUser, verifyOTP, login, resetPassword, requestPasswordReset, GoogleLoginController, getProfile } from "../controllers/auth.controller";
+import { registerUser, verifyOTP, login, resetPassword, requestPasswordReset, GoogleLoginController, getProfile, updateProfile } from "../controllers/auth.controller";
 import { validateRequest } from "../middlewares/validate.middleware"
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { loginSchema, registerSchema, verifyOTPSchema, resetPasswordSchema } from "../validators/auth.validator";
@@ -12,5 +12,6 @@ router.post("/request-password-reset", requestPasswordReset);
 router.post("/reset-password", validateRequest(resetPasswordSchema), resetPassword);
 router.post("/google-login", GoogleLoginController);
 router.get("/profile", authMiddleware, getProfile);
+router.put("/profile", authMiddleware, updateProfile);
 
 export default router;

@@ -2,13 +2,13 @@ import { backendUrl } from "@/utils/exports";
 import { useSelector } from "react-redux";
 import { useMutation } from "@tanstack/react-query";
 
-const useSubmit = (endpoint: string, isAuth: boolean, mutationKey: string) => {
+const useSubmit = (endpoint: string, isAuth: boolean, mutationKey: string, method: string = "POST") => {
     const { token } = useSelector((state: any) => state.auth);
     const { mutate, isPending, error, data, isSuccess } = useMutation({
         mutationKey: [mutationKey],
         mutationFn: async (formData: any) => {
             const response = await fetch(`${backendUrl}${endpoint}`, {
-                method: 'POST',
+                method: method,
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
