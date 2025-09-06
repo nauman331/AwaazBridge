@@ -7,10 +7,10 @@ import { RoleNavigation } from "../utils/Role"
 
 const navLinks = [
     { name: "Home", href: "/" },
-    { name: "About Us", href: "/about-us" },
-    { name: "Contact Us", href: "/contact-us" },
-    { name: "Privacy Policy", href: "/privacy-policy" },
-    { name: "Terms of Service", href: "/terms-of-service" },
+    { name: "About", href: "/about-us" },
+    { name: "Contact", href: "/contact-us" },
+    { name: "Privacy", href: "/privacy-policy" },
+    { name: "Terms", href: "/terms-of-service" },
 ]
 
 const Navbar: React.FC = () => {
@@ -54,11 +54,18 @@ const Navbar: React.FC = () => {
                             <span className="text-sm font-semibold text-muted-foreground">Profile</span>
                         </button>
                     ) : (
-                        location.pathname !== "/signup" && (
-                            <Button asChild className="hidden md:inline-flex font-semibold px-5 py-2 rounded-lg shadow-sm">
-                                <NavLink to="/signup">Get Started</NavLink>
-                            </Button>
-                        )
+                        <div className="hidden md:flex items-center gap-2">
+                            {location.pathname !== "/login" && (
+                                <Button variant="ghost" asChild className="font-semibold px-4 py-2 rounded-lg">
+                                    <NavLink to="/login">Sign In</NavLink>
+                                </Button>
+                            )}
+                            {location.pathname !== "/signup" && (
+                                <Button asChild className="font-semibold px-5 py-2 rounded-lg shadow-sm">
+                                    <NavLink to="/signup">Get Started</NavLink>
+                                </Button>
+                            )}
+                        </div>
                     )}
                     {/* Hamburger for mobile */}
                     <button
@@ -104,11 +111,18 @@ const Navbar: React.FC = () => {
                                 <span className="text-base font-medium text-muted-foreground">Profile</span>
                             </button>
                         ) : (
-                            location.pathname !== "/signup" && (
-                                <Button asChild className="w-full font-semibold px-5 py-2 rounded-lg shadow-sm">
-                                    <NavLink to="/signup">Get Started</NavLink>
-                                </Button>
-                            )
+                            <div className="flex flex-col gap-2">
+                                {location.pathname !== "/login" && (
+                                    <Button variant="ghost" asChild className="w-full font-semibold px-4 py-2 rounded-lg justify-start">
+                                        <NavLink to="/login">Sign In</NavLink>
+                                    </Button>
+                                )}
+                                {location.pathname !== "/signup" && (
+                                    <Button asChild className="w-full font-semibold px-5 py-2 rounded-lg shadow-sm">
+                                        <NavLink to="/signup">Get Started</NavLink>
+                                    </Button>
+                                )}
+                            </div>
                         )}
                     </nav>
                 </div>

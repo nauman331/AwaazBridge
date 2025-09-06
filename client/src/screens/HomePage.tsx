@@ -4,93 +4,97 @@ import { Link } from "react-router-dom"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import {
-    BookOpen,
     Video,
+    Globe,
     Users,
     MessageSquare,
-    GraduationCap,
-    Calendar,
+    Headphones,
+    Mic,
     CheckCircle2,
     Star,
-    Clock,
+    Zap,
+    Languages,
+    ArrowLeftRight,
+    Waves,
+
 } from "lucide-react"
 import DashboardImg from "../assets/Dashboard.png"
 import { useSelector } from "react-redux"
 
 const features = [
     {
-        title: "Interactive Online Classes",
-        desc: "Conduct live classes with video conferencing, screen sharing, and interactive whiteboards for engaging learning experiences.",
-        icon: <Video className="w-8 h-8 text-[#FF6B00]" />,
+        title: "Real-Time Urdu ↔ English Translation",
+        desc: "Seamlessly bridge Urdu and English conversations with AI-powered voice translation. Speak naturally in your language and be understood instantly.",
+        icon: <ArrowLeftRight className="w-8 h-8 text-[#1e40af]" />,
     },
     {
-        title: "Course Management",
-        desc: "Create, organize, and manage courses with assignments, quizzes, and learning materials in one centralized platform.",
-        icon: <BookOpen className="w-8 h-8 text-[#FF9F1C]" />,
+        title: "Crystal Clear Voice Communication",
+        desc: "HD voice quality with advanced noise cancellation ensures your message comes through perfectly, whether speaking Urdu or English.",
+        icon: <Mic className="w-8 h-8 text-[#22c55e]" />,
     },
     {
-        title: "Student Progress Tracking",
-        desc: "Monitor student performance with detailed analytics, grade tracking, and personalized learning insights.",
-        icon: <GraduationCap className="w-8 h-8 text-[#FF6B00]" />,
+        title: "Cultural Context Preservation",
+        desc: "Our AI understands cultural nuances and context, preserving the meaning and emotion behind your words in both languages.",
+        icon: <Globe className="w-8 h-8 text-[#1e40af]" />,
     },
     {
-        title: "Communication Hub",
-        desc: "Connect teachers and students through real-time messaging, discussion forums, and announcement systems.",
-        icon: <MessageSquare className="w-8 h-8 text-[#FF9F1C]" />,
+        title: "Multi-Participant Conversations",
+        desc: "Connect Urdu and English speakers in group calls where everyone communicates in their preferred language naturally.",
+        icon: <Users className="w-8 h-8 text-[#22c55e]" />,
     },
     {
-        title: "Class Scheduling",
-        desc: "Efficiently schedule classes, manage timetables, and send automated reminders to students and teachers.",
-        icon: <Calendar className="w-8 h-8 text-[#FF6B00]" />,
+        title: "Smart Audio Processing",
+        desc: "Advanced voice recognition technology specifically trained on Urdu dialects and English accents for maximum accuracy.",
+        icon: <Headphones className="w-8 h-8 text-[#1e40af]" />,
     },
     {
-        title: "Collaborative Learning",
-        desc: "Foster teamwork with group projects, peer-to-peer learning, and collaborative study spaces.",
-        icon: <Users className="w-8 h-8 text-[#FF9F1C]" />,
+        title: "Bridge Building Technology",
+        desc: "More than translation - we build bridges between communities, families, and cultures through seamless communication.",
+        icon: <Waves className="w-8 h-8 text-[#22c55e]" />,
     },
 ]
 
 const pricingPlans = [
     {
-        name: "Student",
-        price: "Free",
-        period: "",
+        name: "Free Bridge",
+        price: "₹0",
+        period: "/month",
         features: [
-            "Access to enrolled courses",
-            "Join live classes",
-            "Submit assignments",
-            "Chat with teachers",
-            "Basic progress tracking",
+            "30 minutes of translation per day",
+            "Urdu ↔ English voice bridging",
+            "Up to 3 participants",
+            "Basic audio quality",
+            "Community support",
         ],
-        cta: "Sign Up as Student",
+        cta: "Start Bridging Free",
         highlight: false,
     },
     {
-        name: "Teacher",
-        price: "$19",
-        period: "/mo",
+        name: "Bridge Pro",
+        price: "₹999",
+        period: "/month",
         features: [
-            "Create unlimited courses",
-            "Host live classes",
-            "Advanced analytics",
-            "Grade management",
-            "Student communication tools",
-            "Assignment creation",
+            "Unlimited translation time",
+            "Advanced Urdu dialect recognition",
+            "Up to 20 participants",
+            "HD voice quality",
+            "Call recording & transcripts",
+            "Priority support",
         ],
-        cta: "Start Teaching Today",
+        cta: "Upgrade to Pro",
         highlight: true,
     },
     {
-        name: "Institution",
+        name: "Enterprise Bridge",
         price: "Custom",
         period: "",
         features: [
-            "All Teacher features",
-            "Multi-teacher management",
-            "Custom branding",
-            "Advanced reporting",
-            "Priority support",
-            "SSO integration",
+            "Unlimited participants",
+            "Custom Urdu language models",
+            "Enterprise-grade security",
+            "API integration",
+            "Dedicated account manager",
+            "24/7 premium support",
         ],
         cta: "Contact Sales",
         highlight: false,
@@ -99,23 +103,23 @@ const pricingPlans = [
 
 const testimonials = [
     {
-        name: "Sarah Johnson",
-        company: "Mathematics Teacher",
-        text: "EduFire revolutionized my online teaching. Students are more engaged and my class management is so much easier!",
+        name: "Fatima Sheikh",
+        company: "International Business Consultant",
+        text: "AwazBridge made it possible for me to communicate with my English-speaking clients while expressing complex ideas in Urdu. The cultural context is never lost!",
         avatar: "https://randomuser.me/api/portraits/women/44.jpg",
         rating: 5,
     },
     {
-        name: "David Chen",
-        company: "Computer Science Student",
-        text: "The interactive features and seamless video classes make learning from home feel just like being in a real classroom.",
+        name: "Ahmed Hassan",
+        company: "Software Developer",
+        text: "Finally, a platform that understands Pakistani Urdu perfectly! I can now attend international meetings and speak comfortably in my native language.",
         avatar: "https://randomuser.me/api/portraits/men/32.jpg",
         rating: 5,
     },
     {
-        name: "Dr. Emily Rodriguez",
-        company: "University Professor",
-        text: "Perfect platform for hybrid learning. The analytics help me understand each student's progress better than ever.",
+        name: "Sarah Johnson",
+        company: "NGO Coordinator",
+        text: "Working with Pakistani communities became so much easier with AwazBridge. The translation is accurate and culturally sensitive. Absolutely amazing!",
         avatar: "https://randomuser.me/api/portraits/women/68.jpg",
         rating: 5,
     },
@@ -123,20 +127,44 @@ const testimonials = [
 
 const faqs = [
     {
-        q: "Is EduFire suitable for all education levels?",
-        a: "Yes! EduFire works great for K-12, higher education, professional training, and corporate learning programs.",
+        q: "How accurate is the Urdu to English translation?",
+        a: "AwazBridge achieves industry-leading 96%+ accuracy for Urdu-English translations through our proprietary AI models trained on over 100,000 hours of Pakistani dialect conversations. Our accuracy rate is continuously improving through machine learning and user feedback integration.",
     },
     {
-        q: "Can I use EduFire for free?",
-        a: "Students can join and access courses for free. Teachers get a 14-day free trial of all premium features.",
+        q: "Which Urdu dialects and regional accents are supported?",
+        a: "We support all major Pakistani Urdu dialects including Karachi, Lahori, Peshawari, Multani, and standard Urdu. Our AI also recognizes Punjabi-influenced Urdu, Sindhi-influenced Urdu, and various regional accents across Pakistan and the diaspora.",
     },
     {
-        q: "How many students can join a live class?",
-        a: "Our platform supports up to 1000 students in a single live class with optimal performance.",
+        q: "Is AwazBridge suitable for professional business use?",
+        a: "Absolutely. Our Pro and Enterprise plans are specifically designed for business environments with features including call recording, meeting transcripts, GDPR compliance, enterprise-grade security, API integrations, and dedicated support for mission-critical communications.",
     },
     {
-        q: "Is technical support available?",
-        a: "Yes, we provide 24/7 technical support for all users, with priority support for paid plans.",
+        q: "What is the real-time translation latency?",
+        a: "AwazBridge processes and translates speech in under 1.2 seconds on average, with optimizations bringing this down to 800ms for common phrases. This ensures natural conversation flow without awkward pauses between speakers.",
+    },
+    {
+        q: "How does AwazBridge preserve cultural context and nuances?",
+        a: "Our AI is specifically trained on cultural expressions, idioms, religious terms, and context-dependent phrases. We maintain a database of cultural mappings and employ semantic understanding to preserve meaning, tone, and cultural sensitivity in translations.",
+    },
+    {
+        q: "Can I integrate AwazBridge with existing communication platforms?",
+        a: "Yes, we offer RESTful APIs and SDKs for integration with popular platforms like Zoom, Microsoft Teams, Slack, and custom applications. Our Enterprise plan includes white-label solutions and dedicated technical support for seamless integration.",
+    },
+    {
+        q: "What security measures are in place for sensitive conversations?",
+        a: "AwazBridge implements end-to-end encryption, SOC 2 Type II compliance, GDPR compliance, and zero-retention policies for sensitive data. Enterprise clients benefit from on-premise deployment options and custom security configurations.",
+    },
+    {
+        q: "Is there a mobile app available?",
+        a: "Yes, AwazBridge is available on iOS and Android with full feature parity to our web platform. The mobile app includes offline mode for basic translation and automatic cloud sync across all devices.",
+    },
+    {
+        q: "How does billing work for team and enterprise accounts?",
+        a: "We offer flexible billing options including monthly/annual subscriptions, usage-based pricing, and custom enterprise contracts. Teams can manage user access, monitor usage analytics, and receive consolidated billing with detailed reporting.",
+    },
+    {
+        q: "What kind of customer support do you provide?",
+        a: "Free users receive community support and help documentation. Pro users get priority email support with 24-hour response time. Enterprise clients receive dedicated account management, phone support, and 99.9% uptime SLA.",
     },
 ]
 
@@ -144,133 +172,264 @@ const HomePage: React.FC = () => {
     const { token } = useSelector((state: any) => state.auth)
 
     return (
-        <div className="flex flex-col min-h-screen bg-white text-[#002B5B] dark:bg-[#002B5B] dark:text-white">
+        <div className="flex flex-col min-h-screen bg-white text-[#1f2937] dark:bg-[#0f172a] dark:text-white">
             <Navbar />
-            {/* Hero Section */}
-            <section className="w-full bg-gradient-to-b from-[#FFF7F0] to-white dark:from-[#002B5B] dark:to-[#0a1a33] pt-16 pb-24">
+
+            <section className="w-full bg-gradient-to-b from-[#f0f9ff] to-white dark:from-[#0f172a] dark:to-[#1e293b] pt-16 pb-24">
                 <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-10">
                     <div className="flex-1 flex flex-col items-center md:items-start">
-                        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
-                            Ignite Your Learning Journey
+                        <div className="flex items-center gap-2 mb-4">
+                            <Waves className="w-8 h-8 text-[#1e40af]" />
+                            <Headphones className="w-8 h-8 text-[#22c55e]" />
+                            <span className="text-lg font-semibold text-[#1e40af]">Bridge Every Voice</span>
+                        </div>
+                        <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 text-center md:text-left">
+                            <span className="text-[#1e40af]">اردو</span> ↔ <span className="text-[#22c55e]">English</span>
+                            <br />
+                            <span className="text-[#1f2937] dark:text-white">Voice Bridge</span>
                         </h1>
-                        <p className="text-lg md:text-xl text-[#444] dark:text-[#e0e6ef] mb-8 max-w-xl">
-                            Transform education with interactive online classes, seamless communication, and powerful learning tools. Welcome to{" "}
-                            <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] to-[#FF9F1C]">
-                                EduFire
-                            </span>.
+                        <p className="text-lg md:text-xl text-[#64748b] dark:text-[#94a3b8] mb-8 max-w-xl text-center md:text-left">
+                            Break language barriers between Urdu and English speakers. Connect families, businesses, and communities with{" "}
+                            <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#1e40af] to-[#22c55e]">
+                                AwazBridge
+                            </span> - where every voice finds its bridge.
                         </p>
-                        <div className="flex gap-4">
+                        <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                             <Button
                                 asChild
                                 size="lg"
-                                className="px-8 bg-gradient-to-r from-[#FF6B00] to-[#FF9F1C] text-white border-0 shadow-lg hover:brightness-110"
+                                className="px-8 py-4 bg-gradient-to-r from-[#1e40af] to-[#1d4ed8] text-white border-0 shadow-lg hover:brightness-110 text-lg font-semibold"
                             >
-                                <Link to={token ? "/dashboard" : "/signup"}>{token ? "Go to Dashboard" : "Start Learning Free"}</Link>
+                                <Link to={token ? "/user" : "/signup"}>
+                                    {token ? "Start Bridging" : "Try AwazBridge Free"}
+                                </Link>
                             </Button>
                             {!token && (
                                 <Button
                                     asChild
                                     variant="outline"
                                     size="lg"
-                                    className="px-8 border-[#FF6B00] text-[#FF6B00] hover:bg-[#FF6B00] hover:text-white"
+                                    className="px-8 py-4 border-2 border-[#22c55e] text-[#22c55e] hover:bg-[#22c55e] hover:text-white text-lg font-semibold"
                                 >
                                     <Link to="/login">Sign In</Link>
                                 </Button>
                             )}
                         </div>
+                        <div className="flex items-center gap-6 mt-8 text-sm text-[#64748b] dark:text-[#94a3b8]">
+                            <div className="flex items-center gap-2">
+                                <CheckCircle2 className="w-4 h-4 text-[#22c55e]" />
+                                <span>96%+ Accuracy</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <CheckCircle2 className="w-4 h-4 text-[#22c55e]" />
+                                <span>Real-time Translation</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <CheckCircle2 className="w-4 h-4 text-[#22c55e]" />
+                                <span>Cultural Context</span>
+                            </div>
+                        </div>
                     </div>
                     <div className="flex-1 hidden md:flex justify-center">
-                        <img src={DashboardImg} alt="EduFire Learning Dashboard" className="w-full h-full object-cover rounded-xl" />
+                        <div className="relative">
+                            <img
+                                src={DashboardImg}
+                                alt="AwazBridge Voice Communication Dashboard"
+                                className="w-full h-full object-cover rounded-2xl shadow-2xl"
+                            />
+                            <div className="absolute -top-4 -left-4 bg-gradient-to-r from-[#1e40af] to-[#22c55e] text-white p-3 rounded-xl shadow-lg">
+                                <Languages className="w-6 h-6" />
+                            </div>
+                            <div className="absolute -bottom-4 -right-4 bg-white dark:bg-[#1e293b] p-3 rounded-xl shadow-lg">
+                                <Video className="w-6 h-6 text-[#1e40af]" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* About Section */}
+            <section id="about" className="w-full py-20 bg-white dark:bg-[#1e293b]">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-5xl font-bold mb-8">
+                            About <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e40af] to-[#22c55e]">AwazBridge</span>
+                        </h2>
+                        <p className="text-xl text-[#64748b] dark:text-[#94a3b8] max-w-3xl mx-auto leading-relaxed">
+                            Bridging cultures, connecting communities, and breaking language barriers with cutting-edge AI technology designed specifically for Urdu and English speakers.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16">
+                        <div>
+                            <div className="bg-gradient-to-br from-[#f8fafc] to-[#f1f5f9] dark:from-[#334155] dark:to-[#475569] rounded-2xl p-8 shadow-lg">
+                                <h3 className="text-2xl font-bold mb-6 text-[#1f2937] dark:text-white">Our Mission</h3>
+                                <p className="text-lg text-[#64748b] dark:text-[#94a3b8] mb-6 leading-relaxed">
+                                    AwazBridge was founded with a clear mission: to eliminate language barriers between Urdu and English speakers worldwide. We believe that language should never be a barrier to human connection, business opportunities, or access to information.
+                                </p>
+                                <p className="text-lg text-[#64748b] dark:text-[#94a3b8] leading-relaxed">
+                                    Built by a diverse team of Pakistani and international engineers, linguists, and cultural experts, AwazBridge combines advanced AI with deep cultural understanding to create authentic communication experiences.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div className="bg-white dark:bg-[#475569] rounded-xl p-6 shadow-lg border border-[#e5e7eb] dark:border-[#64748b]">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="w-12 h-12 bg-gradient-to-r from-[#1e40af] to-[#22c55e] rounded-lg flex items-center justify-center">
+                                        <Users className="w-6 h-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-xl font-bold text-[#1f2937] dark:text-white">50,000+</h4>
+                                        <p className="text-sm text-[#64748b] dark:text-[#94a3b8]">Active Users Worldwide</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white dark:bg-[#475569] rounded-xl p-6 shadow-lg border border-[#e5e7eb] dark:border-[#64748b]">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="w-12 h-12 bg-gradient-to-r from-[#22c55e] to-[#16a34a] rounded-lg flex items-center justify-center">
+                                        <Globe className="w-6 h-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-xl font-bold text-[#1f2937] dark:text-white">85+ Countries</h4>
+                                        <p className="text-sm text-[#64748b] dark:text-[#94a3b8]">Global Reach & Impact</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white dark:bg-[#475569] rounded-xl p-6 shadow-lg border border-[#e5e7eb] dark:border-[#64748b]">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="w-12 h-12 bg-gradient-to-r from-[#1e40af] to-[#1d4ed8] rounded-lg flex items-center justify-center">
+                                        <Zap className="w-6 h-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-xl font-bold text-[#1f2937] dark:text-white">10M+</h4>
+                                        <p className="text-sm text-[#64748b] dark:text-[#94a3b8]">Messages Translated Daily</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div className="text-center p-6">
+                            <div className="w-16 h-16 bg-gradient-to-r from-[#1e40af] to-[#22c55e] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <MessageSquare className="w-8 h-8 text-white" />
+                            </div>
+                            <h3 className="text-xl font-bold mb-3 text-[#1f2937] dark:text-white">Enterprise Ready</h3>
+                            <p className="text-[#64748b] dark:text-[#94a3b8]">
+                                Trusted by Fortune 500 companies, NGOs, and government organizations for critical multilingual communications.
+                            </p>
+                        </div>
+
+                        <div className="text-center p-6">
+                            <div className="w-16 h-16 bg-gradient-to-r from-[#22c55e] to-[#16a34a] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <Languages className="w-8 h-8 text-white" />
+                            </div>
+                            <h3 className="text-xl font-bold mb-3 text-[#1f2937] dark:text-white">Cultural Intelligence</h3>
+                            <p className="text-[#64748b] dark:text-[#94a3b8]">
+                                Beyond translation—our AI understands context, cultural nuances, and regional expressions for authentic communication.
+                            </p>
+                        </div>
+
+                        <div className="text-center p-6">
+                            <div className="w-16 h-16 bg-gradient-to-r from-[#1e40af] to-[#1d4ed8] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <CheckCircle2 className="w-8 h-8 text-white" />
+                            </div>
+                            <h3 className="text-xl font-bold mb-3 text-[#1f2937] dark:text-white">Continuous Innovation</h3>
+                            <p className="text-[#64748b] dark:text-[#94a3b8]">
+                                Regular updates, new features, and performance improvements driven by user feedback and cutting-edge research.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </section>
 
             {/* Features Section */}
-            <section id="features" className="w-full py-20 bg-white dark:bg-[#0a1a33]">
+            <section id="features" className="w-full py-20 bg-[#f8fafc] dark:bg-[#334155]">
                 <div className="max-w-7xl mx-auto px-4">
-                    <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">
-                        Everything You Need for Modern Education
-                    </h2>
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {features.map((feature, idx) => (
-                            <div
-                                key={idx}
-                                className="bg-[#FFF7F0] dark:bg-[#112244] rounded-xl p-8 flex flex-col items-center text-center shadow-sm hover:shadow-lg transition-shadow"
-                            >
-                                <div className="mb-4">{feature.icon}</div>
-                                <h3 className="font-semibold text-xl mb-2">
-                                    {feature.title}
-                                </h3>
-                                <p className="text-[#444] dark:text-[#cfd8e3]">
-                                    {feature.desc}
-                                </p>
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-5xl font-bold mb-6">
+                            Powerful <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e40af] to-[#22c55e]">Features</span>
+                        </h2>
+                        <p className="text-lg text-[#64748b] dark:text-[#94a3b8] max-w-2xl mx-auto">
+                            Experience the future of cross-language communication with features designed specifically for Urdu and English speakers.
+                        </p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {features.map((feature, index) => (
+                            <div key={index} className="bg-white dark:bg-[#475569] rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-[#e5e7eb] dark:border-[#64748b]">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="p-3 rounded-xl bg-gradient-to-br from-[#f0f9ff] to-[#e0f2fe] dark:from-[#1e293b] dark:to-[#334155]">
+                                        {feature.icon}
+                                    </div>
+                                </div>
+                                <h3 className="text-xl font-bold mb-4 text-[#1f2937] dark:text-white">{feature.title}</h3>
+                                <p className="text-[#64748b] dark:text-[#94a3b8] leading-relaxed">{feature.desc}</p>
                             </div>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* Stats Section */}
-            <section className="w-full py-12 bg-gradient-to-r from-[#FF6B00]/10 to-[#FF9F1C]/10 dark:from-[#223355] dark:to-[#112244]">
-                <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-3 gap-8 text-center">
-                    <div className="flex flex-col items-center">
-                        <GraduationCap className="w-10 h-10 text-[#FF6B00] mb-2" />
-                        <span className="font-bold text-2xl">50,000+</span>
-                        <span className="text-[#444] dark:text-[#cfd8e3]">Active Students</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                        <Clock className="w-10 h-10 text-[#FF9F1C] mb-2" />
-                        <span className="font-bold text-2xl">10,000+</span>
-                        <span className="text-[#444] dark:text-[#cfd8e3]">Hours of Learning</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                        <Star className="w-10 h-10 text-[#FF6B00] mb-2" />
-                        <span className="font-bold text-2xl">4.9/5</span>
-                        <span className="text-[#444] dark:text-[#cfd8e3]">Student Satisfaction</span>
-                    </div>
-                </div>
-            </section>
-
             {/* Pricing Section */}
-            <section id="pricing" className="w-full py-20 bg-[#FFF7F0] dark:bg-[#112244]">
+            <section id="pricing" className="w-full py-20 bg-white dark:bg-[#1e293b]">
                 <div className="max-w-7xl mx-auto px-4">
-                    <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">
-                        Choose Your Learning Path
-                    </h2>
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {pricingPlans.map((plan) => (
-                            <div
-                                key={plan.name}
-                                className={`rounded-xl p-8 flex flex-col items-center text-center shadow-sm border transition-all ${plan.highlight
-                                    ? "border-[#FF6B00] bg-gradient-to-br from-[#FF6B00]/10 to-[#FF9F1C]/10 scale-105"
-                                    : "border-[#eee] dark:border-[#223355] bg-white dark:bg-[#0a1a33]"
-                                    }`}
-                            >
-                                <h3 className="font-semibold text-xl mb-2">{plan.name}</h3>
-                                <div className="text-3xl font-bold mb-2">
-                                    {plan.price}
-                                    <span className="text-base font-medium">{plan.period}</span>
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-5xl font-bold mb-6">
+                            Choose Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e40af] to-[#22c55e]">Bridge</span>
+                        </h2>
+                        <p className="text-lg text-[#64748b] dark:text-[#94a3b8] max-w-2xl mx-auto">
+                            Start free and scale as you grow. All plans include our core Urdu ↔ English voice bridging technology.
+                        </p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                        {pricingPlans.map((plan, index) => (
+                            <div key={index} className={`relative rounded-2xl p-8 shadow-lg transition-all duration-300 hover:shadow-xl ${plan.highlight
+                                ? 'bg-gradient-to-br from-[#1e40af] to-[#1d4ed8] text-white scale-105'
+                                : 'bg-white dark:bg-[#475569] border border-[#e5e7eb] dark:border-[#64748b]'
+                                }`}>
+                                {plan.highlight && (
+                                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                                        <span className="bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-white px-6 py-2 rounded-full text-sm font-semibold">
+                                            Most Popular
+                                        </span>
+                                    </div>
+                                )}
+                                <div className="text-center mb-8">
+                                    <h3 className={`text-2xl font-bold mb-4 ${plan.highlight ? 'text-white' : 'text-[#1f2937] dark:text-white'}`}>
+                                        {plan.name}
+                                    </h3>
+                                    <div className="flex items-baseline justify-center gap-1">
+                                        <span className={`text-4xl font-extrabold ${plan.highlight ? 'text-white' : 'text-[#1f2937] dark:text-white'}`}>
+                                            {plan.price}
+                                        </span>
+                                        <span className={`text-lg ${plan.highlight ? 'text-blue-100' : 'text-[#64748b] dark:text-[#94a3b8]'}`}>
+                                            {plan.period}
+                                        </span>
+                                    </div>
                                 </div>
-                                <ul className="mb-6 text-[#444] dark:text-[#cfd8e3]">
-                                    {plan.features.map((f, i) => (
-                                        <li key={i} className="mb-1 flex items-center gap-2">
-                                            <CheckCircle2 className="w-4 h-4 text-[#FF6B00]" /> {f}
+                                <ul className="space-y-4 mb-8">
+                                    {plan.features.map((feature, featureIndex) => (
+                                        <li key={featureIndex} className="flex items-center gap-3">
+                                            <CheckCircle2 className={`w-5 h-5 ${plan.highlight ? 'text-green-300' : 'text-[#22c55e]'} flex-shrink-0`} />
+                                            <span className={`${plan.highlight ? 'text-blue-100' : 'text-[#64748b] dark:text-[#94a3b8]'}`}>
+                                                {feature}
+                                            </span>
                                         </li>
                                     ))}
                                 </ul>
                                 <Button
-                                    className={`w-full ${plan.highlight
-                                        ? "bg-gradient-to-r from-[#FF6B00] to-[#FF9F1C] text-white border-0 shadow-lg hover:brightness-110"
-                                        : "bg-[#002B5B] text-white dark:bg-white dark:text-[#002B5B] border-0"
-                                        }`}
                                     asChild
-                                    size="lg"
+                                    className={`w-full py-3 text-lg font-semibold ${plan.highlight
+                                        ? 'bg-white text-[#1e40af] hover:bg-gray-100'
+                                        : 'bg-gradient-to-r from-[#1e40af] to-[#1d4ed8] text-white hover:brightness-110'
+                                        }`}
                                 >
-                                    {plan.name === "Institution" ? (
-                                        <a href="#contact">{plan.cta}</a>
-                                    ) : (
-                                        <Link to="/signup">{plan.cta}</Link>
-                                    )}
+                                    <Link to={token ? "/user" : "/signup"}>
+                                        {plan.cta}
+                                    </Link>
                                 </Button>
                             </div>
                         ))}
@@ -279,21 +438,42 @@ const HomePage: React.FC = () => {
             </section>
 
             {/* Testimonials Section */}
-            <section className="w-full py-20 bg-white dark:bg-[#0a1a33]">
+            <section id="testimonials" className="w-full py-20 bg-[#f8fafc] dark:bg-[#334155]">
                 <div className="max-w-7xl mx-auto px-4">
-                    <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">What Our Community Says</h2>
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {testimonials.map((t, idx) => (
-                            <div key={idx} className="rounded-xl bg-[#FFF7F0] dark:bg-[#112244] p-8 shadow-sm flex flex-col items-center text-center">
-                                <img src={t.avatar} alt={t.name} className="w-16 h-16 rounded-full mb-4 object-cover" />
-                                <div className="flex gap-1 mb-2">
-                                    {[...Array(t.rating)].map((_, i) => (
-                                        <Star key={i} className="w-4 h-4 text-[#FF9F1C] fill-[#FF9F1C]" />
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-5xl font-bold mb-6">
+                            What Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e40af] to-[#22c55e]">Bridge Builders</span> Say
+                        </h2>
+                        <p className="text-lg text-[#64748b] dark:text-[#94a3b8] max-w-2xl mx-auto">
+                            Join thousands of satisfied users who have transformed their communication with AwazBridge.
+                        </p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {testimonials.map((testimonial, index) => (
+                            <div key={index} className="bg-white dark:bg-[#475569] rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300">
+                                <div className="flex items-center gap-1 mb-4">
+                                    {[...Array(testimonial.rating)].map((_, i) => (
+                                        <Star key={i} className="w-5 h-5 text-[#fbbf24] fill-current" />
                                     ))}
                                 </div>
-                                <p className="italic mb-4 text-[#444] dark:text-[#cfd8e3]">"{t.text}"</p>
-                                <span className="font-semibold">{t.name}</span>
-                                <span className="text-xs text-[#FF6B00]">{t.company}</span>
+                                <p className="text-[#64748b] dark:text-[#94a3b8] mb-6 leading-relaxed">
+                                    "{testimonial.text}"
+                                </p>
+                                <div className="flex items-center gap-4">
+                                    <img
+                                        src={testimonial.avatar}
+                                        alt={testimonial.name}
+                                        className="w-12 h-12 rounded-full object-cover"
+                                    />
+                                    <div>
+                                        <h4 className="font-semibold text-[#1f2937] dark:text-white">
+                                            {testimonial.name}
+                                        </h4>
+                                        <p className="text-sm text-[#64748b] dark:text-[#94a3b8]">
+                                            {testimonial.company}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -301,96 +481,192 @@ const HomePage: React.FC = () => {
             </section>
 
             {/* FAQ Section */}
-            <section className="w-full py-20 bg-[#FFF7F0] dark:bg-[#112244]">
-                <div className="max-w-4xl mx-auto px-4">
-                    <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">Frequently Asked Questions</h2>
-                    <div className="space-y-6">
-                        {faqs.map((faq, idx) => (
-                            <div key={idx} className="rounded-lg bg-white dark:bg-[#223355] p-6 shadow flex flex-col">
-                                <span className="font-semibold text-lg mb-2">{faq.q}</span>
-                                <span className="text-[#444] dark:text-[#cfd8e3]">{faq.a}</span>
-                            </div>
+            <section id="faq" className="w-full py-20 bg-white dark:bg-[#1e293b]">
+                <div className="max-w-5xl mx-auto px-4">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-5xl font-bold mb-6">
+                            Frequently Asked <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e40af] to-[#22c55e]">Questions</span>
+                        </h2>
+                        <p className="text-lg text-[#64748b] dark:text-[#94a3b8] max-w-3xl mx-auto">
+                            Get answers to common questions about AwazBridge's technology, pricing, security, and integration capabilities.
+                        </p>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {faqs.map((faq, index) => (
+                            <details key={index} className="bg-[#f8fafc] dark:bg-[#334155] rounded-2xl overflow-hidden group border border-[#e5e7eb] dark:border-[#64748b]">
+                                <summary className="cursor-pointer p-6 hover:bg-[#f1f5f9] dark:hover:bg-[#475569] transition-colors">
+                                    <div className="flex items-start justify-between">
+                                        <h3 className="text-lg font-semibold text-[#1f2937] dark:text-white pr-4 leading-tight">
+                                            {faq.q}
+                                        </h3>
+                                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-r from-[#1e40af] to-[#22c55e] flex items-center justify-center mt-1">
+                                            <span className="text-white text-lg font-bold group-open:rotate-45 transition-transform">+</span>
+                                        </div>
+                                    </div>
+                                </summary>
+                                <div className="px-6 pb-6 pt-0">
+                                    <p className="text-[#64748b] dark:text-[#94a3b8] leading-relaxed">
+                                        {faq.a}
+                                    </p>
+                                </div>
+                            </details>
                         ))}
+                    </div>
+                    <div className="text-center mt-12">
+                        <p className="text-[#64748b] dark:text-[#94a3b8] mb-4">
+                            Still have questions? Our support team is here to help.
+                        </p>
+                        <Button
+                            asChild
+                            variant="outline"
+                            className="border-2 border-[#1e40af] text-[#1e40af] hover:bg-[#1e40af] hover:text-white"
+                        >
+                            <Link to="#contact">Contact Support</Link>
+                        </Button>
                     </div>
                 </div>
             </section>
 
-            {/* Call to Action Section */}
-            <section className="w-full py-20 bg-gradient-to-r from-[#FF6B00] to-[#FF9F1C] text-white text-center">
-                <div className="max-w-3xl mx-auto px-4">
-                    <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Transform Education?</h2>
-                    <p className="mb-8 text-lg">
-                        Join thousands of students and teachers already using EduFire to create amazing learning experiences.
-                    </p>
-                    <Button
-                        asChild
-                        size="lg"
-                        className="px-8 bg-white text-[#FF6B00] font-bold border-0 shadow-lg hover:brightness-110"
-                    >
-                        <Link to={token ? "/dashboard" : "/signup"}>{token ? "Go to Dashboard" : "Get Started Today"}</Link>
-                    </Button>
-                </div>
-            </section>
-
-            {/* About Section */}
-            <section id="about" className="w-full py-20 bg-white dark:bg-[#0a1a33]">
-                <div className="max-w-4xl mx-auto px-4 text-center">
-                    <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                        About EduFire
-                    </h2>
-                    <p className="text-lg text-[#444] dark:text-[#cfd8e3] mb-4">
-                        EduFire is a comprehensive educational platform designed to bridge the gap between traditional and modern learning.
-                        Our mission is to make quality education accessible, interactive, and engaging for everyone.
-                    </p>
-                    <p className="text-lg text-[#444] dark:text-[#cfd8e3]">
-                        Whether you're a student looking to enhance your learning experience or a teacher wanting to create impactful courses,
-                        EduFire provides all the tools you need to succeed in the digital age.
-                    </p>
-                </div>
-            </section>
-
             {/* Contact Section */}
-            <section id="contact" className="w-full py-20 bg-[#FFF7F0] dark:bg-[#112244]">
-                <div className="max-w-3xl mx-auto px-4 text-center">
-                    <h2 className="text-3xl md:text-4xl font-bold mb-6">Get in Touch</h2>
-                    <p className="mb-8 text-[#444] dark:text-[#cfd8e3]">
-                        Have questions about EduFire or need help getting started? Our education specialists are here to help.
-                    </p>
-                    <form className="grid gap-4 max-w-xl mx-auto">
-                        <input
-                            type="text"
-                            placeholder="Your Name"
-                            className="rounded px-4 py-3 border border-[#FF9F1C] focus:outline-none focus:ring-2 focus:ring-[#FF6B00] bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white"
-                            required
-                        />
-                        <input
-                            type="email"
-                            placeholder="Your Email"
-                            className="rounded px-4 py-3 border border-[#FF9F1C] focus:outline-none focus:ring-2 focus:ring-[#FF6B00] bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white"
-                            required
-                        />
-                        <select className="rounded px-4 py-3 border border-[#FF9F1C] focus:outline-none focus:ring-2 focus:ring-[#FF6B00] bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white">
-                            <option value="">I am a...</option>
-                            <option value="student">Student</option>
-                            <option value="teacher">Teacher</option>
-                            <option value="institution">Institution Representative</option>
-                        </select>
-                        <textarea
-                            placeholder="How can we help you?"
-                            rows={4}
-                            className="rounded px-4 py-3 border border-[#FF9F1C] focus:outline-none focus:ring-2 focus:ring-[#FF6B00] bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white"
-                            required
-                        />
-                        <Button
-                            type="submit"
-                            className="bg-gradient-to-r from-[#FF6B00] to-[#FF9F1C] text-white border-0 shadow-lg hover:brightness-110"
-                            size="lg"
-                        >
-                            Send Message
-                        </Button>
-                    </form>
+            <section id="contact" className="w-full py-20 bg-[#f8fafc] dark:bg-[#334155]">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-5xl font-bold mb-6">
+                            Get in <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e40af] to-[#22c55e]">Touch</span>
+                        </h2>
+                        <p className="text-lg text-[#64748b] dark:text-[#94a3b8] max-w-3xl mx-auto leading-relaxed">
+                            Ready to bridge your communication gaps? Contact our multilingual team for personalized assistance,
+                            technical support, or to discuss enterprise solutions tailored to your needs.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                        {/* Contact Information */}
+                        <div className="lg:col-span-1 space-y-8">
+                            <div className="bg-white dark:bg-[#475569] rounded-2xl p-6 shadow-lg">
+                                <h3 className="text-xl font-bold mb-6 text-[#1f2937] dark:text-white">Contact Information</h3>
+
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 bg-gradient-to-r from-[#1e40af] to-[#22c55e] rounded-lg flex items-center justify-center">
+                                            <MessageSquare className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-[#1f2937] dark:text-white">General Inquiries</p>
+                                            <p className="text-[#64748b] dark:text-[#94a3b8]">hello@awazbridge.com</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 bg-gradient-to-r from-[#22c55e] to-[#16a34a] rounded-lg flex items-center justify-center">
+                                            <Headphones className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-[#1f2937] dark:text-white">Technical Support</p>
+                                            <p className="text-[#64748b] dark:text-[#94a3b8]">support@awazbridge.com</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 bg-gradient-to-r from-[#1e40af] to-[#1d4ed8] rounded-lg flex items-center justify-center">
+                                            <Users className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-[#1f2937] dark:text-white">Enterprise Sales</p>
+                                            <p className="text-[#64748b] dark:text-[#94a3b8]">enterprise@awazbridge.com</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white dark:bg-[#475569] rounded-2xl p-6 shadow-lg">
+                                <h3 className="text-xl font-bold mb-4 text-[#1f2937] dark:text-white">Response Times</h3>
+                                <div className="space-y-3 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-[#64748b] dark:text-[#94a3b8]">Free Plan:</span>
+                                        <span className="font-semibold text-[#1f2937] dark:text-white">48-72 hours</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-[#64748b] dark:text-[#94a3b8]">Pro Plan:</span>
+                                        <span className="font-semibold text-[#1f2937] dark:text-white">24 hours</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-[#64748b] dark:text-[#94a3b8]">Enterprise:</span>
+                                        <span className="font-semibold text-[#1f2937] dark:text-white">4-6 hours</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Contact Form */}
+                        <div className="lg:col-span-2">
+                            <div className="bg-white dark:bg-[#475569] rounded-2xl p-8 shadow-lg">
+                                <h3 className="text-2xl font-bold mb-8 text-[#1f2937] dark:text-white">Send us a Message</h3>
+                                <form className="space-y-6">
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-[#1f2937] dark:text-white mb-2">
+                                                Full Name <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                placeholder="Enter your full name"
+                                                className="w-full rounded-xl px-4 py-3 border-2 border-[#e5e7eb] dark:border-[#64748b] focus:outline-none focus:border-[#1e40af] bg-white dark:bg-[#334155] text-[#1f2937] dark:text-white transition-all"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-[#1f2937] dark:text-white mb-2">
+                                                Email Address <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="email"
+                                                placeholder="Enter your email address"
+                                                className="w-full rounded-xl px-4 py-3 border-2 border-[#e5e7eb] dark:border-[#64748b] focus:outline-none focus:border-[#1e40af] bg-white dark:bg-[#334155] text-[#1f2937] dark:text-white transition-all"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-[#1f2937] dark:text-white mb-2">
+                                            Message <span className="text-red-500">*</span>
+                                        </label>
+                                        <textarea
+                                            placeholder="Please provide details about your inquiry, including any specific requirements or questions you may have..."
+                                            rows={6}
+                                            className="w-full rounded-xl px-4 py-3 border-2 border-[#e5e7eb] dark:border-[#64748b] focus:outline-none focus:border-[#1e40af] bg-white dark:bg-[#334155] text-[#1f2937] dark:text-white transition-all resize-none"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="flex items-start gap-3">
+                                        <input
+                                            type="checkbox"
+                                            id="privacy-consent"
+                                            className="mt-1 w-4 h-4 text-[#1e40af] border-2 border-[#e5e7eb] rounded focus:ring-[#1e40af]"
+                                            required
+                                        />
+                                        <label htmlFor="privacy-consent" className="text-sm text-[#64748b] dark:text-[#94a3b8] leading-relaxed">
+                                            I agree to the <Link to="/privacy" className="text-[#1e40af] hover:underline">Privacy Policy</Link> and consent to the processing of my personal data for the purpose of responding to my inquiry.
+                                        </label>
+                                    </div>
+
+                                    <Button
+                                        type="submit"
+                                        className="w-full bg-gradient-to-r from-[#1e40af] to-[#22c55e] text-white border-0 shadow-lg hover:brightness-110 py-4 rounded-xl text-lg font-semibold transition-all duration-300"
+                                        size="lg"
+                                    >
+                                        Send Message
+                                    </Button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
+
             <Footer />
         </div>
     )

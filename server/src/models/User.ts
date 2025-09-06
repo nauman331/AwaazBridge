@@ -5,7 +5,7 @@ export interface IUser extends Document {
     email: string;
     password?: string;
     role: "Admin" | "Teacher" | "Student";
-    Department: mongoose.Types.ObjectId;
+    Department?: mongoose.Types.ObjectId;
     otp: string | null;
     otpExpiresAt: Date | null;
     isActive: boolean;
@@ -17,6 +17,7 @@ export interface IUser extends Document {
     experience?: number | null;
     address?: string | null;
     specialization?: string | null;
+    ratings?: Array<Object> | null;
 }
 
 const userSchema = new Schema<IUser>({
@@ -36,6 +37,7 @@ const userSchema = new Schema<IUser>({
     experience: { type: Number, default: 0 },
     address: { type: String, default: null },
     specialization: { type: String, default: null },
+    ratings: { type: Array, default: [] },
 }, { timestamps: true });
 
 export const User = mongoose.model<IUser>("User", userSchema);

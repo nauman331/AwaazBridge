@@ -5,9 +5,9 @@ import {
     LogOut,
     Menu,
     X,
-    Shield
+    ShieldCheck
 } from 'lucide-react'
-import { adminnavigationItems } from "../utils/exports"
+import { moderatorNavigationItems } from "../utils/exports"
 import { useDispatch } from 'react-redux'
 import { logout } from "../store/slices/authSlice"
 import {
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useNavigate } from 'react-router-dom'
 
-const AdminLayout: React.FC = () => {
+const ModeratorLayout: React.FC = () => {
     const dispatch = useDispatch()
     const navigate = useNavigate()
     const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false)
@@ -46,22 +46,22 @@ const AdminLayout: React.FC = () => {
 
             {/* Sidebar */}
             <aside
-                className={`fixed top-0 left-0 h-full bg-white dark:bg-[#0a1a33] border-r border-red-500/20 shadow-lg z-50 transform transition-all duration-300 ease-out ${isSidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full w-72 lg:translate-x-0'
+                className={`fixed top-0 left-0 h-full bg-white dark:bg-[#0a1a33] border-r border-blue-500/20 shadow-lg z-50 transform transition-all duration-300 ease-out ${isSidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full w-72 lg:translate-x-0'
                     } ${isHovered ? 'lg:w-72' : 'lg:w-16'
                     }`}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
             >
                 {/* Sidebar Header */}
-                <div className="relative p-4 bg-gradient-to-r from-red-600 to-red-500 border-b border-red-500/20">
+                <div className="relative p-4 bg-gradient-to-r from-blue-600 to-blue-500 border-b border-blue-500/20">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                             <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                                <Shield className="text-red-600" size={18} />
+                                <ShieldCheck className="text-blue-600" size={18} />
                             </div>
                             <div className={`transition-all duration-300 ${isHovered || isSidebarOpen ? 'opacity-100 lg:block' : 'opacity-0 lg:hidden'} block`}>
-                                <h2 className="text-lg font-bold text-white">Admin</h2>
-                                <p className="text-red-100 text-xs font-medium">Control Panel</p>
+                                <h2 className="text-lg font-bold text-white">Moderator</h2>
+                                <p className="text-blue-100 text-xs font-medium">Control Panel</p>
                             </div>
                         </div>
                         <button
@@ -75,7 +75,7 @@ const AdminLayout: React.FC = () => {
 
                 {/* Navigation */}
                 <div className="flex-1 overflow-y-auto px-2 py-4 space-y-1">
-                    {adminnavigationItems.map((item) => {
+                    {moderatorNavigationItems.map((item) => {
                         const Icon = item.icon
                         const isActive = isActiveRoute(item.path)
 
@@ -85,15 +85,15 @@ const AdminLayout: React.FC = () => {
                                 to={item.path}
                                 onClick={() => setIsSidebarOpen(false)}
                                 className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative overflow-hidden ${isActive
-                                    ? 'bg-gradient-to-r from-red-600 to-red-500 text-white shadow-md'
-                                    : 'text-[#666] dark:text-[#cfd8e3] hover:bg-red-600/10 dark:hover:bg-red-600/20 hover:text-red-600'
+                                    ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md'
+                                    : 'text-[#666] dark:text-[#cfd8e3] hover:bg-blue-600/10 dark:hover:bg-blue-600/20 hover:text-blue-600'
                                     }`}
                             >
                                 <Icon
                                     size={18}
                                     className={`transition-all duration-200 flex-shrink-0 ${isActive
                                         ? 'text-white'
-                                        : 'group-hover:text-red-600 group-hover:scale-110'
+                                        : 'group-hover:text-blue-600 group-hover:scale-110'
                                         }`}
                                 />
                                 <span className={`font-medium text-sm transition-all duration-300 ${isHovered || isSidebarOpen ? 'opacity-100 lg:block' : 'opacity-0 lg:hidden'
@@ -112,13 +112,13 @@ const AdminLayout: React.FC = () => {
                 </div>
 
                 {/* Sidebar Footer */}
-                <div className="border-t border-red-500/20 p-2 space-y-1 bg-gradient-to-t from-red-600/5 to-transparent">
+                <div className="border-t border-blue-500/20 p-2 space-y-1 bg-gradient-to-t from-blue-600/5 to-transparent">
                     <Link
-                        to="/admin/settings"
+                        to="/moderator/settings"
                         onClick={() => setIsSidebarOpen(false)}
-                        className="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-[#666] dark:text-[#cfd8e3] hover:bg-red-600/10 dark:hover:bg-red-600/20 hover:text-red-600 transition-all duration-200 group"
+                        className="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-[#666] dark:text-[#cfd8e3] hover:bg-blue-600/10 dark:hover:bg-blue-600/20 hover:text-blue-600 transition-all duration-200 group"
                     >
-                        <Settings size={18} className="group-hover:text-red-600 group-hover:rotate-45 transition-all duration-200 flex-shrink-0" />
+                        <Settings size={18} className="group-hover:text-blue-600 group-hover:rotate-45 transition-all duration-200 flex-shrink-0" />
                         <span className={`font-medium text-sm transition-all duration-300 ${isHovered || isSidebarOpen ? 'opacity-100 lg:block' : 'opacity-0 lg:hidden'
                             } block`}>
                             Settings
@@ -136,33 +136,30 @@ const AdminLayout: React.FC = () => {
                 </div>
             </aside>
 
-            {/* Main Content */}
+            {/* ...existing code for main content and dialog... */}
             <div className={`min-h-screen transition-all duration-300 ${isHovered ? 'lg:ml-72' : 'lg:ml-16'}`}>
-                {/* Mobile Header */}
-                <header className="lg:hidden sticky top-0 z-30 bg-white/95 dark:bg-[#0a1a33]/95 backdrop-blur-xl border-b border-red-500/20 px-4 py-3 shadow-sm">
+                <header className="lg:hidden sticky top-0 z-30 bg-white/95 dark:bg-[#0a1a33]/95 backdrop-blur-xl border-b border-blue-500/20 px-4 py-3 shadow-sm">
                     <div className="flex items-center justify-between">
                         <button
                             onClick={() => setIsSidebarOpen(true)}
-                            className="p-2 rounded-lg hover:bg-red-600/10 dark:hover:bg-red-600/20 transition-colors"
+                            className="p-2 rounded-lg hover:bg-blue-600/10 dark:hover:bg-blue-600/20 transition-colors"
                         >
-                            <Menu className="text-red-600 dark:text-red-500" size={20} />
+                            <Menu className="text-blue-600 dark:text-blue-500" size={20} />
                         </button>
                         <div className="flex items-center space-x-3">
-                            <div className="w-7 h-7 bg-gradient-to-r from-red-600 to-red-500 rounded-lg flex items-center justify-center shadow-sm">
-                                <Shield className="text-white" size={14} />
+                            <div className="w-7 h-7 bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg flex items-center justify-center shadow-sm">
+                                <ShieldCheck className="text-white" size={14} />
                             </div>
-                            <span className="text-lg font-bold text-[#002B5B] dark:text-white">Admin Panel</span>
+                            <span className="text-lg font-bold text-[#002B5B] dark:text-white">Moderator Panel</span>
                         </div>
                         <div className="w-10"></div>
                     </div>
                 </header>
 
-                {/* Page Content */}
                 <main>
                     <Outlet />
                 </main>
 
-                {/* Logout Confirmation Dialog */}
                 <AlertDialog open={logoutConfirmation} onOpenChange={setLogoutConfirmation}>
                     <AlertDialogContent>
                         <AlertDialogHeader>
@@ -188,4 +185,4 @@ const AdminLayout: React.FC = () => {
     )
 }
 
-export default AdminLayout
+export default ModeratorLayout

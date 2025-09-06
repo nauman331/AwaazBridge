@@ -5,9 +5,9 @@ import {
     LogOut,
     Menu,
     X,
-    BookOpen
+    Video
 } from 'lucide-react'
-import { teachernavigationItems } from "../utils/exports"
+import { userNavigationItems } from "../utils/exports"
 import { useDispatch } from 'react-redux'
 import { logout } from "../store/slices/authSlice"
 import {
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useNavigate } from 'react-router-dom'
 
-const TeacherLayout: React.FC = () => {
+const UserLayout: React.FC = () => {
     const dispatch = useDispatch()
     const navigate = useNavigate()
     const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false)
@@ -46,22 +46,22 @@ const TeacherLayout: React.FC = () => {
 
             {/* Sidebar */}
             <aside
-                className={`fixed top-0 left-0 h-full bg-white dark:bg-[#0a1a33] border-r border-green-500/20 shadow-lg z-50 transform transition-all duration-300 ease-out ${isSidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full w-72 lg:translate-x-0'
+                className={`fixed top-0 left-0 h-full bg-white dark:bg-[#0a1a33] border-r border-[#FF9F1C]/20 shadow-lg z-50 transform transition-all duration-300 ease-out ${isSidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full w-72 lg:translate-x-0'
                     } ${isHovered ? 'lg:w-72' : 'lg:w-16'
                     }`}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
             >
                 {/* Sidebar Header */}
-                <div className="relative p-4 bg-gradient-to-r from-green-600 to-green-500 border-b border-green-500/20">
+                <div className="relative p-4 bg-gradient-to-r from-[#FF6B00] to-[#FF9F1C] border-b border-[#FF9F1C]/20">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                             <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                                <BookOpen className="text-green-600" size={18} />
+                                <Video className="text-[#FF6B00]" size={18} />
                             </div>
                             <div className={`transition-all duration-300 ${isHovered || isSidebarOpen ? 'opacity-100 lg:block' : 'opacity-0 lg:hidden'} block`}>
-                                <h2 className="text-lg font-bold text-white">Teacher</h2>
-                                <p className="text-green-100 text-xs font-medium">Portal</p>
+                                <h2 className="text-lg font-bold text-white">VoiceLink</h2>
+                                <p className="text-orange-100 text-xs font-medium">User Dashboard</p>
                             </div>
                         </div>
                         <button
@@ -75,7 +75,7 @@ const TeacherLayout: React.FC = () => {
 
                 {/* Navigation */}
                 <div className="flex-1 overflow-y-auto px-2 py-4 space-y-1">
-                    {teachernavigationItems.map((item) => {
+                    {userNavigationItems.map((item) => {
                         const Icon = item.icon
                         const isActive = isActiveRoute(item.path)
 
@@ -85,15 +85,15 @@ const TeacherLayout: React.FC = () => {
                                 to={item.path}
                                 onClick={() => setIsSidebarOpen(false)}
                                 className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative overflow-hidden ${isActive
-                                    ? 'bg-gradient-to-r from-green-600 to-green-500 text-white shadow-md'
-                                    : 'text-[#666] dark:text-[#cfd8e3] hover:bg-green-600/10 dark:hover:bg-green-600/20 hover:text-green-600'
+                                    ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF9F1C] text-white shadow-md'
+                                    : 'text-[#666] dark:text-[#cfd8e3] hover:bg-[#FF6B00]/10 dark:hover:bg-[#FF6B00]/20 hover:text-[#FF6B00]'
                                     }`}
                             >
                                 <Icon
                                     size={18}
                                     className={`transition-all duration-200 flex-shrink-0 ${isActive
                                         ? 'text-white'
-                                        : 'group-hover:text-green-600 group-hover:scale-110'
+                                        : 'group-hover:text-[#FF6B00] group-hover:scale-110'
                                         }`}
                                 />
                                 <span className={`font-medium text-sm transition-all duration-300 ${isHovered || isSidebarOpen ? 'opacity-100 lg:block' : 'opacity-0 lg:hidden'
@@ -112,13 +112,13 @@ const TeacherLayout: React.FC = () => {
                 </div>
 
                 {/* Sidebar Footer */}
-                <div className="border-t border-green-500/20 p-2 space-y-1 bg-gradient-to-t from-green-600/5 to-transparent">
+                <div className="border-t border-[#FF9F1C]/20 p-2 space-y-1 bg-gradient-to-t from-[#FF6B00]/5 to-transparent">
                     <Link
-                        to="/teacher/settings"
+                        to="/user/settings"
                         onClick={() => setIsSidebarOpen(false)}
-                        className="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-[#666] dark:text-[#cfd8e3] hover:bg-green-600/10 dark:hover:bg-green-600/20 hover:text-green-600 transition-all duration-200 group"
+                        className="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-[#666] dark:text-[#cfd8e3] hover:bg-[#FF6B00]/10 dark:hover:bg-[#FF6B00]/20 hover:text-[#FF6B00] transition-all duration-200 group"
                     >
-                        <Settings size={18} className="group-hover:text-green-600 group-hover:rotate-45 transition-all duration-200 flex-shrink-0" />
+                        <Settings size={18} className="group-hover:text-[#FF6B00] group-hover:rotate-45 transition-all duration-200 flex-shrink-0" />
                         <span className={`font-medium text-sm transition-all duration-300 ${isHovered || isSidebarOpen ? 'opacity-100 lg:block' : 'opacity-0 lg:hidden'
                             } block`}>
                             Settings
@@ -139,19 +139,19 @@ const TeacherLayout: React.FC = () => {
             {/* Main Content */}
             <div className={`min-h-screen transition-all duration-300 ${isHovered ? 'lg:ml-72' : 'lg:ml-16'}`}>
                 {/* Mobile Header */}
-                <header className="lg:hidden sticky top-0 z-30 bg-white/95 dark:bg-[#0a1a33]/95 backdrop-blur-xl border-b border-green-500/20 px-4 py-3 shadow-sm">
+                <header className="lg:hidden sticky top-0 z-30 bg-white/95 dark:bg-[#0a1a33]/95 backdrop-blur-xl border-b border-[#FF9F1C]/20 px-4 py-3 shadow-sm">
                     <div className="flex items-center justify-between">
                         <button
                             onClick={() => setIsSidebarOpen(true)}
-                            className="p-2 rounded-lg hover:bg-green-600/10 dark:hover:bg-green-600/20 transition-colors"
+                            className="p-2 rounded-lg hover:bg-[#FF6B00]/10 dark:hover:bg-[#FF6B00]/20 transition-colors"
                         >
-                            <Menu className="text-green-600 dark:text-green-500" size={20} />
+                            <Menu className="text-[#FF6B00] dark:text-[#FF9F1C]" size={20} />
                         </button>
                         <div className="flex items-center space-x-3">
-                            <div className="w-7 h-7 bg-gradient-to-r from-green-600 to-green-500 rounded-lg flex items-center justify-center shadow-sm">
-                                <BookOpen className="text-white" size={14} />
+                            <div className="w-7 h-7 bg-gradient-to-r from-[#FF6B00] to-[#FF9F1C] rounded-lg flex items-center justify-center shadow-sm">
+                                <Video className="text-white" size={14} />
                             </div>
-                            <span className="text-lg font-bold text-[#002B5B] dark:text-white">Teacher Portal</span>
+                            <span className="text-lg font-bold text-[#002B5B] dark:text-white">VoiceLink</span>
                         </div>
                         <div className="w-10"></div>
                     </div>
@@ -188,4 +188,4 @@ const TeacherLayout: React.FC = () => {
     )
 }
 
-export default TeacherLayout
+export default UserLayout

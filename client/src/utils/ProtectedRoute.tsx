@@ -31,7 +31,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
         }
 
         // Check if user is trying to access protected route without authentication
-        if (!token && (location.pathname.includes("/student") || location.pathname.includes("/teacher") || location.pathname.includes("/admin"))) {
+        if (!token && (location.pathname.includes("/user") || location.pathname.includes("/moderator") || location.pathname.includes("/admin"))) {
             toast.error("Please login to access this page.");
             navigate("/login", { replace: true });
             return;
@@ -43,15 +43,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
             const currentPath = location.pathname;
 
             // Check if user is trying to access wrong role's routes
-            if (userRole === "Admin" && (currentPath.startsWith("/student") || currentPath.startsWith("/teacher"))) {
+            if (userRole === "Admin" && (currentPath.startsWith("/user") || currentPath.startsWith("/moderator"))) {
                 toast.error("Access denied. Redirecting to your dashboard.");
                 navigate("/", { replace: true });
                 return;
-            } else if (userRole === "Student" && (currentPath.startsWith("/admin") || currentPath.startsWith("/teacher"))) {
+            } else if (userRole === "User" && (currentPath.startsWith("/admin") || currentPath.startsWith("/moderator"))) {
                 toast.error("Access denied. Redirecting to your dashboard.");
                 navigate("/", { replace: true });
                 return;
-            } else if (userRole === "Teacher" && (currentPath.startsWith("/admin") || currentPath.startsWith("/student"))) {
+            } else if (userRole === "Moderator" && (currentPath.startsWith("/admin") || currentPath.startsWith("/user"))) {
                 toast.error("Access denied. Redirecting to your dashboard.");
                 navigate("/", { replace: true });
                 return;

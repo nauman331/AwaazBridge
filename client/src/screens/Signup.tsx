@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Link, useNavigate } from "react-router-dom"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
-import { User, Mail, Lock, GraduationCap, Users } from "lucide-react"
+import { User, Mail, Lock, GraduationCap, Users, Video } from "lucide-react"
 import Logo from "@/components/Logo"
 import { useGoogleLogin } from '@react-oauth/google';
 import type { SubmitHandler } from "react-hook-form"
@@ -19,7 +19,7 @@ type FormData = {
     name: string;
     email: string;
     password: string;
-    role: "Student" | "Teacher";
+    role: "User" | "Moderator";
 }
 
 
@@ -29,7 +29,7 @@ const Signup: React.FC = () => {
     const { register, handleSubmit, formState: { errors } } = useForm<FormData>()
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const [selectedRole, setSelectedRole] = useState<"Student" | "Teacher" | "">("");
+    const [selectedRole, setSelectedRole] = useState<"User" | "Moderator" | "">("");
 
     const handleRegister: SubmitHandler<FormData> = async (formData) => {
         if (selectedRole) {
@@ -51,7 +51,7 @@ const Signup: React.FC = () => {
     }, [isSuccess, data, error, dispatch, navigate]);
 
 
-    const handleRoleSelect = (role: "Student" | "Teacher") => {
+    const handleRoleSelect = (role: "User" | "Moderator") => {
         setSelectedRole(role);
     }
 
@@ -88,38 +88,38 @@ const Signup: React.FC = () => {
     }, [isGoogleLoginSuccess, googleLoginData, googleLoginError, dispatch, navigate]);
 
     return (
-        <div className="flex flex-col min-h-screen bg-white text-[#002B5B] dark:bg-[#002B5B] dark:text-white">
+        <div className="flex flex-col min-h-screen bg-white text-[#1f2937] dark:bg-[#0f172a] dark:text-white">
             <Navbar />
             <main className="flex flex-1 items-center justify-center py-8 px-2">
-                <div className="w-full max-w-md bg-[#FFF7F0] dark:bg-[#112244] rounded-2xl shadow-2xl p-8 md:p-10 border border-[#FF9F1C]/30 dark:border-[#FF9F1C]/20 flex flex-col items-center">
+                <div className="w-full max-w-md bg-gradient-to-br from-[#f0f9ff] to-[#e0f2fe] dark:bg-gradient-to-br dark:from-[#1e293b] dark:to-[#334155] rounded-2xl shadow-2xl p-8 md:p-10 border border-[#1e40af]/30 dark:border-[#22c55e]/20 flex flex-col items-center">
                     <Logo className="mb-6" />
-                    <span className="font-black text-3xl text-[#FF6B00] dark:text-[#FF9F1C] tracking-tight mb-1">Join EduFire</span>
-                    <p className="text-sm text-center text-[#444] dark:text-[#cfd8e3] mt-1 mb-5">
-                        Create your <span className="font-semibold text-[#FF6B00] dark:text-[#FF9F1C]">EduFire</span> account
+                    <span className="font-black text-3xl text-[#1e40af] dark:text-[#22c55e] tracking-tight mb-1">Join AwazBridge</span>
+                    <p className="text-sm text-center text-[#64748b] dark:text-[#94a3b8] mt-1 mb-5">
+                        Start bridging languages with <span className="font-semibold text-[#1e40af] dark:text-[#22c55e]">AwazBridge</span>
                     </p>
 
                     {/* Role Selection */}
                     {!selectedRole && (
                         <div className="w-full mb-6">
-                            <h3 className="text-lg font-semibold text-center mb-4 text-[#002B5B] dark:text-white">Choose Your Role</h3>
+                            <h3 className="text-lg font-semibold text-center mb-4 text-[#1f2937] dark:text-white">Choose Your Account Type</h3>
                             <div className="grid grid-cols-2 gap-3">
                                 <button
                                     type="button"
-                                    onClick={() => handleRoleSelect("Student")}
-                                    className="flex flex-col items-center p-4 border-2 border-[#FF9F1C]/40 rounded-lg hover:border-[#FF6B00] hover:bg-[#FF6B00]/5 transition-all"
+                                    onClick={() => handleRoleSelect("User")}
+                                    className="flex flex-col items-center p-4 border-2 border-[#1e40af]/40 rounded-lg hover:border-[#1e40af] hover:bg-[#1e40af]/5 transition-all"
                                 >
-                                    <GraduationCap className="w-8 h-8 text-[#FF6B00] mb-2" />
-                                    <span className="font-semibold text-[#002B5B] dark:text-white">Student</span>
-                                    <span className="text-xs text-[#444] dark:text-[#cfd8e3] text-center">Join classes & learn</span>
+                                    <Video className="w-8 h-8 text-[#1e40af] mb-2" />
+                                    <span className="font-semibold text-[#1f2937] dark:text-white">Regular User</span>
+                                    <span className="text-xs text-[#64748b] dark:text-[#94a3b8] text-center">Bridge voices with translation</span>
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => handleRoleSelect("Teacher")}
-                                    className="flex flex-col items-center p-4 border-2 border-[#FF9F1C]/40 rounded-lg hover:border-[#FF6B00] hover:bg-[#FF6B00]/5 transition-all"
+                                    onClick={() => handleRoleSelect("Moderator")}
+                                    className="flex flex-col items-center p-4 border-2 border-[#22c55e]/40 rounded-lg hover:border-[#22c55e] hover:bg-[#22c55e]/5 transition-all"
                                 >
-                                    <Users className="w-8 h-8 text-[#FF9F1C] mb-2" />
-                                    <span className="font-semibold text-[#002B5B] dark:text-white">Teacher</span>
-                                    <span className="text-xs text-[#444] dark:text-[#cfd8e3] text-center">Create & teach courses</span>
+                                    <Users className="w-8 h-8 text-[#22c55e] mb-2" />
+                                    <span className="font-semibold text-[#1f2937] dark:text-white">Moderator</span>
+                                    <span className="text-xs text-[#64748b] dark:text-[#94a3b8] text-center">Manage calls & support users</span>
                                 </button>
                             </div>
                         </div>
@@ -127,21 +127,21 @@ const Signup: React.FC = () => {
 
                     {/* Show selected role */}
                     {selectedRole && (
-                        <div className="w-full mb-4 p-3 bg-[#FF6B00]/10 rounded-lg flex items-center justify-between">
+                        <div className="w-full mb-4 p-3 bg-[#1e40af]/10 rounded-lg flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                {selectedRole === "Student" ? (
-                                    <GraduationCap className="w-5 h-5 text-[#FF6B00]" />
+                                {selectedRole === "User" ? (
+                                    <Video className="w-5 h-5 text-[#1e40af]" />
                                 ) : (
-                                    <Users className="w-5 h-5 text-[#FF6B00]" />
+                                    <Users className="w-5 h-5 text-[#1e40af]" />
                                 )}
-                                <span className="text-sm font-medium text-[#FF6B00]">
+                                <span className="text-sm font-medium text-[#1e40af]">
                                     Signing up as {selectedRole}
                                 </span>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => setSelectedRole("")}
-                                className="text-xs text-[#FF6B00] hover:underline"
+                                className="text-xs text-[#1e40af] hover:underline"
                             >
                                 Change
                             </button>
@@ -155,37 +155,37 @@ const Signup: React.FC = () => {
                                 onSubmit={handleSubmit(handleRegister)}
                                 className="space-y-4 w-full">
                                 <div className="relative">
-                                    <User className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${errors.name ? 'text-red-500' : 'text-[#FF9F1C]'}`} />
+                                    <User className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${errors.name ? 'text-red-500' : 'text-[#1e40af]'}`} />
                                     <Input
                                         type="text"
                                         placeholder={errors.name ? errors.name.message : "Full Name"}
                                         style={{ border: errors.name && "2px solid red" }}
                                         {...register("name", { required: "Name is required" })}
-                                        className={`pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg transition-all ${errors.name ? 'placeholder:text-red-500' : ''}`} />
+                                        className={`pl-10 bg-white dark:bg-[#334155] text-[#1f2937] dark:text-white border border-[#1e40af]/40 dark:border-[#22c55e]/30 rounded-lg transition-all ${errors.name ? 'placeholder:text-red-500' : ''}`} />
                                 </div>
                                 <div className="relative">
-                                    <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${errors.email ? 'text-red-500' : 'text-[#FF9F1C]'}`} />
+                                    <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${errors.email ? 'text-red-500' : 'text-[#1e40af]'}`} />
                                     <Input
                                         type="email"
                                         placeholder={errors.email ? errors.email.message : "Email"}
                                         style={{ border: errors.email && "2px solid red" }}
                                         {...register("email", { required: "Email is required" })}
-                                        className={`pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg transition-all ${errors.email ? 'placeholder:text-red-500' : ''}`}
+                                        className={`pl-10 bg-white dark:bg-[#334155] text-[#1f2937] dark:text-white border border-[#1e40af]/40 dark:border-[#22c55e]/30 rounded-lg transition-all ${errors.email ? 'placeholder:text-red-500' : ''}`}
                                     />
                                 </div>
                                 <div className="relative">
-                                    <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${errors.password ? 'text-red-500' : 'text-[#FF9F1C]'}`} />
+                                    <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${errors.password ? 'text-red-500' : 'text-[#1e40af]'}`} />
                                     <Input
                                         type="password"
                                         placeholder={errors.password ? errors.password.message : "Password"}
                                         style={{ border: errors.password && "2px solid red" }}
                                         {...register("password", { required: "Password is required", minLength: { value: 6, message: "Password must be at least 6 characters" } })}
-                                        className={`pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg transition-all ${errors.password ? 'placeholder:text-red-500' : ''}`}
+                                        className={`pl-10 bg-white dark:bg-[#334155] text-[#1f2937] dark:text-white border border-[#1e40af]/40 dark:border-[#22c55e]/30 rounded-lg transition-all ${errors.password ? 'placeholder:text-red-500' : ''}`}
                                     />
                                 </div>
                                 <Button
                                     type="submit"
-                                    className="w-full bg-gradient-to-r from-[#FF6B00] to-[#FF9F1C] text-white font-bold border-0 shadow-lg hover:brightness-110 rounded-lg text-base py-2"
+                                    className="w-full bg-gradient-to-r from-[#1e40af] to-[#1d4ed8] text-white font-bold border-0 shadow-lg hover:brightness-110 rounded-lg text-base py-2"
                                     size="lg"
                                     disabled={isPending}
                                 >
@@ -194,15 +194,15 @@ const Signup: React.FC = () => {
                             </form>
 
                             <div className="flex items-center w-full my-5">
-                                <span className="flex-1 h-px bg-[#FF9F1C]/30 dark:bg-[#FF9F1C]/20"></span>
+                                <span className="flex-1 h-px bg-[#1e40af]/30 dark:bg-[#22c55e]/20"></span>
                                 <span className="mx-3 text-muted-foreground text-xs font-medium">or</span>
-                                <span className="flex-1 h-px bg-[#FF9F1C]/30 dark:bg-[#FF9F1C]/20"></span>
+                                <span className="flex-1 h-px bg-[#1e40af]/30 dark:bg-[#22c55e]/20"></span>
                             </div>
 
                             <Button
                                 onClick={handleGoogleLogin}
                                 type="button"
-                                className="w-full cursor-pointer flex items-center justify-center gap-2 bg-white border border-[#ddd] text-[#444] font-semibold shadow-sm hover:bg-[#f7f7f7] dark:bg-[#223355] dark:text-[#FF9F1C] dark:border-[#FF9F1C]/40 rounded-lg py-2 text-base"
+                                className="w-full cursor-pointer flex items-center justify-center gap-2 bg-white border border-[#ddd] text-[#444] font-semibold shadow-sm hover:bg-[#f7f7f7] dark:bg-[#334155] dark:text-[#22c55e] dark:border-[#22c55e]/40 rounded-lg py-2 text-base"
                                 size="lg"
                                 disabled={isGoogleLoginPending}
                             >
@@ -221,7 +221,7 @@ const Signup: React.FC = () => {
 
                     <div className="flex justify-center mt-6 text-sm">
                         <span>Already have an account?</span>
-                        <Link to="/login" className="ml-1 text-[#FF6B00] hover:underline font-semibold">Sign In</Link>
+                        <Link to="/login" className="ml-1 text-[#1e40af] hover:underline font-semibold">Sign In</Link>
                     </div>
                 </div>
             </main>

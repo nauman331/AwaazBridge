@@ -64,47 +64,47 @@ const Login: React.FC = () => {
     }, [isGoogleLoginSuccess, googleLoginData, googleLoginError, dispatch, navigate]);
 
     return (
-        <div className="flex flex-col min-h-screen bg-white text-[#002B5B] dark:bg-[#002B5B] dark:text-white">
+        <div className="flex flex-col min-h-screen bg-white text-[#1f2937] dark:bg-[#0f172a] dark:text-white">
             <Navbar />
             <main className="flex flex-1 items-center justify-center py-8 px-2">
-                <div className="w-full max-w-md bg-[#FFF7F0] dark:bg-[#112244] rounded-2xl shadow-2xl p-8 md:p-10 border border-[#FF9F1C]/30 dark:border-[#FF9F1C]/20 flex flex-col items-center">
+                <div className="w-full max-w-md bg-gradient-to-br from-[#f0f9ff] to-[#e0f2fe] dark:bg-gradient-to-br dark:from-[#1e293b] dark:to-[#334155] rounded-2xl shadow-2xl p-8 md:p-10 border border-[#1e40af]/30 dark:border-[#22c55e]/20 flex flex-col items-center">
                     {/* Branding - same as Navbar */}
                     <Logo className="mb-6" />
-                    <span className="font-black text-3xl text-[#FF6B00] dark:text-[#FF9F1C] tracking-tight mb-1">Sign In</span>
-                    <p className="text-sm text-center text-[#444] dark:text-[#cfd8e3] mt-1 mb-5">
-                        Welcome back to <span className="font-semibold text-[#FF6B00] dark:text-[#FF9F1C]">FinanceFire</span>
+                    <span className="font-black text-3xl text-[#1e40af] dark:text-[#22c55e] tracking-tight mb-1">Sign In</span>
+                    <p className="text-sm text-center text-[#64748b] dark:text-[#94a3b8] mt-1 mb-5">
+                        Welcome back to <span className="font-semibold text-[#1e40af] dark:text-[#22c55e]">AwazBridge</span>
                     </p>
                     {/* Form */}
                     <form
                         onSubmit={handleSubmit(handleLogin)}
                         className="space-y-4 w-full">
                         <div className="relative">
-                            <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${errors.email ? 'text-red-500' : 'text-[#FF9F1C]'}`} />
+                            <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${errors.email ? 'text-red-500' : 'text-[#1e40af]'}`} />
                             <Input
                                 {...register("email", { required: "Email is required" })}
                                 type="email"
                                 placeholder={errors.email ? errors.email.message : "Email"}
                                 style={{ border: errors.email && "2px solid red" }}
-                                className={`pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg focus:ring-2 focus:ring-[#FF9F1C]/40 transition-all ${errors.email ? 'placeholder:text-red-500' : ''}`}
+                                className={`pl-10 bg-white dark:bg-[#334155] text-[#1f2937] dark:text-white border border-[#1e40af]/40 dark:border-[#22c55e]/30 rounded-lg focus:ring-2 focus:ring-[#1e40af]/40 transition-all ${errors.email ? 'placeholder:text-red-500' : ''}`}
                                 required
                                 autoComplete="email"
                             />
                         </div>
                         <div className="relative">
-                            <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${errors.password ? 'text-red-500' : 'text-[#FF9F1C]'}`} />
+                            <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${errors.password ? 'text-red-500' : 'text-[#1e40af]'}`} />
                             <Input
                                 {...register("password", { required: "Password is required" })}
                                 type="password"
                                 placeholder={errors.password ? errors.password.message : "Password"}
                                 style={{ border: errors.password && "2px solid red" }}
-                                className={`pl-10 bg-white dark:bg-[#223355] text-[#002B5B] dark:text-white border border-[#FF9F1C]/40 dark:border-[#FF9F1C]/30 rounded-lg focus:ring-2 focus:ring-[#FF9F1C]/40 transition-all ${errors.password ? 'placeholder:text-red-500' : ''}`}
+                                className={`pl-10 bg-white dark:bg-[#334155] text-[#1f2937] dark:text-white border border-[#1e40af]/40 dark:border-[#22c55e]/30 rounded-lg focus:ring-2 focus:ring-[#1e40af]/40 transition-all ${errors.password ? 'placeholder:text-red-500' : ''}`}
                                 required
                                 autoComplete="current-password"
                             />
                         </div>
                         <Button
                             type="submit"
-                            className="w-full bg-gradient-to-r from-[#FF6B00] to-[#FF9F1C] text-white font-bold border-0 shadow-lg hover:brightness-110 rounded-lg text-base py-2"
+                            className="w-full bg-gradient-to-r from-[#1e40af] to-[#1d4ed8] text-white font-bold border-0 shadow-lg hover:brightness-110 rounded-lg text-base py-2"
                             size="lg"
                             disabled={isPending}
                         >
@@ -113,15 +113,15 @@ const Login: React.FC = () => {
                     </form>
                     {/* Divider */}
                     <div className="flex items-center w-full my-5">
-                        <span className="flex-1 h-px bg-[#FF9F1C]/30 dark:bg-[#FF9F1C]/20"></span>
+                        <span className="flex-1 h-px bg-[#1e40af]/30 dark:bg-[#22c55e]/20"></span>
                         <span className="mx-3 text-muted-foreground text-xs font-medium">or</span>
-                        <span className="flex-1 h-px bg-[#FF9F1C]/30 dark:bg-[#FF9F1C]/20"></span>
+                        <span className="flex-1 h-px bg-[#1e40af]/30 dark:bg-[#22c55e]/20"></span>
                     </div>
                     {/* Google Button */}
                     <Button
                         onClick={() => handleGoogleLogin()}
                         type="button"
-                        className="w-full cursor-pointer flex items-center justify-center gap-2 bg-white border border-[#ddd] text-[#444] font-semibold shadow-sm hover:bg-[#f7f7f7] dark:bg-[#223355] dark:text-[#FF9F1C] dark:border-[#FF9F1C]/40 rounded-lg py-2 text-base"
+                        className="w-full cursor-pointer flex items-center justify-center gap-2 bg-white border border-[#ddd] text-[#444] font-semibold shadow-sm hover:bg-[#f7f7f7] dark:bg-[#334155] dark:text-[#22c55e] dark:border-[#22c55e]/40 rounded-lg py-2 text-base"
                         size="lg"
                         disabled={isGoogleLoginPending}
                     >
@@ -137,8 +137,8 @@ const Login: React.FC = () => {
                     </Button>
                     {/* Links */}
                     <div className="flex justify-between mt-6 text-sm w-full">
-                        <Link to="/forgot-password" className="text-[#FF6B00] hover:underline font-semibold">Forgot password?</Link>
-                        <Link to="/signup" className="text-[#FF9F1C] hover:underline font-semibold">Sign up</Link>
+                        <Link to="/forgot-password" className="text-[#1e40af] hover:underline font-semibold">Forgot password?</Link>
+                        <Link to="/signup" className="text-[#22c55e] hover:underline font-semibold">Sign up</Link>
                     </div>
                 </div>
             </main>

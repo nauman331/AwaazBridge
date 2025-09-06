@@ -3,9 +3,8 @@ import { Routes, Route } from 'react-router-dom'
 import { GoogleOAuthProvider } from "@react-oauth/google"
 import { googleClientId } from './utils/exports'
 // layouts
-import StudentLayout from './Layouts/StudentLayout'
-import AdminLayout from './Layouts/AdminLayout'
-import TeacherLayout from './Layouts/TeacherLayout'
+import UserLayout from './Layouts/UserLayout'
+import ModeratorLayout from './Layouts/ModeratorLayout'
 
 //extras
 import Loader from './components/Loader';
@@ -26,14 +25,12 @@ const ContactUs = lazy(() => import('./screens/ContactUs'))
 const PrivacyPolicy = lazy(() => import('./screens/PrivacyPolicy'))
 const TermsOfService = lazy(() => import('./screens/TermsOfService'))
 const NotFound = lazy(() => import('./screens/NotFound'))
-// student routes
-const StudentProfile = lazy(() => import('./screens/Student/Profile'))
+// user routes
+const UserProfile = lazy(() => import('./screens/User/Profile'))
+const VideoCall = lazy(() => import('./screens/User/VideoCall'))
 
-//admin routes
-const AdminProfile = lazy(() => import('./screens/Admin/Profile'))
-
-// teacher routes
-const TeacherProfile = lazy(() => import('./screens/Teacher/Profile'))
+// moderator routes
+const ModeratorProfile = lazy(() => import('./screens/Moderator/Profile'))
 
 
 const App: React.FC = () => {
@@ -64,20 +61,16 @@ const App: React.FC = () => {
             <Route path="/contact-us" element={<ContactUs />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
-            {/* Student Routes */}
-            <Route path='/student' element={<StudentLayout />} >
-              <Route index element={<StudentProfile />} />
-              <Route path="profile" element={<StudentProfile />} />
+            {/* User Routes */}
+            <Route path='/user' element={<UserLayout />} >
+              <Route index element={<UserProfile />} />
+              <Route path="profile" element={<UserProfile />} />
+              <Route path="video-call" element={<VideoCall />} />
             </Route>
-            {/* Admin Routes */}
-            <Route path='/admin' element={<AdminLayout />} >
-              <Route index element={<AdminProfile />} />
-              <Route path="profile" element={<AdminProfile />} />
-            </Route>
-            {/* Teacher Routes */}
-            <Route path='/teacher' element={<TeacherLayout />} >
-              <Route index element={<TeacherProfile />} />
-              <Route path="profile" element={<TeacherProfile />} />
+            {/* Moderator Routes */}
+            <Route path='/moderator' element={<ModeratorLayout />} >
+              <Route index element={<ModeratorProfile />} />
+              <Route path="profile" element={<ModeratorProfile />} />
             </Route>
             {/* 404 Not Found Route */}
             <Route path="*" element={<NotFound />} />
