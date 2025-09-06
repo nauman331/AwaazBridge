@@ -3,13 +3,11 @@ import {
     Bell,
     User,
     Phone,
-    Calendar,
     History,
     Home,
     Users,
     BarChart3,
     Settings,
-    Headphones,
     Languages,
     MessageSquare
 } from 'lucide-react'

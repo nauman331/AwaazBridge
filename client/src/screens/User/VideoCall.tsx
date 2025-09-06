@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Video, VideoOff, Mic, MicOff, Phone, PhoneOff, Users, Settings, Languages, Volume2, VolumeX } from 'lucide-react'
+import { Video, VideoOff, Mic, MicOff, Phone, PhoneOff, Users, Settings, Languages, Volume2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const VideoCall: React.FC = () => {
@@ -297,8 +297,8 @@ const VideoCall: React.FC = () => {
                                 <div className="flex items-center justify-between">
                                     <span className="text-[#444] dark:text-[#cfd8e3]">Connection</span>
                                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${connectionStatus === 'Connected' ? 'bg-green-100 text-green-600' :
-                                            connectionStatus === 'Connecting...' ? 'bg-yellow-100 text-yellow-600' :
-                                                'bg-gray-100 text-gray-600'
+                                        connectionStatus === 'Connecting...' ? 'bg-yellow-100 text-yellow-600' :
+                                            'bg-gray-100 text-gray-600'
                                         }`}>
                                         {connectionStatus}
                                     </span>

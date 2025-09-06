@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Link, useNavigate } from "react-router-dom"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
-import { User, Mail, Lock, GraduationCap, Users, Video } from "lucide-react"
+import { User, Mail, Lock, Users, Video } from "lucide-react"
 import Logo from "@/components/Logo"
 import { useGoogleLogin } from '@react-oauth/google';
 import type { SubmitHandler } from "react-hook-form"

@@ -1,6 +1,6 @@
 import * as React from "react"
 import { NavLink } from "react-router-dom"
-import { Mail, Facebook, Twitter, Linkedin, Instagram, MapPin, Phone, MessageSquare, HelpCircle } from "lucide-react"
+import { Mail, Facebook, Twitter, Linkedin, Instagram, MapPin, Phone, MessageSquare } from "lucide-react"
 import Logo from "./Logo"
 
 const quickLinks = [
