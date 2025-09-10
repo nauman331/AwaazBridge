@@ -5,11 +5,9 @@ import { sendOTPEmail } from "../utils/lib";
 
 const registerUser = async (req: Request, res: Response): Promise<Response> => {
     try {
-        const { name, email, password, role }: IUser = req.body;
-        if (!name || !email || !password || !role)
+        const { name, email, password, language }: IUser = req.body;
+        if (!name || !email || !password || !language)
             return res.status(400).json({ message: "All fields are required", isOk: false });
-        if (role !== "Student" && role !== "Teacher")
-            return res.status(400).json({ message: "Invalid role", isOk: false });
         if (await User.findOne({ email }))
             return res.status(400).json({ message: "User already exists", isOk: false });
 
@@ -23,11 +21,12 @@ const registerUser = async (req: Request, res: Response): Promise<Response> => {
             name,
             email,
             password: hashedPassword,
-            role,
+            role: "User",
             otp,
             otpExpiresAt: otpExpiresAt(),
             isActive: false,
             companyId: null,
+            language
         }).save();
 
         return res.status(201).json({ message: "User registered successfully", isOk: true });
@@ -206,12 +205,9 @@ const updateProfile = async (req: Request, res: Response): Promise<Response> => 
         const { name,
             email,
             password,
-            Department,
             picture,
             phone,
-            experience,
-            address,
-            specialization, }: IUser = req.body;
+            language, }: IUser = req.body;
         const user = await User.findById(userID);
         if (!user) {
             return res.status(404).json({ message: "User not found", isOk: false });
@@ -219,11 +215,8 @@ const updateProfile = async (req: Request, res: Response): Promise<Response> => 
         user.name = name || user.name;
         user.email = email || user.email;
         user.phone = phone || user.phone;
-        user.address = address || user.address;
-        user.specialization = specialization || user.specialization;
-        user.Department = Department || user.Department;
+        user.language = language || user.language;
         user.picture = picture || user.picture;
-        user.experience = experience || user.experience;
         user.password = password ? await hashPassword(password) : user.password;
         await user.save();
         return res.status(200).json({ message: "Profile updated successfully", isOk: true });

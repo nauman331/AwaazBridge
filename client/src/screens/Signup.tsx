@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Link, useNavigate } from "react-router-dom"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
-import { User, Mail, Lock, Users, Video } from "lucide-react"
+import { User, Mail, Lock, Globe, MessageCircle } from "lucide-react"
 import Logo from "@/components/Logo"
 import { useGoogleLogin } from '@react-oauth/google';
 import type { SubmitHandler } from "react-hook-form"
@@ -19,7 +19,7 @@ type FormData = {
     name: string;
     email: string;
     password: string;
-    role: "User" | "Moderator";
+    language: "en" | "ur";
 }
 
 
@@ -29,13 +29,13 @@ const Signup: React.FC = () => {
     const { register, handleSubmit, formState: { errors } } = useForm<FormData>()
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const [selectedRole, setSelectedRole] = useState<"User" | "Moderator" | "">("");
+    const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ur" | "">("");
 
     const handleRegister: SubmitHandler<FormData> = async (formData) => {
-        if (selectedRole) {
-            mutate({ ...formData, role: selectedRole });
+        if (selectedLanguage) {
+            mutate({ ...formData, language: selectedLanguage });
         } else {
-            toast.error("Please select a role first.");
+            toast.error("Please select a language first.");
         }
     }
 
@@ -43,7 +43,7 @@ const Signup: React.FC = () => {
         if (isSuccess && data) {
             toast.success("Registration successful! Welcome.");
             dispatch(setToken(data.token));
-            navigate(RoleNavigation(selectedRole));
+            navigate(RoleNavigation("User"));
         }
         if (error) {
             toast.error(error.message || "Registration failed. Please try again.");
@@ -51,16 +51,16 @@ const Signup: React.FC = () => {
     }, [isSuccess, data, error, dispatch, navigate]);
 
 
-    const handleRoleSelect = (role: "User" | "Moderator") => {
-        setSelectedRole(role);
+    const handleLanguageSelect = (language: "en" | "ur") => {
+        setSelectedLanguage(language);
     }
 
     const doGoogleLogin = useGoogleLogin({
         onSuccess: (response) => {
-            if (selectedRole) {
-                googleLogin({ access_token: response.access_token, role: selectedRole });
+            if (selectedLanguage) {
+                googleLogin({ access_token: response.access_token, language: selectedLanguage });
             } else {
-                toast.error("Please select a role before signing in with Google.");
+                toast.error("Please select a language before signing in with Google.");
             }
         },
         onError: () => {
@@ -69,8 +69,8 @@ const Signup: React.FC = () => {
     });
 
     const handleGoogleLogin = () => {
-        if (!selectedRole) {
-            toast.error("Please select a role first.");
+        if (!selectedLanguage) {
+            toast.error("Please select a language first.");
             return;
         }
         doGoogleLogin();
@@ -98,49 +98,49 @@ const Signup: React.FC = () => {
                         Start bridging languages with <span className="font-semibold text-[#1e40af] dark:text-[#22c55e]">AwazBridge</span>
                     </p>
 
-                    {/* Role Selection */}
-                    {!selectedRole && (
+                    {/* Language Selection */}
+                    {!selectedLanguage && (
                         <div className="w-full mb-6">
-                            <h3 className="text-lg font-semibold text-center mb-4 text-[#1f2937] dark:text-white">Choose Your Account Type</h3>
+                            <h3 className="text-lg font-semibold text-center mb-4 text-[#1f2937] dark:text-white">Choose Your Language</h3>
                             <div className="grid grid-cols-2 gap-3">
                                 <button
                                     type="button"
-                                    onClick={() => handleRoleSelect("User")}
+                                    onClick={() => handleLanguageSelect("en")}
                                     className="flex flex-col items-center p-4 border-2 border-[#1e40af]/40 rounded-lg hover:border-[#1e40af] hover:bg-[#1e40af]/5 transition-all"
                                 >
-                                    <Video className="w-8 h-8 text-[#1e40af] mb-2" />
-                                    <span className="font-semibold text-[#1f2937] dark:text-white">Regular User</span>
-                                    <span className="text-xs text-[#64748b] dark:text-[#94a3b8] text-center">Bridge voices with translation</span>
+                                    <Globe className="w-8 h-8 text-[#1e40af] mb-2" />
+                                    <span className="font-semibold text-[#1f2937] dark:text-white">English</span>
+                                    <span className="text-xs text-[#64748b] dark:text-[#94a3b8] text-center">I speak English</span>
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => handleRoleSelect("Moderator")}
+                                    onClick={() => handleLanguageSelect("ur")}
                                     className="flex flex-col items-center p-4 border-2 border-[#22c55e]/40 rounded-lg hover:border-[#22c55e] hover:bg-[#22c55e]/5 transition-all"
                                 >
-                                    <Users className="w-8 h-8 text-[#22c55e] mb-2" />
-                                    <span className="font-semibold text-[#1f2937] dark:text-white">Moderator</span>
-                                    <span className="text-xs text-[#64748b] dark:text-[#94a3b8] text-center">Manage calls & support users</span>
+                                    <MessageCircle className="w-8 h-8 text-[#22c55e] mb-2" />
+                                    <span className="font-semibold text-[#1f2937] dark:text-white">اردو</span>
+                                    <span className="text-xs text-[#64748b] dark:text-[#94a3b8] text-center">میں اردو بولتا ہوں</span>
                                 </button>
                             </div>
                         </div>
                     )}
 
-                    {/* Show selected role */}
-                    {selectedRole && (
+                    {/* Show selected language */}
+                    {selectedLanguage && (
                         <div className="w-full mb-4 p-3 bg-[#1e40af]/10 rounded-lg flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                {selectedRole === "User" ? (
-                                    <Video className="w-5 h-5 text-[#1e40af]" />
+                                {selectedLanguage === "en" ? (
+                                    <Globe className="w-5 h-5 text-[#1e40af]" />
                                 ) : (
-                                    <Users className="w-5 h-5 text-[#1e40af]" />
+                                    <MessageCircle className="w-5 h-5 text-[#1e40af]" />
                                 )}
                                 <span className="text-sm font-medium text-[#1e40af]">
-                                    Signing up as {selectedRole}
+                                    Language: {selectedLanguage === "en" ? "English" : "اردو"}
                                 </span>
                             </div>
                             <button
                                 type="button"
-                                onClick={() => setSelectedRole("")}
+                                onClick={() => setSelectedLanguage("")}
                                 className="text-xs text-[#1e40af] hover:underline"
                             >
                                 Change
@@ -149,7 +149,7 @@ const Signup: React.FC = () => {
                     )}
 
                     {/* Form */}
-                    {selectedRole && (
+                    {selectedLanguage && (
                         <>
                             <form
                                 onSubmit={handleSubmit(handleRegister)}
@@ -189,7 +189,7 @@ const Signup: React.FC = () => {
                                     size="lg"
                                     disabled={isPending}
                                 >
-                                    {isPending ? "Joining..." : `Join as ${selectedRole}`}
+                                    {isPending ? "Joining..." : "Join AwazBridge"}
                                 </Button>
                             </form>
 
