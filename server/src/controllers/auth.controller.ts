@@ -140,7 +140,7 @@ const resetPassword = async (req: Request, res: Response): Promise<Response> => 
 
 const GoogleLoginController = async (req: Request, res: Response): Promise<Response> => {
     try {
-        const { access_token, role } = req.body;
+        const { access_token, language } = req.body;
         if (!access_token) {
             return res.status(400).json({ message: "Access token is required", isOk: false });
         }
@@ -161,13 +161,13 @@ const GoogleLoginController = async (req: Request, res: Response): Promise<Respo
         }
         let user = await User.findOne({ email });
         if (!user) {
-            // Use provided role or default to "Student"
-            const userRole = role || "Student";
+            // Use provided language or default to "English"
+            const userLanguage = language || "en";
             user = new User({
                 name,
                 email,
                 picture,
-                role: userRole,
+                language: userLanguage,
                 googleId,
                 isActive: true,
             });

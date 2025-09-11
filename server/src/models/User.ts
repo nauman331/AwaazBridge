@@ -13,7 +13,7 @@ export interface IUser extends Document {
     picture?: string;
     googleId: string | null;
     phone?: string | null;
-    language: 'en' | 'ur';
+    language: string;
 }
 
 const userSchema = new Schema<IUser>({
@@ -29,7 +29,7 @@ const userSchema = new Schema<IUser>({
     picture: { type: String, default: null },
     googleId: { type: String, default: null },
     phone: { type: String, default: null, unique: true },
-    language: { type: String, enum: ['en', 'ur'], default: 'en' },
+    language: { type: String, default: "en" },
 }, { timestamps: true });
 
 export const User = mongoose.model<IUser>("User", userSchema);
