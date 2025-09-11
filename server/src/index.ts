@@ -2,16 +2,17 @@ import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import express, { Express } from "express";
 const app: Express = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT;
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
 import { SocketConnection } from "./sockets/SocketConnection";
 import connectDB from "./config/connectDB";
 import authRoutes from "./routes/auth.route"
+import { AITranslate } from "./config/openAI"
 
 const corsoptions = {
-    origin: process.env.CLIENT_URL || "https://finance-fire-xuot.vercel.app",
+    origin: process.env.CLIENT_URL,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true,
 };
@@ -21,6 +22,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
     res.json({ msg: "Routes Working Perfectly" })
+})
+app.get("/translate", (req, res) => {
+    AITranslate("English", "Spanish", "Hello, how are you?").then(response => {
+        res.json(response)
+    }).catch(error => {
+        res.json(error)
+    })
 })
 
 app.use("/api/v1/auth", authRoutes);
