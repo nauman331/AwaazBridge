@@ -23,103 +23,103 @@ import { useSelector } from "react-redux"
 
 const features = [
     {
-        title: "Real-Time Urdu ↔ English Translation",
-        desc: "Seamlessly bridge Urdu and English conversations with AI-powered voice translation. Speak naturally in your language and be understood instantly.",
+        title: "Talk in Any Language, Be Understood by Anyone",
+        desc: "Speak in your own language during video calls and everyone else hears it in their language instantly. No learning new languages or waiting for translations!",
         icon: <ArrowLeftRight className="w-8 h-8 text-[#1e40af]" />,
     },
     {
-        title: "Crystal Clear Voice Communication",
-        desc: "HD voice quality with advanced noise cancellation ensures your message comes through perfectly, whether speaking Urdu or English.",
+        title: "Crystal Clear Voice Calls",
+        desc: "Your voice comes through loud and clear, even with background noise. Perfect for important family calls, business meetings, or catching up with friends.",
         icon: <Mic className="w-8 h-8 text-[#22c55e]" />,
     },
     {
-        title: "Cultural Context Preservation",
-        desc: "Our AI understands cultural nuances and context, preserving the meaning and emotion behind your words in both languages.",
+        title: "Understands What You Really Mean",
+        desc: "Our smart technology doesn't just translate words - it understands jokes, expressions, and cultural references, so your personality shines through.",
         icon: <Globe className="w-8 h-8 text-[#1e40af]" />,
     },
     {
-        title: "Multi-Participant Conversations",
-        desc: "Connect Urdu and English speakers in group calls where everyone communicates in their preferred language naturally.",
+        title: "Group Video Calls Made Easy",
+        desc: "Have video calls with family, friends, or colleagues who speak different languages. Everyone talks naturally and understands each other perfectly.",
         icon: <Users className="w-8 h-8 text-[#22c55e]" />,
     },
     {
-        title: "Smart Audio Processing",
-        desc: "Advanced voice recognition technology specifically trained on Urdu dialects and English accents for maximum accuracy.",
+        title: "Works with Your Accent",
+        desc: "Whether you have a strong local accent or speak softly, our technology recognizes how you speak and translates accurately every time.",
         icon: <Headphones className="w-8 h-8 text-[#1e40af]" />,
     },
     {
-        title: "Bridge Building Technology",
-        desc: "More than translation - we build bridges between communities, families, and cultures through seamless communication.",
+        title: "Bringing People Together",
+        desc: "Connect with grandparents who speak a different language, do business internationally, or make friends from around the world - all without language barriers.",
         icon: <Waves className="w-8 h-8 text-[#22c55e]" />,
     },
 ]
 
 const pricingPlans = [
     {
-        name: "Free Bridge",
+        name: "Try for Free",
         price: "₹0",
         period: "/month",
         features: [
-            "30 minutes of translation per day",
-            "Urdu ↔ English voice bridging",
-            "Up to 3 participants",
-            "Basic audio quality",
-            "Community support",
+            "30 minutes of translated calls daily",
+            "5 popular languages",
+            "Up to 3 people per call",
+            "Good call quality",
+            "Email help when needed",
         ],
-        cta: "Start Bridging Free",
+        cta: "Start Free Today",
         highlight: false,
     },
     {
-        name: "Bridge Pro",
+        name: "Premium Plan",
         price: "₹999",
         period: "/month",
         features: [
-            "Unlimited translation time",
-            "Advanced Urdu dialect recognition",
-            "Up to 20 participants",
-            "HD voice quality",
-            "Call recording & transcripts",
-            "Priority support",
+            "Unlimited translated calls",
+            "50+ languages available",
+            "Up to 20 people per call",
+            "Best call quality",
+            "Save & replay your calls",
+            "Quick help when you need it",
         ],
-        cta: "Upgrade to Pro",
+        cta: "Go Premium",
         highlight: true,
     },
     {
-        name: "Enterprise Bridge",
+        name: "Business Plan",
         price: "Custom",
         period: "",
         features: [
-            "Unlimited participants",
-            "Custom Urdu language models",
-            "Enterprise-grade security",
-            "API integration",
-            "Dedicated account manager",
-            "24/7 premium support",
+            "Unlimited people per call",
+            "Special business features",
+            "Extra security & privacy",
+            "Works with your existing tools",
+            "Dedicated support person",
+            "24/7 help available",
         ],
-        cta: "Contact Sales",
+        cta: "Contact Us",
         highlight: false,
     },
 ]
 
 const testimonials = [
     {
-        name: "Fatima Sheikh",
-        company: "International Business Consultant",
-        text: "AwazBridge made it possible for me to communicate with my English-speaking clients while expressing complex ideas in Urdu. The cultural context is never lost!",
+        name: "Maria Rodriguez",
+        company: "Small Business Owner",
+        text: "I can finally talk to my international customers in Spanish while they hear everything in English! It's like magic - my business has grown so much since I started using AwazBridge.",
         avatar: "https://randomuser.me/api/portraits/women/44.jpg",
         rating: 5,
     },
     {
-        name: "Ahmed Hassan",
-        company: "Software Developer",
-        text: "Finally, a platform that understands Pakistani Urdu perfectly! I can now attend international meetings and speak comfortably in my native language.",
+        name: "Hiroshi Tanaka",
+        company: "Remote Worker",
+        text: "No more struggling in English meetings! I speak Japanese, my teammates hear English, and we all understand each other perfectly. Work is so much easier now.",
         avatar: "https://randomuser.me/api/portraits/men/32.jpg",
         rating: 5,
     },
     {
         name: "Sarah Johnson",
-        company: "NGO Coordinator",
-        text: "Working with Pakistani communities became so much easier with AwazBridge. The translation is accurate and culturally sensitive. Absolutely amazing!",
+        company: "Grandmother of 6",
+        text: "My grandchildren live in different countries and speak different languages. Now I can video call them and we all understand each other. It brings our family together!",
         avatar: "https://randomuser.me/api/portraits/women/68.jpg",
         rating: 5,
     },
@@ -127,44 +127,44 @@ const testimonials = [
 
 const faqs = [
     {
-        q: "How accurate is the Urdu to English translation?",
-        a: "AwazBridge achieves industry-leading 96%+ accuracy for Urdu-English translations through our proprietary AI models trained on over 100,000 hours of Pakistani dialect conversations. Our accuracy rate is continuously improving through machine learning and user feedback integration.",
+        q: "How many languages can I use with AwazBridge?",
+        a: "AwazBridge works with over 50 languages including Spanish, French, German, Japanese, Chinese, Arabic, Hindi, Portuguese, and many more. We're always adding new languages based on what our users need.",
     },
     {
-        q: "Which Urdu dialects and regional accents are supported?",
-        a: "We support all major Pakistani Urdu dialects including Karachi, Lahori, Peshawari, Multani, and standard Urdu. Our AI also recognizes Punjabi-influenced Urdu, Sindhi-influenced Urdu, and various regional accents across Pakistan and the diaspora.",
+        q: "Will it understand my accent?",
+        a: "Yes! Our technology is designed to understand different accents and ways of speaking. Whether you have a strong regional accent or speak softly, AwazBridge adapts to how you naturally talk.",
     },
     {
-        q: "Is AwazBridge suitable for professional business use?",
-        a: "Absolutely. Our Pro and Enterprise plans are specifically designed for business environments with features including call recording, meeting transcripts, GDPR compliance, enterprise-grade security, API integrations, and dedicated support for mission-critical communications.",
+        q: "Can I use this for work meetings?",
+        a: "Absolutely! Many people use AwazBridge for work meetings, client calls, and team discussions. Our Premium and Business plans have extra features like call recording and better security for professional use.",
     },
     {
-        q: "What is the real-time translation latency?",
-        a: "AwazBridge processes and translates speech in under 1.2 seconds on average, with optimizations bringing this down to 800ms for common phrases. This ensures natural conversation flow without awkward pauses between speakers.",
+        q: "How fast does the translation work?",
+        a: "The translation happens almost instantly - usually in less than 1.5 seconds. This means conversations flow naturally without long, awkward pauses between speakers.",
     },
     {
-        q: "How does AwazBridge preserve cultural context and nuances?",
-        a: "Our AI is specifically trained on cultural expressions, idioms, religious terms, and context-dependent phrases. We maintain a database of cultural mappings and employ semantic understanding to preserve meaning, tone, and cultural sensitivity in translations.",
+        q: "Does it just translate words or understand meaning too?",
+        a: "AwazBridge understands the real meaning behind what you say, including jokes, expressions, and cultural references. It's not just word-for-word translation - it captures what you actually mean.",
     },
     {
-        q: "Can I integrate AwazBridge with existing communication platforms?",
-        a: "Yes, we offer RESTful APIs and SDKs for integration with popular platforms like Zoom, Microsoft Teams, Slack, and custom applications. Our Enterprise plan includes white-label solutions and dedicated technical support for seamless integration.",
+        q: "Can I use this with Zoom, Teams, or other video call apps?",
+        a: "Yes! Our Business plan includes ways to connect AwazBridge with popular video calling apps like Zoom and Microsoft Teams. Just ask our support team for help setting it up.",
     },
     {
-        q: "What security measures are in place for sensitive conversations?",
-        a: "AwazBridge implements end-to-end encryption, SOC 2 Type II compliance, GDPR compliance, and zero-retention policies for sensitive data. Enterprise clients benefit from on-premise deployment options and custom security configurations.",
+        q: "Is my conversation private and secure?",
+        a: "Your privacy is very important to us. We use strong security measures to protect your calls, and we never store or share your personal conversations without your permission.",
     },
     {
-        q: "Is there a mobile app available?",
-        a: "Yes, AwazBridge is available on iOS and Android with full feature parity to our web platform. The mobile app includes offline mode for basic translation and automatic cloud sync across all devices.",
+        q: "Do you have a mobile app?",
+        a: "Yes! You can download AwazBridge on your iPhone or Android phone. It works just like the website version, so you can make translated video calls from anywhere.",
     },
     {
-        q: "How does billing work for team and enterprise accounts?",
-        a: "We offer flexible billing options including monthly/annual subscriptions, usage-based pricing, and custom enterprise contracts. Teams can manage user access, monitor usage analytics, and receive consolidated billing with detailed reporting.",
+        q: "How much does it cost for my team or business?",
+        a: "We have flexible pricing for teams and businesses. You can pay monthly, yearly, or we can create a custom plan based on how much you use it. Contact us to discuss what works best for you.",
     },
     {
-        q: "What kind of customer support do you provide?",
-        a: "Free users receive community support and help documentation. Pro users get priority email support with 24-hour response time. Enterprise clients receive dedicated account management, phone support, and 99.9% uptime SLA.",
+        q: "What if I need help or have problems?",
+        a: "We're here to help! Free users can email us and we'll respond within a few days. Premium users get faster responses, and Business users get dedicated support with quick phone and email help.",
     },
 ]
 
@@ -184,15 +184,15 @@ const HomePage: React.FC = () => {
                             <span className="text-lg font-semibold text-[#1e40af]">Bridge Every Voice</span>
                         </div>
                         <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 text-center md:text-left">
-                            <span className="text-[#1e40af]">اردو</span> ↔ <span className="text-[#22c55e]">English</span>
+                            <span className="text-[#1e40af]">Live Video Calls</span>
                             <br />
-                            <span className="text-[#1f2937] dark:text-white">Voice Bridge</span>
+                            <span className="text-[#22c55e]">🌍 Speak Any Language</span> <span className="text-[#1e40af]">↔</span> <span className="text-[#22c55e]">Understand All</span>
                         </h1>
                         <p className="text-lg md:text-xl text-[#64748b] dark:text-[#94a3b8] mb-8 max-w-xl text-center md:text-left">
-                            Break language barriers between Urdu and English speakers. Connect families, businesses, and communities with{" "}
+                            Talk to anyone in the world, even if you don't speak the same language. Video calls where everyone speaks their own language and understands each other perfectly.{" "}
                             <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#1e40af] to-[#22c55e]">
                                 AwazBridge
-                            </span> - where every voice finds its bridge.
+                            </span> makes it simple.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                             <Button
@@ -218,7 +218,7 @@ const HomePage: React.FC = () => {
                         <div className="flex items-center gap-6 mt-8 text-sm text-[#64748b] dark:text-[#94a3b8]">
                             <div className="flex items-center gap-2">
                                 <CheckCircle2 className="w-4 h-4 text-[#22c55e]" />
-                                <span>96%+ Accuracy</span>
+                                <span>50+ Languages</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <CheckCircle2 className="w-4 h-4 text-[#22c55e]" />
@@ -256,7 +256,7 @@ const HomePage: React.FC = () => {
                             About <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e40af] to-[#22c55e]">AwazBridge</span>
                         </h2>
                         <p className="text-xl text-[#64748b] dark:text-[#94a3b8] max-w-3xl mx-auto leading-relaxed">
-                            Bridging cultures, connecting communities, and breaking language barriers with cutting-edge AI technology designed specifically for Urdu and English speakers.
+                            Connecting people who speak different languages through simple, easy-to-use video calling technology. No complicated setup, no learning required.
                         </p>
                     </div>
 
@@ -265,10 +265,10 @@ const HomePage: React.FC = () => {
                             <div className="bg-gradient-to-br from-[#f8fafc] to-[#f1f5f9] dark:from-[#334155] dark:to-[#475569] rounded-2xl p-8 shadow-lg">
                                 <h3 className="text-2xl font-bold mb-6 text-[#1f2937] dark:text-white">Our Mission</h3>
                                 <p className="text-lg text-[#64748b] dark:text-[#94a3b8] mb-6 leading-relaxed">
-                                    AwazBridge was founded with a clear mission: to eliminate language barriers between Urdu and English speakers worldwide. We believe that language should never be a barrier to human connection, business opportunities, or access to information.
+                                    AwazBridge was created to solve a simple problem: helping people who speak different languages talk to each other easily. We believe everyone should be able to connect with family, friends, and colleagues without worrying about language differences.
                                 </p>
                                 <p className="text-lg text-[#64748b] dark:text-[#94a3b8] leading-relaxed">
-                                    Built by a diverse team of Pakistani and international engineers, linguists, and cultural experts, AwazBridge combines advanced AI with deep cultural understanding to create authentic communication experiences.
+                                    Our team includes people from many countries who understand what it's like to struggle with language barriers. We've made AwazBridge simple to use - just start a video call and talk naturally in your own language.
                                 </p>
                             </div>
                         </div>
@@ -317,9 +317,9 @@ const HomePage: React.FC = () => {
                             <div className="w-16 h-16 bg-gradient-to-r from-[#1e40af] to-[#22c55e] rounded-2xl flex items-center justify-center mx-auto mb-4">
                                 <MessageSquare className="w-8 h-8 text-white" />
                             </div>
-                            <h3 className="text-xl font-bold mb-3 text-[#1f2937] dark:text-white">Enterprise Ready</h3>
+                            <h3 className="text-xl font-bold mb-3 text-[#1f2937] dark:text-white">Works for Everyone</h3>
                             <p className="text-[#64748b] dark:text-[#94a3b8]">
-                                Trusted by Fortune 500 companies, NGOs, and government organizations for critical multilingual communications.
+                                Perfect for families staying in touch, businesses working internationally, and anyone who wants to connect with people who speak different languages.
                             </p>
                         </div>
 
@@ -327,9 +327,9 @@ const HomePage: React.FC = () => {
                             <div className="w-16 h-16 bg-gradient-to-r from-[#22c55e] to-[#16a34a] rounded-2xl flex items-center justify-center mx-auto mb-4">
                                 <Languages className="w-8 h-8 text-white" />
                             </div>
-                            <h3 className="text-xl font-bold mb-3 text-[#1f2937] dark:text-white">Cultural Intelligence</h3>
+                            <h3 className="text-xl font-bold mb-3 text-[#1f2937] dark:text-white">Smart & Natural</h3>
                             <p className="text-[#64748b] dark:text-[#94a3b8]">
-                                Beyond translation—our AI understands context, cultural nuances, and regional expressions for authentic communication.
+                                Our technology understands not just words, but the real meaning behind what you say - including jokes, expressions, and cultural references.
                             </p>
                         </div>
 
@@ -337,9 +337,9 @@ const HomePage: React.FC = () => {
                             <div className="w-16 h-16 bg-gradient-to-r from-[#1e40af] to-[#1d4ed8] rounded-2xl flex items-center justify-center mx-auto mb-4">
                                 <CheckCircle2 className="w-8 h-8 text-white" />
                             </div>
-                            <h3 className="text-xl font-bold mb-3 text-[#1f2937] dark:text-white">Continuous Innovation</h3>
+                            <h3 className="text-xl font-bold mb-3 text-[#1f2937] dark:text-white">Always Getting Better</h3>
                             <p className="text-[#64748b] dark:text-[#94a3b8]">
-                                Regular updates, new features, and performance improvements driven by user feedback and cutting-edge research.
+                                We regularly improve our service based on what our users tell us, making calls clearer and translations more accurate over time.
                             </p>
                         </div>
                     </div>
@@ -354,7 +354,7 @@ const HomePage: React.FC = () => {
                             Powerful <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e40af] to-[#22c55e]">Features</span>
                         </h2>
                         <p className="text-lg text-[#64748b] dark:text-[#94a3b8] max-w-2xl mx-auto">
-                            Experience the future of cross-language communication with features designed specifically for Urdu and English speakers.
+                            Simple video calling that lets everyone speak their own language and understand each other perfectly.
                         </p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -381,7 +381,7 @@ const HomePage: React.FC = () => {
                             Choose Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e40af] to-[#22c55e]">Bridge</span>
                         </h2>
                         <p className="text-lg text-[#64748b] dark:text-[#94a3b8] max-w-2xl mx-auto">
-                            Start free and scale as you grow. All plans include our core Urdu ↔ English voice bridging technology.
+                            Choose the plan that works for you. All plans let you talk in your language and be understood by others.
                         </p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -442,10 +442,10 @@ const HomePage: React.FC = () => {
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-5xl font-bold mb-6">
-                            What Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e40af] to-[#22c55e]">Bridge Builders</span> Say
+                            What People Are <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e40af] to-[#22c55e]">Saying</span>
                         </h2>
                         <p className="text-lg text-[#64748b] dark:text-[#94a3b8] max-w-2xl mx-auto">
-                            Join thousands of satisfied users who have transformed their communication with AwazBridge.
+                            Real stories from people who use AwazBridge to connect with family, friends, and colleagues around the world.
                         </p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -485,10 +485,10 @@ const HomePage: React.FC = () => {
                 <div className="max-w-5xl mx-auto px-4">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-5xl font-bold mb-6">
-                            Frequently Asked <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e40af] to-[#22c55e]">Questions</span>
+                            Common <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e40af] to-[#22c55e]">Questions</span>
                         </h2>
                         <p className="text-lg text-[#64748b] dark:text-[#94a3b8] max-w-3xl mx-auto">
-                            Get answers to common questions about AwazBridge's technology, pricing, security, and integration capabilities.
+                            Here are answers to questions people often ask about how AwazBridge works and what it can do for you.
                         </p>
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -514,14 +514,14 @@ const HomePage: React.FC = () => {
                     </div>
                     <div className="text-center mt-12">
                         <p className="text-[#64748b] dark:text-[#94a3b8] mb-4">
-                            Still have questions? Our support team is here to help.
+                            Have more questions? We'd love to help you out.
                         </p>
                         <Button
                             asChild
                             variant="outline"
                             className="border-2 border-[#1e40af] text-[#1e40af] hover:bg-[#1e40af] hover:text-white"
                         >
-                            <Link to="#contact">Contact Support</Link>
+                            <Link to="#contact">Ask Us Anything</Link>
                         </Button>
                     </div>
                 </div>
@@ -535,8 +535,8 @@ const HomePage: React.FC = () => {
                             Get in <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e40af] to-[#22c55e]">Touch</span>
                         </h2>
                         <p className="text-lg text-[#64748b] dark:text-[#94a3b8] max-w-3xl mx-auto leading-relaxed">
-                            Ready to bridge your communication gaps? Contact our multilingual team for personalized assistance,
-                            technical support, or to discuss enterprise solutions tailored to your needs.
+                            Ready to start talking with people around the world? Have questions about how it works?
+                            Our friendly team is here to help you get started or answer any questions you might have.
                         </p>
                     </div>
 
@@ -544,7 +544,7 @@ const HomePage: React.FC = () => {
                         {/* Contact Information */}
                         <div className="lg:col-span-1 space-y-8">
                             <div className="bg-white dark:bg-[#475569] rounded-2xl p-6 shadow-lg">
-                                <h3 className="text-xl font-bold mb-6 text-[#1f2937] dark:text-white">Contact Information</h3>
+                                <h3 className="text-xl font-bold mb-6 text-[#1f2937] dark:text-white">How to Reach Us</h3>
 
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-4">
@@ -552,7 +552,7 @@ const HomePage: React.FC = () => {
                                             <MessageSquare className="w-5 h-5 text-white" />
                                         </div>
                                         <div>
-                                            <p className="font-semibold text-[#1f2937] dark:text-white">General Inquiries</p>
+                                            <p className="font-semibold text-[#1f2937] dark:text-white">General Questions</p>
                                             <p className="text-[#64748b] dark:text-[#94a3b8]">hello@awazbridge.com</p>
                                         </div>
                                     </div>
@@ -562,7 +562,7 @@ const HomePage: React.FC = () => {
                                             <Headphones className="w-5 h-5 text-white" />
                                         </div>
                                         <div>
-                                            <p className="font-semibold text-[#1f2937] dark:text-white">Technical Support</p>
+                                            <p className="font-semibold text-[#1f2937] dark:text-white">Need Help?</p>
                                             <p className="text-[#64748b] dark:text-[#94a3b8]">support@awazbridge.com</p>
                                         </div>
                                     </div>
@@ -572,26 +572,26 @@ const HomePage: React.FC = () => {
                                             <Users className="w-5 h-5 text-white" />
                                         </div>
                                         <div>
-                                            <p className="font-semibold text-[#1f2937] dark:text-white">Enterprise Sales</p>
-                                            <p className="text-[#64748b] dark:text-[#94a3b8]">enterprise@awazbridge.com</p>
+                                            <p className="font-semibold text-[#1f2937] dark:text-white">Business Plans</p>
+                                            <p className="text-[#64748b] dark:text-[#94a3b8]">business@awazbridge.com</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="bg-white dark:bg-[#475569] rounded-2xl p-6 shadow-lg">
-                                <h3 className="text-xl font-bold mb-4 text-[#1f2937] dark:text-white">Response Times</h3>
+                                <h3 className="text-xl font-bold mb-4 text-[#1f2937] dark:text-white">How Quickly We Respond</h3>
                                 <div className="space-y-3 text-sm">
                                     <div className="flex justify-between">
                                         <span className="text-[#64748b] dark:text-[#94a3b8]">Free Plan:</span>
-                                        <span className="font-semibold text-[#1f2937] dark:text-white">48-72 hours</span>
+                                        <span className="font-semibold text-[#1f2937] dark:text-white">2-3 days</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-[#64748b] dark:text-[#94a3b8]">Pro Plan:</span>
-                                        <span className="font-semibold text-[#1f2937] dark:text-white">24 hours</span>
+                                        <span className="text-[#64748b] dark:text-[#94a3b8]">Premium Plan:</span>
+                                        <span className="font-semibold text-[#1f2937] dark:text-white">Same day</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-[#64748b] dark:text-[#94a3b8]">Enterprise:</span>
+                                        <span className="text-[#64748b] dark:text-[#94a3b8]">Business Plan:</span>
                                         <span className="font-semibold text-[#1f2937] dark:text-white">4-6 hours</span>
                                     </div>
                                 </div>
@@ -634,7 +634,7 @@ const HomePage: React.FC = () => {
                                             Message <span className="text-red-500">*</span>
                                         </label>
                                         <textarea
-                                            placeholder="Please provide details about your inquiry, including any specific requirements or questions you may have..."
+                                            placeholder="Tell us how we can help you, what questions you have, or what you'd like to know about AwazBridge..."
                                             rows={6}
                                             className="w-full rounded-xl px-4 py-3 border-2 border-[#e5e7eb] dark:border-[#64748b] focus:outline-none focus:border-[#1e40af] bg-white dark:bg-[#334155] text-[#1f2937] dark:text-white transition-all resize-none"
                                             required
@@ -649,7 +649,7 @@ const HomePage: React.FC = () => {
                                             required
                                         />
                                         <label htmlFor="privacy-consent" className="text-sm text-[#64748b] dark:text-[#94a3b8] leading-relaxed">
-                                            I agree to the <Link to="/privacy" className="text-[#1e40af] hover:underline">Privacy Policy</Link> and consent to the processing of my personal data for the purpose of responding to my inquiry.
+                                            I agree to the <Link to="/privacy" className="text-[#1e40af] hover:underline">Privacy Policy</Link> and I'm okay with you using my information to answer my questions.
                                         </label>
                                     </div>
 
