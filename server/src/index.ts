@@ -23,13 +23,6 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
     res.json({ msg: "Routes Working Perfectly" })
 })
-app.get("/translate", (req, res) => {
-    AITranslate("English", "Spanish", "Hello, how are you?").then(response => {
-        res.json(response)
-    }).catch(error => {
-        res.json(error)
-    })
-})
 
 app.use("/api/v1/auth", authRoutes);
 

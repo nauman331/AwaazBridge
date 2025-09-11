@@ -25,6 +25,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mongoose": "^5.11.96",
     "@types/nodemailer": "^6.4.17",
+    "@vitalets/google-translate-api": "^9.2.1",
     "bcryptjs": "^3.0.2",
     "child_process": "^1.0.2",
     "cors": "^2.8.5",
@@ -34,7 +35,6 @@
     "mongoose": "^8.16.4",
     "node-fetch": "^3.3.2",
     "nodemailer": "^7.0.5",
-    "openai": "^5.20.0",
     "socket.io": "^4.8.1",
     "zod": "^3.23.8"
   }
