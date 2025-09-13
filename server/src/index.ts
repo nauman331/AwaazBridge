@@ -20,11 +20,19 @@ const corsoptions = {
 app.use(cors(corsoptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use("/api/v1/auth", authRoutes);
+
 app.get("/", (req, res) => {
     res.json({ msg: "Routes Working Perfectly" })
 })
 
-app.use("/api/v1/auth", authRoutes);
+app.get("/translate", async (req, res) => {
+    AITranslate("en", "ur", "Hello, how are you?").then((translatedText) => {
+        res.json({ translatedText });
+    }).catch((error) => {
+        res.status(500).json({ error: "Translation failed" });
+    })
+})
 
 connectDB()
 

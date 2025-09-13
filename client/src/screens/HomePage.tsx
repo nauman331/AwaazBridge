@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import DashboardImg from "../assets/Dashboard.png"
 import { useSelector } from "react-redux"
+import TTS from "@/hooks/TTS"
 
 const features = [
     {
@@ -171,6 +172,16 @@ const faqs = [
 const HomePage: React.FC = () => {
     const { token } = useSelector((state: any) => state.auth)
 
+    const handleSpeak = (gender: 'male' | 'female' = 'female', language: 'en' | 'fr' | 'ur' = 'en') => {
+        const messages = {
+            en: "Welcome to AwazBridge, the ultimate solution for breaking language barriers in video calls. Start your free trial today and connect with anyone, anywhere in the world!",
+            fr: "Bienvenue sur AwazBridge, la solution ultime pour briser les barrières linguistiques lors des appels vidéo. Commencez votre essai gratuit aujourd'hui et connectez-vous avec n'importe qui, n'importe où dans le monde!",
+            ur: "اوازبرج میں خوش آمدید، ویڈیو کالز میں زبان کی رکاوٹوں کو توڑنے کا بہترین حل۔ آج ہی اپنا مفت ٹرائل شروع کریں اور دنیا میں کہیں بھی کسی سے بھی جڑیں!"
+        };
+
+        TTS(messages[language], { gender, language });
+    }
+
     return (
         <div className="flex flex-col min-h-screen bg-white text-[#1f2937] dark:bg-[#0f172a] dark:text-white">
             <Navbar />
@@ -195,15 +206,6 @@ const HomePage: React.FC = () => {
                             </span> makes it simple.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-                            <Button
-                                asChild
-                                size="lg"
-                                className="px-8 py-4 bg-gradient-to-r from-[#1e40af] to-[#1d4ed8] text-white border-0 shadow-lg hover:brightness-110 text-lg font-semibold"
-                            >
-                                <Link to={token ? "/user" : "/signup"}>
-                                    {token ? "Start Bridging" : "Try AwazBridge Free"}
-                                </Link>
-                            </Button>
                             {!token && (
                                 <Button
                                     asChild
@@ -214,6 +216,31 @@ const HomePage: React.FC = () => {
                                     <Link to="/login">Sign In</Link>
                                 </Button>
                             )}
+                            <div className="flex flex-col sm:flex-row gap-2">
+                                <Button
+                                    onClick={() => handleSpeak('female', 'en')}
+                                    size="lg"
+                                    className="px-6 py-4 bg-gradient-to-r from-[#1e40af] to-[#1d4ed8] text-white border-0 shadow-lg hover:brightness-110 text-sm font-semibold"
+                                >
+                                    Demo (Male/EN)
+                                </Button>
+                                <Button
+                                    onClick={() => handleSpeak('male', 'fr')}
+                                    size="lg"
+                                    variant="outline"
+                                    className="px-6 py-4 border-2 border-[#1e40af] text-[#1e40af] hover:bg-[#1e40af] hover:text-white text-sm font-semibold"
+                                >
+                                    Demo (Male/FR)
+                                </Button>
+                                <Button
+                                    onClick={() => handleSpeak('female', 'ur')}
+                                    size="lg"
+                                    variant="outline"
+                                    className="px-6 py-4 border-2 border-[#22c55e] text-[#22c55e] hover:bg-[#22c55e] hover:text-white text-sm font-semibold"
+                                >
+                                    Demo (Female/UR)
+                                </Button>
+                            </div>
                         </div>
                         <div className="flex items-center gap-6 mt-8 text-sm text-[#64748b] dark:text-[#94a3b8]">
                             <div className="flex items-center gap-2">
