@@ -3,7 +3,7 @@ import { languageMap } from "../utils/exports";
 
 interface TTSOptions {
     gender?: 'male' | 'female';
-    language?: 'en' | 'fr' | 'ur';
+    language?: string; // Changed to string to support more language codes
 }
 
 const TTS = (text: string, options: TTSOptions = {}) => {
@@ -17,7 +17,9 @@ const TTS = (text: string, options: TTSOptions = {}) => {
             utterance.rate = 0.9;
             utterance.pitch = gender === 'female' ? 1.2 : 0.8;
             utterance.volume = 0.8;
-            utterance.lang = languageMap[language];
+
+            // Use language map if available, otherwise use the language directly
+            utterance.lang = languageMap[language] || `${language}-US`;
 
             // Try to find a voice that matches gender and language preferences
             const voices = window.speechSynthesis.getVoices();
@@ -25,7 +27,7 @@ const TTS = (text: string, options: TTSOptions = {}) => {
             let preferredVoice = voices.find(voice => {
                 const voiceLang = voice.lang.toLowerCase();
                 const voiceName = voice.name.toLowerCase();
-                const matchesLanguage = voiceLang.startsWith(language);
+                const matchesLanguage = voiceLang.startsWith(language.toLowerCase());
                 const matchesGender = gender === 'female'
                     ? voiceName.includes('female') || voiceName.includes('woman') || !voiceName.includes('male')
                     : voiceName.includes('male') || voiceName.includes('man');
@@ -36,21 +38,21 @@ const TTS = (text: string, options: TTSOptions = {}) => {
             // Fallback: find any voice that matches the language
             if (!preferredVoice) {
                 preferredVoice = voices.find(voice =>
-                    voice.lang.toLowerCase().startsWith(language)
+                    voice.lang.toLowerCase().startsWith(language.toLowerCase())
                 );
             }
 
-            // Final fallback: find any voice that matches gender preference for English
-            if (!preferredVoice && language === 'en') {
+            // Final fallback: find any voice for common languages
+            if (!preferredVoice && ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'zh'].includes(language)) {
                 preferredVoice = voices.find(voice => {
                     const voiceName = voice.name.toLowerCase();
                     const voiceLang = voice.lang.toLowerCase();
-                    const isEnglish = voiceLang.startsWith('en');
+                    const matchesLanguage = voiceLang.includes(language) || voiceLang.startsWith(language);
                     const matchesGender = gender === 'female'
                         ? !voiceName.includes('male') || voiceName.includes('female')
                         : voiceName.includes('male');
 
-                    return isEnglish && matchesGender;
+                    return matchesLanguage && matchesGender;
                 });
             }
 
@@ -61,7 +63,8 @@ const TTS = (text: string, options: TTSOptions = {}) => {
             window.speechSynthesis.speak(utterance);
 
         } catch (error) {
-            toast.error("Browser speech synthesis failed");
+            console.error('TTS Error:', error);
+            toast.error("Speech synthesis failed");
         }
     } else {
         console.warn("No TTS service available");

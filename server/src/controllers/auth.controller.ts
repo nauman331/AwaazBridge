@@ -5,11 +5,13 @@ import { sendOTPEmail } from "../utils/lib";
 
 const registerUser = async (req: Request, res: Response): Promise<Response> => {
     try {
-        const { name, email, password, language }: IUser = req.body;
-        if (!name || !email || !password || !language)
+        const { name, email, password, language, phone }: IUser = req.body;
+        if (!name || !email || !password || !language || !phone)
             return res.status(400).json({ message: "All fields are required", isOk: false });
         if (await User.findOne({ email }))
-            return res.status(400).json({ message: "User already exists", isOk: false });
+            return res.status(400).json({ message: "Email already exists", isOk: false });
+        if (await User.findOne({ phone }))
+            return res.status(400).json({ message: "Phone number already exists", isOk: false });
 
         const otp = generateOTP();
         const hashedPassword = await hashPassword(password);
@@ -25,8 +27,8 @@ const registerUser = async (req: Request, res: Response): Promise<Response> => {
             otp,
             otpExpiresAt: otpExpiresAt(),
             isActive: false,
-            companyId: null,
-            language
+            language,
+            phone
         }).save();
 
         return res.status(201).json({ message: "User registered successfully", isOk: true });

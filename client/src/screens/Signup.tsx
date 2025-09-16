@@ -7,7 +7,7 @@ import Footer from "@/components/Footer"
 import Select from "react-select"
 import type { SingleValue } from "react-select"
 import ISO6391 from "iso-639-1";
-import { User, Mail, Lock, Globe } from "lucide-react"
+import { User, Mail, Lock, Globe, Phone } from "lucide-react"
 import Logo from "@/components/Logo"
 import { useGoogleLogin } from '@react-oauth/google';
 import type { SubmitHandler } from "react-hook-form"
@@ -22,6 +22,7 @@ import { RoleNavigation } from "../utils/Role"
 type FormData = {
     name: string;
     email: string;
+    phone: string;
     password: string;
     language: string;
 }
@@ -56,7 +57,11 @@ const Signup: React.FC = () => {
             setError("language", { type: "required", message: "Language is required" });
             return;
         }
-        mutate({ ...formData, language: selectedLanguage.value });
+        mutate({
+            ...formData,
+            phone: String(formData.phone),
+            language: selectedLanguage.value
+        });
     }
 
     useEffect(() => {
@@ -134,6 +139,22 @@ const Signup: React.FC = () => {
                                 style={{ border: errors.email && "2px solid red" }}
                                 {...register("email", { required: "Email is required" })}
                                 className={`pl-10 bg-white dark:bg-[#334155] text-[#1f2937] dark:text-white border border-[#1e40af]/40 dark:border-[#22c55e]/30 rounded-lg transition-all ${errors.email ? 'placeholder:text-red-500' : ''}`}
+                            />
+                        </div>
+                        <div className="relative">
+                            <Phone className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${errors.phone ? 'text-red-500' : 'text-[#1e40af]'}`} />
+                            <Input
+                                type="tel"
+                                placeholder={errors.phone ? errors.phone.message : "Phone Number"}
+                                style={{ border: errors.phone && "2px solid red" }}
+                                {...register("phone", {
+                                    required: "Phone number is required",
+                                    pattern: {
+                                        value: /^[+]?[\d\s\-\(\)]{10,}$/,
+                                        message: "Invalid phone number format"
+                                    }
+                                })}
+                                className={`pl-10 bg-white dark:bg-[#334155] text-[#1f2937] dark:text-white border border-[#1e40af]/40 dark:border-[#22c55e]/30 rounded-lg transition-all ${errors.phone ? 'placeholder:text-red-500' : ''}`}
                             />
                         </div>
                         <div className="relative">

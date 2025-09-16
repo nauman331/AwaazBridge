@@ -222,7 +222,7 @@ const HomePage: React.FC = () => {
                                     size="lg"
                                     className="px-6 py-4 bg-gradient-to-r from-[#1e40af] to-[#1d4ed8] text-white border-0 shadow-lg hover:brightness-110 text-sm font-semibold"
                                 >
-                                    Demo (Male/EN)
+                                    Demo (Female/EN)
                                 </Button>
                                 <Button
                                     onClick={() => handleSpeak('male', 'fr')}
