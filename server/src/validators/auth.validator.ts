@@ -10,7 +10,6 @@ export const registerSchema = z.object({
     email: z.string().email("Invalid email format"),
     password: z.string().min(6, "Password must be at least 6 characters long"),
     phone: z.string().min(10, "Phone number must be at least 10 characters long"),
-    language: z.string().min(2, "Language must be at least 2 characters long"),
 })
 
 export const verifyOTPSchema = z.object({
@@ -21,4 +20,9 @@ export const resetPasswordSchema = z.object({
     otp: z.string().length(6, "OTP must be exactly 6 characters long"),
     email: z.string().email("Invalid email format"),
     password: z.string().min(6, "Password must be at least 6 characters long"),
+})
+
+export const googleLoginSchema = z.object({
+    access_token: z.string().min(1, "Access token is required"),
+    phone: z.string().min(10, "Phone number must be at least 10 characters long"),
 })

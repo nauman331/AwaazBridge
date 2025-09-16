@@ -4,10 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Link, useNavigate } from "react-router-dom"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
-import Select from "react-select"
-import type { SingleValue } from "react-select"
-import ISO6391 from "iso-639-1";
-import { User, Mail, Lock, Globe, Phone } from "lucide-react"
+import { User, Mail, Lock, Phone } from "lucide-react"
 import Logo from "@/components/Logo"
 import { useGoogleLogin } from '@react-oauth/google';
 import type { SubmitHandler } from "react-hook-form"
@@ -24,43 +21,23 @@ type FormData = {
     email: string;
     phone: string;
     password: string;
-    language: string;
 }
-
-interface LanguageOption {
-    value: string;
-    label: string;
-}
-
-
 
 const Signup: React.FC = () => {
     const { mutate, isPending, error, data, isSuccess } = useSubmit('auth/register', false, 'register');
     const { mutate: googleLogin, isPending: isGoogleLoginPending, error: googleLoginError, data: googleLoginData, isSuccess: isGoogleLoginSuccess } = useSubmit('auth/google-login', false, 'google-login');
-    const { register, handleSubmit, formState: { errors }, setError, clearErrors } = useForm<FormData>()
+    const { register, handleSubmit, formState: { errors } } = useForm<FormData>()
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const [selectedLanguage, setSelectedLanguage] = useState<LanguageOption | null>(null);
+    const [googlePhone, setGooglePhone] = useState("");
+    const [googleFormErrors, setGoogleFormErrors] = useState<{ phone?: string }>({});
+    const [registeredEmail, setRegisteredEmail] = useState<string>("");
 
-    const options: LanguageOption[] = ISO6391.getAllCodes().map((code) => ({
-        value: code,
-        label: ISO6391.getName(code),
-    }));
-    const handleChange = (option: SingleValue<LanguageOption>) => {
-        setSelectedLanguage(option);
-        if (option) {
-            clearErrors("language");
-        }
-    };
     const handleRegister: SubmitHandler<FormData> = async (formData) => {
-        if (!selectedLanguage) {
-            setError("language", { type: "required", message: "Language is required" });
-            return;
-        }
+        setRegisteredEmail(formData.email);
         mutate({
             ...formData,
             phone: String(formData.phone),
-            language: selectedLanguage.value
         });
     }
 
@@ -68,20 +45,25 @@ const Signup: React.FC = () => {
         if (isSuccess && data) {
             toast.success("Registration successful! Welcome.");
             dispatch(setToken(data.token));
-            navigate(RoleNavigation("User"));
+            navigate("/verify-otp", { state: { email: registeredEmail } });
         }
         if (error) {
             toast.error(error.message || "Registration failed. Please try again.");
         }
-    }, [isSuccess, data, error, dispatch, navigate]);
+    }, [isSuccess, data, error, dispatch, navigate, registeredEmail]);
 
     const doGoogleLogin = useGoogleLogin({
         onSuccess: (response) => {
-            if (selectedLanguage) {
-                googleLogin({ access_token: response.access_token, language: selectedLanguage.value });
-            } else {
-                setError("language", { type: "required", message: "Language is required" });
+            // Validate phone before proceeding
+            if (!googlePhone || googlePhone.length < 10) {
+                setGoogleFormErrors({ phone: "Phone number is required and must be at least 10 characters" });
+                return;
             }
+
+            googleLogin({
+                access_token: response.access_token,
+                phone: googlePhone
+            });
         },
         onError: () => {
             toast.error("Google login failed. Please try again.");
@@ -89,10 +71,13 @@ const Signup: React.FC = () => {
     });
 
     const handleGoogleLogin = () => {
-        if (!selectedLanguage) {
-            setError("language", { type: "required", message: "Language is required" });
+        // Validate phone field before even starting Google login
+        if (!googlePhone || googlePhone.length < 10) {
+            setGoogleFormErrors({ phone: "Please enter your phone number first" });
+            toast.error("Please fill in phone number before using Google signup");
             return;
         }
+
         doGoogleLogin();
     }
 
@@ -158,48 +143,6 @@ const Signup: React.FC = () => {
                             />
                         </div>
                         <div className="relative">
-                            <Globe className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 z-10 ${errors.language ? 'text-red-500' : 'text-[#1e40af]'}`} />
-                            <Select
-                                options={options}
-                                value={selectedLanguage}
-                                onChange={handleChange}
-                                placeholder={errors.language ? errors.language.message : "I Speak..."}
-                                isSearchable
-                                className="text-[#1f2937] dark:text-white"
-                                styles={{
-                                    control: (base, state) => ({
-                                        ...base,
-                                        paddingLeft: '2.5rem',
-                                        backgroundColor: 'white',
-                                        borderColor: errors.language ? 'red' : state.isFocused ? '#1e40af' : '#1e40af66',
-                                        borderWidth: errors.language ? '2px' : '1px',
-                                        borderRadius: '0.5rem',
-                                        boxShadow: 'none',
-                                        '&:hover': {
-                                            borderColor: errors.language ? 'red' : '#1e40af',
-                                        },
-                                    }),
-                                    placeholder: (base) => ({
-                                        ...base,
-                                        color: errors.language ? 'red' : '#64748b',
-                                    }),
-                                    singleValue: (base) => ({
-                                        ...base,
-                                        color: '#1f2937',
-                                    }),
-                                    menu: (base) => ({
-                                        ...base,
-                                        backgroundColor: 'white',
-                                    }),
-                                    option: (base, state) => ({
-                                        ...base,
-                                        backgroundColor: state.isSelected ? '#1e40af' : state.isFocused ? '#f0f9ff' : 'white',
-                                        color: state.isSelected ? 'white' : '#1f2937',
-                                    })
-                                }}
-                            />
-                        </div>
-                        <div className="relative">
                             <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${errors.password ? 'text-red-500' : 'text-[#1e40af]'}`} />
                             <Input
                                 type="password"
@@ -223,6 +166,26 @@ const Signup: React.FC = () => {
                         <span className="flex-1 h-px bg-[#1e40af]/30 dark:bg-[#22c55e]/20"></span>
                         <span className="mx-3 text-muted-foreground text-xs font-medium">or</span>
                         <span className="flex-1 h-px bg-[#1e40af]/30 dark:bg-[#22c55e]/20"></span>
+                    </div>
+
+                    {/* Phone field for Google signup */}
+                    <div className="w-full space-y-4 mb-4">
+                        <div className="relative">
+                            <Phone className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${googleFormErrors.phone ? 'text-red-500' : 'text-[#1e40af]'}`} />
+                            <Input
+                                type="tel"
+                                placeholder={googleFormErrors.phone || "Phone Number (for Google signup)"}
+                                value={googlePhone}
+                                onChange={(e) => {
+                                    setGooglePhone(e.target.value);
+                                    if (e.target.value.length >= 10) {
+                                        setGoogleFormErrors({});
+                                    }
+                                }}
+                                style={{ border: googleFormErrors.phone && "2px solid red" }}
+                                className={`pl-10 bg-white dark:bg-[#334155] text-[#1f2937] dark:text-white border border-[#1e40af]/40 dark:border-[#22c55e]/30 rounded-lg transition-all ${googleFormErrors.phone ? 'placeholder:text-red-500' : ''}`}
+                            />
+                        </div>
                     </div>
 
                     <Button

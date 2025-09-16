@@ -15,7 +15,6 @@ import { toast } from "sonner"
 import useSubmit from "@/hooks/useSubmit"
 import { RoleNavigation } from "../utils/Role"
 
-
 type FormData = {
     email: string;
     password: string;
@@ -45,7 +44,11 @@ const Login: React.FC = () => {
 
     const handleGoogleLogin = useGoogleLogin({
         onSuccess: (tokenResponse) => {
-            googleLogin({ access_token: tokenResponse.access_token });
+            // For login, only send access token and phone
+            googleLogin({
+                access_token: tokenResponse.access_token,
+                phone: "" // Empty phone for existing users
+            });
         },
         onError: () => {
             toast.error("Google login failed");
@@ -111,12 +114,14 @@ const Login: React.FC = () => {
                             {isPending ? "Signing in..." : "Login"}
                         </Button>
                     </form>
+
                     {/* Divider */}
                     <div className="flex items-center w-full my-5">
                         <span className="flex-1 h-px bg-[#1e40af]/30 dark:bg-[#22c55e]/20"></span>
                         <span className="mx-3 text-muted-foreground text-xs font-medium">or</span>
                         <span className="flex-1 h-px bg-[#1e40af]/30 dark:bg-[#22c55e]/20"></span>
                     </div>
+
                     {/* Google Button */}
                     <Button
                         onClick={() => handleGoogleLogin()}
@@ -135,6 +140,7 @@ const Login: React.FC = () => {
                         </svg>
                         {isGoogleLoginPending ? "Signing in..." : "Login with Google"}
                     </Button>
+
                     {/* Links */}
                     <div className="flex justify-between mt-6 text-sm w-full">
                         <Link to="/forgot-password" className="text-[#1e40af] hover:underline font-semibold">Forgot password?</Link>

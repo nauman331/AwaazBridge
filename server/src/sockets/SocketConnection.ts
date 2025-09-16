@@ -1,5 +1,4 @@
 import { Server, Socket } from "socket.io";
-import { AITranslate } from "../config/openAI";
 
 export const SocketConnection = (io: Server) => {
     io.on("connection", (socket: Socket) => {
@@ -44,41 +43,6 @@ export const SocketConnection = (io: Server) => {
         socket.on("ice-candidate", (data) => {
             if (data.candidate && data.to) {
                 io.to(data.to).emit("ice-candidate", data);
-            }
-        });
-
-        // Handle translation requests
-        socket.on("translateText", async (data) => {
-            try {
-                if (!data.text || !data.fromLang || !data.toLang || !data.to) {
-                    socket.emit("translationError", "Missing required translation data");
-                    return;
-                }
-
-                const translatedText = await AITranslate(data.fromLang, data.toLang, data.text);
-
-                // Send translation to the requesting socket
-                socket.emit("translationResult", {
-                    id: data.id,
-                    original: data.text,
-                    translated: translatedText,
-                    fromLang: data.fromLang,
-                    toLang: data.toLang,
-                    timestamp: new Date()
-                });
-
-                // Send translation to the other participant
-                io.to(data.to).emit("translation", {
-                    original: data.text,
-                    translated: translatedText,
-                    fromLang: data.fromLang,
-                    toLang: data.toLang,
-                    timestamp: new Date(),
-                    from: socket.id
-                });
-            } catch (error) {
-                console.error("Translation error:", error);
-                socket.emit("translationError", "Translation failed");
             }
         });
 

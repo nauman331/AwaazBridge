@@ -2,7 +2,6 @@ import {
     Video,
     Bell,
     User,
-    Phone,
     History,
     Home,
     Users,
@@ -12,8 +11,8 @@ import {
     MessageSquare
 } from 'lucide-react'
 
-export const backendUrl = "https://finance-fire-svpq.vercel.app/api/v1/";
-// export const backendUrl = "http://localhost:5000/api/v1/";
+// export const backendUrl = "https://finance-fire-svpq.vercel.app/api/v1/";
+export const backendUrl = "http://localhost:5000/api/v1/";
 export const socketUrl = "http://localhost:5000";
 // export const socketUrl = "https://finance-fire-svpq.vercel.app";
 

@@ -5,8 +5,8 @@ import { sendOTPEmail } from "../utils/lib";
 
 const registerUser = async (req: Request, res: Response): Promise<Response> => {
     try {
-        const { name, email, password, language, phone }: IUser = req.body;
-        if (!name || !email || !password || !language || !phone)
+        const { name, email, password, phone }: IUser = req.body;
+        if (!name || !email || !password || !phone)
             return res.status(400).json({ message: "All fields are required", isOk: false });
         if (await User.findOne({ email }))
             return res.status(400).json({ message: "Email already exists", isOk: false });
@@ -27,7 +27,6 @@ const registerUser = async (req: Request, res: Response): Promise<Response> => {
             otp,
             otpExpiresAt: otpExpiresAt(),
             isActive: false,
-            language,
             phone
         }).save();
 
@@ -142,10 +141,11 @@ const resetPassword = async (req: Request, res: Response): Promise<Response> => 
 
 const GoogleLoginController = async (req: Request, res: Response): Promise<Response> => {
     try {
-        const { access_token, language } = req.body;
+        const { access_token, phone } = req.body;
         if (!access_token) {
             return res.status(400).json({ message: "Access token is required", isOk: false });
         }
+
         const googleRes = await fetch(
             `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${access_token}`,
             {
@@ -161,23 +161,36 @@ const GoogleLoginController = async (req: Request, res: Response): Promise<Respo
         if (!email) {
             return res.status(400).json({ message: "Google account does not have an email", isOk: false });
         }
+
         let user = await User.findOne({ email });
         if (!user) {
-            // Use provided language or default to "English"
-            const userLanguage = language || "en";
+            // For new users, require phone only
+            if (!phone) {
+                return res.status(400).json({ message: "Phone number is required for new users", isOk: false });
+            }
+
+            // Check if phone number already exists
+            const existingPhoneUser = await User.findOne({ phone });
+            if (existingPhoneUser) {
+                return res.status(400).json({ message: "Phone number already exists", isOk: false });
+            }
+
             user = new User({
                 name,
                 email,
                 picture,
-                language: userLanguage,
                 googleId,
                 isActive: true,
+                phone
             });
             await user.save();
         }
+        // For existing users, login directly without requiring phone
+
         const token = signToken({ userId: (user._id as string | { toString(): string }).toString(), role: user.role });
         return res.status(200).json({ token, userId: user._id, role: user.role, isOk: true });
     } catch (error) {
+        console.error("Google login error:", error);
         return res.status(500).json({ message: "Internal server error", isOk: false });
     }
 }
@@ -204,12 +217,7 @@ const updateProfile = async (req: Request, res: Response): Promise<Response> => 
         if (!userID) {
             return res.status(401).json({ message: "Unauthorized", isOk: false });
         }
-        const { name,
-            email,
-            password,
-            picture,
-            phone,
-            language, }: IUser = req.body;
+        const { name, email, password, picture, phone }: IUser = req.body;
         const user = await User.findById(userID);
         if (!user) {
             return res.status(404).json({ message: "User not found", isOk: false });
@@ -217,7 +225,6 @@ const updateProfile = async (req: Request, res: Response): Promise<Response> => 
         user.name = name || user.name;
         user.email = email || user.email;
         user.phone = phone || user.phone;
-        user.language = language || user.language;
         user.picture = picture || user.picture;
         user.password = password ? await hashPassword(password) : user.password;
         await user.save();
