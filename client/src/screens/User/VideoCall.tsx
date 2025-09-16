@@ -199,7 +199,7 @@ const VideoCall: React.FC = () => {
                     setCurrentTranscript(result.transcript);
 
                     if (result.isFinal && result.transcript.trim()) {
-                        handleTranslation(result.transcript, myLanguage.value, targetLanguage.value, true);
+                        handleTranslation(result.transcript, myLanguage.value, targetLanguage.value);
                         setCurrentTranscript('');
                     }
                 },
@@ -229,7 +229,7 @@ const VideoCall: React.FC = () => {
         };
     }, [isTranslationActive, isListening, myLanguage.value, targetLanguage.value]);
 
-    const handleTranslation = async (text: string, fromLang: string, toLang: string, isSent: boolean) => {
+    const handleTranslation = async (text: string, fromLang: string, toLang: string) => {
         if (!socket || !text.trim()) return;
 
         try {
