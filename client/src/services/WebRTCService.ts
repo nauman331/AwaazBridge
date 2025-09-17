@@ -12,6 +12,8 @@ export interface CallData {
 export interface AnswerData {
     to: string;
     signal: any;
+    fromLang: string;
+    toLang: string;
 }
 
 export class WebRTCService {
@@ -19,7 +21,7 @@ export class WebRTCService {
     private localStream: MediaStream | null = null;
     private remoteStream: MediaStream | null = null;
     private socket: Socket;
-    private remotePhoneNumber: string | null = null;
+    private onRemoteStreamCallback: ((stream: MediaStream) => void) | null = null;
 
     constructor(socket: Socket) {
         this.socket = socket;
@@ -37,16 +39,22 @@ export class WebRTCService {
 
         this.peerConnection.onicecandidate = (event) => {
             if (event.candidate) {
-                // Send ice candidate to peer through socket
                 this.socket.emit('ice-candidate', {
-                    candidate: event.candidate
+                    candidate: event.candidate,
                 });
             }
         };
 
         this.peerConnection.ontrack = (event) => {
             this.remoteStream = event.streams[0];
+            if (this.onRemoteStreamCallback) {
+                this.onRemoteStreamCallback(this.remoteStream);
+            }
         };
+    }
+
+    onRemoteStream(callback: (stream: MediaStream) => void) {
+        this.onRemoteStreamCallback = callback;
     }
 
     async getUserMedia(): Promise<MediaStream> {
@@ -57,7 +65,6 @@ export class WebRTCService {
             });
             this.localStream = stream;
 
-            // Add local stream tracks to peer connection
             if (this.peerConnection) {
                 stream.getTracks().forEach(track => {
                     this.peerConnection!.addTrack(track, stream);
@@ -81,7 +88,7 @@ export class WebRTCService {
     async createAnswer(offer: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
         if (!this.peerConnection) throw new Error('Peer connection not initialized');
 
-        await this.peerConnection.setRemoteDescription(offer);
+        await this.peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
         const answer = await this.peerConnection.createAnswer();
         await this.peerConnection.setLocalDescription(answer);
         return answer;
@@ -89,17 +96,16 @@ export class WebRTCService {
 
     async handleAnswer(answer: RTCSessionDescriptionInit) {
         if (!this.peerConnection) throw new Error('Peer connection not initialized');
-        await this.peerConnection.setRemoteDescription(answer);
+        await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
     }
 
     async handleIceCandidate(candidate: RTCIceCandidateInit) {
         if (this.peerConnection) {
-            await this.peerConnection.addIceCandidate(candidate);
+            await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
         }
     }
 
     callUser(callData: CallData) {
-        this.remotePhoneNumber = callData.phone;
         this.socket.emit('callUser', callData);
     }
 
@@ -114,15 +120,13 @@ export class WebRTCService {
     endCall() {
         if (this.peerConnection) {
             this.peerConnection.close();
-            this.peerConnection = null;
         }
 
         if (this.localStream) {
             this.localStream.getTracks().forEach(track => track.stop());
             this.localStream = null;
         }
-
-        this.remotePhoneNumber = null;
+        this.remoteStream = null;
         this.socket.emit('callEnded');
         this.initializePeerConnection();
     }
@@ -130,14 +134,12 @@ export class WebRTCService {
     getLocalStream(): MediaStream | null {
         return this.localStream;
     }
+    // ...existing code...
 
     getRemoteStream(): MediaStream | null {
         return this.remoteStream;
     }
 
-    getRemotePhoneNumber(): string | null {
-        return this.remotePhoneNumber;
-    }
 
     toggleVideo(enabled: boolean) {
         if (this.localStream) {

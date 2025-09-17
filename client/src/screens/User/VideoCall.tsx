@@ -1,30 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import Select from "react-select"
-import type { SingleValue } from "react-select"
-import {
-    Video,
-    VideoOff,
-    Mic,
-    MicOff,
-    Phone,
-    PhoneCall,
-    PhoneOff,
-    Languages,
-    Volume2,
-    VolumeX,
-    MessageCircle,
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { io, Socket } from 'socket.io-client'
-import { WebRTCService } from '../../services/WebRTCService'
-import TTS from '../../hooks/TTS'
-import ISO6391 from 'iso-639-1'
-import { socketUrl } from '../../utils/exports'
+import React, { useState, useEffect, useRef } from 'react';
+import { io, Socket } from 'socket.io-client';
+import { toast } from 'sonner';
+import { WebRTCService } from '../../services/WebRTCService';
+import STT from '../../hooks/STT';
+import TTS from '../../hooks/TTS';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Phone, PhoneOff, Video, VideoOff, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import Select from 'react-select';
+import type { SingleValue } from 'react-select';
+import ISO6391 from 'iso-639-1';
+import { socketUrl } from '../../utils/exports';
 
 interface TranslationMessage {
     id: string;
@@ -52,19 +39,24 @@ const VideoCall: React.FC = () => {
     const [callAccepted, setCallAccepted] = useState(false);
 
     // Media states
+    const [localStream, setLocalStream] = useState<MediaStream | null>(null);
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
     const [videoEnabled, setVideoEnabled] = useState(true);
     const [audioEnabled, setAudioEnabled] = useState(true);
     const [speakerEnabled, setSpeakerEnabled] = useState(true);
 
-    // Only translated language and call setup state needed
+    // Translation and call setup state
+    const [myLanguage, setMyLanguage] = useState<LanguageOption | null>({ value: 'en', label: 'English' });
     const [targetLanguage, setTargetLanguage] = useState<LanguageOption | null>(null);
+    const [translations, setTranslations] = useState<TranslationMessage[]>([]);
+    const [isListening, setIsListening] = useState(false);
     const [showCallSetup, setShowCallSetup] = useState(false);
     const [step, setStep] = useState<'idle' | 'language' | 'callerId'>('idle');
 
     // Refs
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
+    const sttRef = useRef<any>(null);
 
     // Language options
     const languageOptions: LanguageOption[] = ISO6391.getAllCodes().map(code => ({
@@ -74,7 +66,9 @@ const VideoCall: React.FC = () => {
 
     // Initialize socket connection
     useEffect(() => {
-        const newSocket = io(socketUrl);
+        const newSocket = io(socketUrl, {
+            transports: ['websocket'],
+        });
         setSocket(newSocket);
 
         newSocket.on('me', (id: string) => {
@@ -86,13 +80,6 @@ const VideoCall: React.FC = () => {
             setIncomingCall(data);
         });
 
-        newSocket.on('callAccepted', (signal: any) => {
-            setCallAccepted(true);
-            if (webRTC) {
-                webRTC.handleAnswer(signal);
-            }
-        });
-
         newSocket.on('callRejected', () => {
             toast.error('Call was rejected');
             endCall();
@@ -102,18 +89,55 @@ const VideoCall: React.FC = () => {
             endCall();
         });
 
-
-
         return () => {
             newSocket.disconnect();
         };
-    }, [speakerEnabled]);
+    }, []);
+
+    // Socket event listeners that depend on other states
+    useEffect(() => {
+        if (!socket || !webRTC) return;
+
+        const handleCallAccepted = (signal: any) => {
+            setCallAccepted(true);
+            if (webRTC) {
+                webRTC.handleAnswer(signal);
+            }
+        };
+
+        const handleTranslation = (data: any) => {
+            if (speakerEnabled) {
+                TTS(data.translated, { language: data.toLang });
+            }
+            setTranslations(prev => [...prev, { ...data, isSent: false, id: `trans-${Date.now()}` }]);
+        };
+
+        const handleIceCandidate = (candidate: any) => {
+            if (webRTC) {
+                webRTC.handleIceCandidate(candidate);
+            }
+        };
+
+        socket.on('callAccepted', handleCallAccepted);
+        socket.on('translation', handleTranslation);
+        socket.on('ice-candidate', handleIceCandidate);
+
+        return () => {
+            socket.off('callAccepted', handleCallAccepted);
+            socket.off('translation', handleTranslation);
+            socket.off('ice-candidate', handleIceCandidate);
+        };
+    }, [socket, webRTC, speakerEnabled]);
 
     // Initialize WebRTC when socket is ready
     useEffect(() => {
         if (socket && !webRTC) {
             const rtcService = new WebRTCService(socket);
             setWebRTC(rtcService);
+
+            rtcService.onRemoteStream((stream) => {
+                setRemoteStream(stream);
+            });
         }
     }, [socket]);
 
@@ -123,7 +147,7 @@ const VideoCall: React.FC = () => {
             if (webRTC) {
                 try {
                     const stream = await webRTC.getUserMedia();
-
+                    setLocalStream(stream);
                     if (localVideoRef.current) {
                         localVideoRef.current.srcObject = stream;
                     }
@@ -144,9 +168,56 @@ const VideoCall: React.FC = () => {
     }, [remoteStream]);
 
     // Initialize STT
-    // Translation and STT logic removed for this step-by-step call flow
+    useEffect(() => {
+        if (callAccepted && myLanguage) {
+            const stt = STT({ language: myLanguage.value, continuous: true, interimResults: true }, {
+                onResult: ({ transcript, isFinal }) => {
+                    if (isFinal) {
+                        handleTranslation(transcript);
+                    }
+                },
+                onEnd: () => setIsListening(false),
+                onError: (err) => toast.error(err)
+            });
 
-    // handleTranslation removed for this step-by-step call flow
+            if (stt) {
+                sttRef.current = stt;
+                stt.start();
+                setIsListening(true);
+            }
+        } else {
+            if (sttRef.current) {
+                sttRef.current.stop();
+                sttRef.current = null;
+            }
+        }
+
+        return () => {
+            if (sttRef.current) {
+                sttRef.current.stop();
+            }
+        };
+    }, [callAccepted, myLanguage]);
+
+    const handleTranslation = (text: string) => {
+        if (socket && webRTC && myLanguage && targetLanguage) {
+            const payload = {
+                text,
+                fromLang: myLanguage.value,
+                toLang: targetLanguage.value,
+            };
+            socket.emit('translation', payload);
+            setTranslations(prev => [...prev, {
+                id: `trans-${Date.now()}`,
+                original: text,
+                translated: '...',
+                fromLang: myLanguage.value,
+                toLang: targetLanguage.value,
+                timestamp: new Date(),
+                isSent: true
+            }]);
+        }
+    };
 
     const callUser = async () => {
         if (!webRTC || !callerId.trim()) {
@@ -163,7 +234,7 @@ const VideoCall: React.FC = () => {
                 phone: callerId,
                 signalData: offer,
                 from: myId,
-                fromLang: 'en', // default or detected
+                fromLang: myLanguage?.value || 'en',
                 toLang: targetLanguage.value
             });
         } catch (error) {
@@ -172,16 +243,22 @@ const VideoCall: React.FC = () => {
     };
 
     const answerCall = async () => {
-        if (!webRTC || !incomingCall) return;
+        if (!webRTC || !incomingCall || !myLanguage) {
+            toast.error("Please select a language first.");
+            return
+        };
 
         try {
             const answer = await webRTC.createAnswer(incomingCall.signal);
 
             webRTC.answerCall({
                 to: incomingCall.from,
-                signal: answer
+                signal: answer,
+                fromLang: myLanguage.value,
+                toLang: incomingCall.fromLang
             });
 
+            setTargetLanguage({ value: incomingCall.fromLang, label: ISO6391.getName(incomingCall.fromLang) });
             setCallAccepted(true);
             setIncomingCall(null);
         } catch (error) {
@@ -200,10 +277,14 @@ const VideoCall: React.FC = () => {
         if (webRTC) {
             webRTC.endCall();
         }
-
+        if (sttRef.current) {
+            sttRef.current.stop();
+        }
         setCallAccepted(false);
         setIncomingCall(null);
         setRemoteStream(null);
+        setTranslations([]);
+        setIsListening(false);
     };
 
     const toggleVideo = () => {
@@ -219,10 +300,20 @@ const VideoCall: React.FC = () => {
             const newState = !audioEnabled;
             webRTC.toggleAudio(newState);
             setAudioEnabled(newState);
+            if (newState && callAccepted && sttRef.current) {
+                sttRef.current.start();
+            } else if (!newState && sttRef.current) {
+                sttRef.current.stop();
+            }
         }
     };
 
-    // Removed unused translation/listening logic and myLanguage change handler
+    const handleMyLanguageChange = (option: SingleValue<LanguageOption>) => {
+        if (option) {
+            setMyLanguage(option);
+        }
+    };
+
     const handleTargetLanguageChange = (option: SingleValue<LanguageOption>) => {
         if (option) {
             setTargetLanguage(option);
@@ -232,116 +323,62 @@ const VideoCall: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-[#1e40af] via-[#22c55e]/30 to-white dark:from-[#0f172a] dark:to-[#1e293b] p-0 sm:p-4 flex flex-col">
-            <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col gap-4">
+            <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col lg:flex-row gap-4">
                 <div className="flex flex-col gap-4 lg:gap-6 flex-1 w-full">
-                    {/* Video Section - now full width */}
-                    <div className="flex flex-col gap-4 lg:gap-6 w-full">
+                    {/* Video Section */}
+                    <div className="flex flex-col gap-4 lg:gap-6 flex-1">
                         {/* Connection Status & Call Input */}
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white/80 dark:bg-[#1e293b]/80 rounded-2xl shadow-lg border border-[#22c55e]/20 px-4 py-3">
                             <div className="flex items-center space-x-2">
-                                <Badge variant={isConnected ? "default" : "destructive"} className={isConnected ? "bg-[#22c55e] text-white" : ""}>
-                                    {isConnected ? "Connected" : "Disconnected"}
-                                </Badge>
-                                {myId && (
-                                    <div className="flex items-center gap-2 bg-white/80 dark:bg-[#1e293b]/80 rounded-xl px-3 py-2 border border-[#1e40af]/20 shadow">
-                                        <span className="font-mono text-xs text-[#1e40af] select-all">My ID: {myId}</span>
-                                        <Button
-                                            size="icon"
-                                            variant="outline"
-                                            className="p-1 border-[#22c55e] text-[#22c55e] hover:bg-[#22c55e]/10"
-                                            onClick={() => { navigator.clipboard.writeText(myId); toast.success('Caller ID copied!'); }}
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 8.25V6.75A2.25 2.25 0 0014.25 4.5h-6A2.25 2.25 0 006 6.75v10.5A2.25 2.25 0 008.25 19.5h6a2.25 2.25 0 002.25-2.25v-1.5M9.75 15.75h6A2.25 2.25 0 0018 13.5v-6A2.25 2.25 0 0015.75 5.25h-6A2.25 2.25 0 007.5 7.5v6a2.25 2.25 0 002.25 2.25z" />
-                                            </svg>
-                                        </Button>
-                                    </div>
-                                )}
+                                <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    {isConnected ? `Your ID: ${myId}` : 'Connecting...'}
+                                </span>
                             </div>
                             {!callAccepted && !incomingCall && (
-                                <>
-                                    {step === 'idle' && (
-                                        <Button
-                                            onClick={() => { setShowCallSetup(true); setStep('language'); }}
-                                            className="w-full sm:w-auto bg-gradient-to-r from-[#1e40af] to-[#22c55e] text-white font-bold shadow-md hover:from-[#1e40af]/90 hover:to-[#22c55e]/90"
-                                        >
-                                            Start a New Call
+                                <div className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                    {!showCallSetup ? (
+                                        <Button onClick={() => setShowCallSetup(true)} className="w-full sm:w-auto bg-[#1e40af] hover:bg-[#1e3a8a] text-white">
+                                            <Phone className="mr-2" />
+                                            New Call
                                         </Button>
-                                    )}
-                                    {step === 'language' && (
-                                        <div className="flex flex-col gap-2 w-full max-w-xs">
-                                            <label className="text-xs font-semibold text-[#22c55e] mb-1">Listen in (translated)</label>
-                                            <Select
-                                                options={languageOptions}
-                                                value={targetLanguage}
-                                                onChange={option => { handleTargetLanguageChange(option); if (option) setStep('callerId'); }}
-                                                placeholder="Select language..."
-                                                isSearchable
-                                                className="text-[#1f2937]"
-                                                styles={{
-                                                    control: (base, state) => ({
-                                                        ...base,
-                                                        backgroundColor: 'white',
-                                                        borderColor: state.isFocused ? '#22c55e' : '#cbd5e1',
-                                                        borderWidth: '1px',
-                                                        borderRadius: '0.75rem',
-                                                        boxShadow: 'none',
-                                                        minHeight: '36px',
-                                                        fontSize: '14px',
-                                                        '&:hover': {
-                                                            borderColor: '#22c55e',
-                                                        },
-                                                    }),
-                                                    placeholder: (base) => ({
-                                                        ...base,
-                                                        color: '#64748b',
-                                                        fontSize: '14px',
-                                                    }),
-                                                    singleValue: (base) => ({
-                                                        ...base,
-                                                        color: '#1f2937',
-                                                        fontSize: '14px',
-                                                    }),
-                                                    menu: (base) => ({
-                                                        ...base,
-                                                        backgroundColor: 'white',
-                                                        zIndex: 50,
-                                                        fontSize: '14px',
-                                                    }),
-                                                    option: (base, state) => ({
-                                                        ...base,
-                                                        backgroundColor: state.isSelected ? '#22c55e' : state.isFocused ? '#f0f9ff' : 'white',
-                                                        color: state.isSelected ? 'white' : '#1f2937',
-                                                        cursor: 'pointer',
-                                                        fontSize: '14px',
-                                                    })
-                                                }}
-                                            />
+                                    ) : (
+                                        <div className="flex flex-col sm:flex-row gap-2 w-full">
+                                            {step === 'idle' && (
+                                                <>
+                                                    <Button onClick={() => setStep('language')} className="w-full">Select Language</Button>
+                                                    <Button onClick={() => setShowCallSetup(false)} variant="outline">Cancel</Button>
+                                                </>
+                                            )}
+                                            {step === 'language' && (
+                                                <div className='flex flex-col gap-2 w-full sm:w-72'>
+                                                    <Select
+                                                        options={languageOptions}
+                                                        value={targetLanguage}
+                                                        onChange={handleTargetLanguageChange}
+                                                        placeholder="Translate to..."
+                                                        className="w-full"
+                                                    />
+                                                    <Button onClick={() => setStep('callerId')} disabled={!targetLanguage}>Next</Button>
+                                                </div>
+                                            )}
+                                            {step === 'callerId' && (
+                                                <div className='flex flex-col gap-2 w-full sm:w-72'>
+                                                    <Input
+                                                        type="text"
+                                                        placeholder="Enter Caller ID"
+                                                        value={callerId}
+                                                        onChange={(e) => setCallerId(e.target.value)}
+                                                        className="w-full"
+                                                    />
+                                                    <Button onClick={callUser} disabled={!callerId.trim()}>
+                                                        <Phone className="mr-2" /> Call
+                                                    </Button>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
-                                    {step === 'callerId' && (
-                                        <div className="flex flex-col sm:flex-row items-center gap-4 w-full">
-                                            <Input
-                                                placeholder="Enter caller ID"
-                                                value={callerId}
-                                                onChange={(e) => setCallerId(e.target.value)}
-                                                className="w-full sm:w-64 rounded-xl border-[#1e40af]/30"
-                                            />
-                                            <Button
-                                                onClick={callUser}
-                                                disabled={
-                                                    !isConnected ||
-                                                    !callerId.trim() ||
-                                                    !targetLanguage?.value
-                                                }
-                                                className="w-full sm:w-auto bg-gradient-to-r from-[#1e40af] to-[#22c55e] text-white font-bold shadow-md hover:from-[#1e40af]/90 hover:to-[#22c55e]/90"
-                                            >
-                                                <PhoneCall className="w-4 h-4 mr-2" />
-                                                Call
-                                            </Button>
-                                        </div>
-                                    )}
-                                </>
+                                </div>
                             )}
                         </div>
 
@@ -356,106 +393,89 @@ const VideoCall: React.FC = () => {
                                     playsInline
                                     className="w-full aspect-video object-cover rounded-3xl"
                                 />
-                                <div className="absolute top-3 left-3">
-                                    <Badge className="text-xs bg-[#1e40af] text-white shadow">You</Badge>
-                                </div>
+                                <div className="absolute bottom-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">You</div>
                             </div>
 
                             {/* Remote Video */}
-                            <div className="relative rounded-3xl overflow-hidden shadow-2xl border-2 border-[#22c55e]/20 bg-white/60 dark:bg-[#1e293b]/60 backdrop-blur-xl">
-                                <video
-                                    ref={remoteVideoRef}
-                                    autoPlay
-                                    playsInline
-                                    className="w-full aspect-video object-cover rounded-3xl"
-                                />
-                                <div className="absolute top-3 left-3">
-                                    <Badge className="text-xs bg-[#22c55e] text-white shadow">Remote</Badge>
-                                </div>
-                                {!callAccepted && !incomingCall && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#1e40af]/80 to-[#22c55e]/80">
-                                        <p className="text-white text-lg font-semibold">No call active</p>
+                            <div className="relative rounded-3xl overflow-hidden shadow-2xl border-2 border-[#22c55e]/20 bg-black/20 dark:bg-black/40 backdrop-blur-xl">
+                                {remoteStream ? (
+                                    <video
+                                        ref={remoteVideoRef}
+                                        autoPlay
+                                        playsInline
+                                        className="w-full aspect-video object-cover rounded-3xl"
+                                    />
+                                ) : (
+                                    <div className="w-full aspect-video flex items-center justify-center">
+                                        <p className="text-gray-600 dark:text-gray-400">Waiting for other user...</p>
                                     </div>
                                 )}
+                                <div className="absolute bottom-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">Remote</div>
                             </div>
 
-                            {/* Floating Call Controls */}
-                            <div className="absolute left-1/2 -translate-x-1/2 bottom-4 z-20 flex items-center justify-center space-x-2 sm:space-x-4 bg-white/80 dark:bg-[#1e293b]/80 rounded-full shadow-xl px-4 py-2 border border-[#1e40af]/10 backdrop-blur-xl">
-                                <Button
-                                    variant={videoEnabled ? "default" : "destructive"}
-                                    size="icon"
-                                    className={`rounded-full ${videoEnabled ? 'bg-[#1e40af] text-white' : 'bg-red-500 text-white'} shadow`}
-                                    onClick={toggleVideo}
-                                >
-                                    {videoEnabled ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
-                                </Button>
-                                <Button
-                                    variant={audioEnabled ? "default" : "destructive"}
-                                    size="icon"
-                                    className={`rounded-full ${audioEnabled ? 'bg-[#22c55e] text-white' : 'bg-red-500 text-white'} shadow`}
-                                    onClick={toggleAudio}
-                                >
-                                    {audioEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
-                                </Button>
-                                <Button
-                                    variant={speakerEnabled ? "default" : "destructive"}
-                                    size="icon"
-                                    className={`rounded-full ${speakerEnabled ? 'bg-[#1e40af] text-white' : 'bg-red-500 text-white'} shadow`}
-                                    onClick={() => setSpeakerEnabled(!speakerEnabled)}
-                                >
-                                    {speakerEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-                                </Button>
-                                {(callAccepted || incomingCall) && (
-                                    <Button
-                                        variant="destructive"
-                                        size="icon"
-                                        className="rounded-full bg-red-600 text-white shadow hover:bg-red-700"
-                                        onClick={endCall}
-                                    >
-                                        <PhoneOff className="w-5 h-5" />
+                            {/* Call Controls */}
+                            {callAccepted && (
+                                <div className="absolute bottom-4 right-4 flex items-center gap-3 bg-white/80 dark:bg-[#1e293b]/80 rounded-full shadow-lg p-3">
+                                    <Button onClick={toggleVideo} variant="ghost" size="icon" className="rounded-full">
+                                        {videoEnabled ? <Video /> : <VideoOff className="text-red-500" />}
                                     </Button>
-                                )}
-                            </div>
+                                    <Button onClick={toggleAudio} variant="ghost" size="icon" className="rounded-full">
+                                        {audioEnabled ? <Mic /> : <MicOff className="text-red-500" />}
+                                    </Button>
+                                    <Button onClick={() => setSpeakerEnabled(!speakerEnabled)} variant="ghost" size="icon" className="rounded-full">
+                                        {speakerEnabled ? <Volume2 /> : <VolumeX className="text-red-500" />}
+                                    </Button>
+                                    <Button onClick={endCall} variant="destructive" size="icon" className="rounded-full">
+                                        <PhoneOff />
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    {/* Translation panel removed for full-width video/call UI */}
+                    {/* Translation Panel */}
+                    {callAccepted && (
+                        <Card className="w-full lg:w-96 bg-white/80 dark:bg-[#1e293b]/80 border-[#22c55e]/20 shadow-lg rounded-2xl">
+                            <CardHeader>
+                                <CardTitle className="text-lg font-semibold text-gray-800 dark:text-white">Live Translation</CardTitle>
+                            </CardHeader>
+                            <CardContent className="h-96 overflow-y-auto p-4 space-y-4">
+                                {translations.map((msg) => (
+                                    <div key={msg.id} className={`flex flex-col ${msg.isSent ? 'items-end' : 'items-start'}`}>
+                                        <div className={`max-w-xs p-3 rounded-xl ${msg.isSent ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}>
+                                            <p className="text-sm">{msg.isSent ? msg.original : msg.translated}</p>
+                                            <p className="text-xs opacity-70 mt-1">{new Date(msg.timestamp).toLocaleTimeString()}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
 
                 {/* Incoming Call Modal */}
-                {incomingCall && (
+                {incomingCall && !callAccepted && (
                     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
                         <div className="w-full max-w-sm sm:w-96 bg-white rounded-3xl shadow-2xl border-2 border-[#22c55e]/30 p-6 text-center space-y-4">
-                            <div className="w-16 h-16 bg-gradient-to-br from-[#22c55e]/80 to-[#1e40af]/80 rounded-full flex items-center justify-center mx-auto shadow-lg">
-                                <Phone className="w-8 h-8 text-white" />
+                            <h2 className="text-2xl font-bold text-gray-800">Incoming Call</h2>
+                            <p className="text-gray-600">From: {incomingCall.from}</p>
+                            <p className="text-gray-600">Wants to speak in: <span className='font-bold'>{ISO6391.getName(incomingCall.fromLang)}</span></p>
+                            <div className="space-y-2">
+                                <p className="text-sm font-medium text-gray-700">I will speak in:</p>
+                                <Select
+                                    options={languageOptions}
+                                    value={myLanguage}
+                                    onChange={handleMyLanguageChange}
+                                    placeholder="Select your language"
+                                    className="w-full text-left"
+                                />
                             </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-[#1e40af]">Incoming Call</h3>
-                                <p className="text-base text-[#334155] font-medium">
-                                    {incomingCall.name || incomingCall.from}
-                                </p>
-                                <p className="text-sm text-[#22c55e] font-semibold">
-                                    {ISO6391.getName(incomingCall.fromLang)} → {ISO6391.getName(incomingCall.toLang)}
-                                </p>
-                            </div>
-                            <div className="flex space-x-3">
-                                <Button
-                                    variant="destructive"
-                                    className="flex-1 text-sm rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold shadow"
-                                    size="sm"
-                                    onClick={rejectCall}
-                                >
-                                    <PhoneOff className="w-4 h-4 mr-2" />
-                                    Decline
+                            <div className="flex justify-around items-center pt-4">
+                                <Button onClick={answerCall} disabled={!myLanguage} className="bg-green-500 hover:bg-green-600 text-white rounded-full w-20 h-20 flex items-center justify-center">
+                                    <Phone size={30} />
                                 </Button>
-                                <Button
-                                    variant="default"
-                                    className="flex-1 text-sm rounded-xl bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold shadow"
-                                    size="sm"
-                                    onClick={answerCall}
-                                >
-                                    <Phone className="w-4 h-4 mr-2" />
-                                    Accept
+                                <Button onClick={rejectCall} className="bg-red-500 hover:bg-red-600 text-white rounded-full w-20 h-20 flex items-center justify-center">
+                                    <PhoneOff size={30} />
                                 </Button>
                             </div>
                         </div>
