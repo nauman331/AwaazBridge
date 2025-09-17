@@ -28,6 +28,8 @@ const NotFound = lazy(() => import('./screens/NotFound'))
 // user routes
 const UserProfile = lazy(() => import('./screens/User/Profile'))
 const VideoCall = lazy(() => import('./screens/User/VideoCall'))
+const Chats = lazy(() => import('./screens/User/Chats'))
+const SingleChat = lazy(() => import('./screens/User/SingleChat'))
 
 // moderator routes
 const ModeratorProfile = lazy(() => import('./screens/Moderator/Profile'))
@@ -63,9 +65,11 @@ const App: React.FC = () => {
             <Route path="/terms-of-service" element={<TermsOfService />} />
             {/* User Routes */}
             <Route path='/user' element={<UserLayout />} >
-              <Route index element={<UserProfile />} />
+              <Route index element={<Chats />} />
               <Route path="profile" element={<UserProfile />} />
               <Route path="video-call" element={<VideoCall />} />
+              <Route path="chats" element={<Chats />} />
+              <Route path="chats/:id" element={<SingleChat />} />
             </Route>
             {/* Moderator Routes */}
             <Route path='/moderator' element={<ModeratorLayout />} >

@@ -22,7 +22,6 @@ import {
 import { toast } from 'sonner'
 import { io, Socket } from 'socket.io-client'
 import { WebRTCService } from '../../services/WebRTCService'
-import STT from '../../hooks/STT'
 import TTS from '../../hooks/TTS'
 import ISO6391 from 'iso-639-1'
 import { socketUrl } from '../../utils/exports'
@@ -58,19 +57,14 @@ const VideoCall: React.FC = () => {
     const [audioEnabled, setAudioEnabled] = useState(true);
     const [speakerEnabled, setSpeakerEnabled] = useState(true);
 
-    // Translation states
-    const [myLanguage, setMyLanguage] = useState<LanguageOption>({ value: 'en', label: 'English' });
-    const [targetLanguage, setTargetLanguage] = useState<LanguageOption>({ value: 'fr', label: 'French' });
-    const [isTranslationActive, setIsTranslationActive] = useState(false);
-    const [messages, setMessages] = useState<TranslationMessage[]>([]);
-    const [currentTranscript, setCurrentTranscript] = useState<string>('');
-    const [isListening, setIsListening] = useState(false);
+    // Only translated language and call setup state needed
+    const [targetLanguage, setTargetLanguage] = useState<LanguageOption | null>(null);
+    const [showCallSetup, setShowCallSetup] = useState(false);
+    const [step, setStep] = useState<'idle' | 'language' | 'callerId'>('idle');
 
     // Refs
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
-    const sttInstanceRef = useRef<any>(null);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Language options
     const languageOptions: LanguageOption[] = ISO6391.getAllCodes().map(code => ({
@@ -108,43 +102,7 @@ const VideoCall: React.FC = () => {
             endCall();
         });
 
-        // Handle translation results
-        newSocket.on('translationResult', (data: any) => {
-            const message: TranslationMessage = {
-                id: data.id,
-                original: data.original,
-                translated: data.translated,
-                fromLang: data.fromLang,
-                toLang: data.toLang,
-                timestamp: new Date(data.timestamp),
-                isSent: true
-            };
 
-            setMessages(prev => [...prev, message]);
-        });
-
-        newSocket.on('translation', (data: any) => {
-            const message: TranslationMessage = {
-                id: Date.now().toString(),
-                original: data.original,
-                translated: data.translated,
-                fromLang: data.fromLang,
-                toLang: data.toLang,
-                timestamp: new Date(data.timestamp),
-                isSent: false
-            };
-
-            setMessages(prev => [...prev, message]);
-
-            if (speakerEnabled) {
-                TTS(data.translated, { language: data.toLang as any });
-            }
-        });
-
-        newSocket.on('translationError', (error: string) => {
-            console.error('Translation error:', error);
-            toast.error('Translation failed');
-        });
 
         return () => {
             newSocket.disconnect();
@@ -186,82 +144,26 @@ const VideoCall: React.FC = () => {
     }, [remoteStream]);
 
     // Initialize STT
-    useEffect(() => {
-        if (isTranslationActive && isListening) {
-            const sttOptions = {
-                language: myLanguage.value,
-                continuous: true,
-                interimResults: true
-            };
+    // Translation and STT logic removed for this step-by-step call flow
 
-            const sttCallbacks = {
-                onResult: (result: any) => {
-                    setCurrentTranscript(result.transcript);
-
-                    if (result.isFinal && result.transcript.trim()) {
-                        handleTranslation(result.transcript, myLanguage.value, targetLanguage.value);
-                        setCurrentTranscript('');
-                    }
-                },
-                onStart: () => {
-                    console.log('Speech recognition started');
-                },
-                onEnd: () => {
-                    console.log('Speech recognition ended');
-                },
-                onError: (error: string) => {
-                    console.error('STT Error:', error);
-                    setIsListening(false);
-                }
-            };
-
-            sttInstanceRef.current = STT(sttOptions, sttCallbacks);
-
-            if (sttInstanceRef.current) {
-                sttInstanceRef.current.start();
-            }
-        }
-
-        return () => {
-            if (sttInstanceRef.current) {
-                sttInstanceRef.current.stop();
-            }
-        };
-    }, [isTranslationActive, isListening, myLanguage.value, targetLanguage.value]);
-
-    const handleTranslation = async (text: string, fromLang: string, toLang: string) => {
-        if (!socket || !text.trim()) return;
-
-        try {
-            const translationId = Date.now().toString();
-
-            socket.emit('translateText', {
-                id: translationId,
-                text: text.trim(),
-                fromLang,
-                toLang,
-                to: callAccepted ? (incomingCall?.from || callerId) : null
-            });
-        } catch (error) {
-            console.error('Translation error:', error);
-            toast.error('Translation failed');
-        }
-    };
+    // handleTranslation removed for this step-by-step call flow
 
     const callUser = async () => {
         if (!webRTC || !callerId.trim()) {
             toast.error('Please enter a valid caller ID');
             return;
         }
-
+        if (!targetLanguage) {
+            toast.error('Please select a language to listen in');
+            return;
+        }
         try {
             const offer = await webRTC.createOffer();
-
             webRTC.callUser({
                 phone: callerId,
                 signalData: offer,
                 from: myId,
-                fromLang: myLanguage.value,
+                fromLang: 'en', // default or detected
                 toLang: targetLanguage.value
             });
         } catch (error) {
@@ -302,9 +204,6 @@ const VideoCall: React.FC = () => {
         setCallAccepted(false);
         setIncomingCall(null);
         setRemoteStream(null);
-        setIsTranslationActive(false);
-        setIsListening(false);
-        setMessages([]);
     };
 
     const toggleVideo = () => {
@@ -323,384 +222,243 @@ const VideoCall: React.FC = () => {
         }
     };
 
-    const toggleTranslation = () => {
-        setIsTranslationActive(!isTranslationActive);
-        if (isTranslationActive) {
-            setIsListening(false);
-        }
-    };
-
-    const toggleListening = () => {
-        if (isTranslationActive) {
-            setIsListening(!isListening);
-        }
-    };
-
-    // Scroll to bottom of messages
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
-
-    const handleMyLanguageChange = (option: SingleValue<LanguageOption>) => {
-        if (option) {
-            setMyLanguage(option);
-        }
-    };
-
+    // Removed unused translation/listening logic and myLanguage change handler
     const handleTargetLanguageChange = (option: SingleValue<LanguageOption>) => {
         if (option) {
             setTargetLanguage(option);
         }
     };
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-2 sm:p-4">
-            <div className="max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 lg:gap-6">
-                    {/* Video Section */}
-                    <div className="xl:col-span-3 space-y-4 lg:space-y-6">
-                        {/* Connection Status */}
-                        <Card>
-                            <CardContent className="p-3 sm:p-4">
-                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                                    <div className="flex items-center space-x-2">
-                                        <Badge variant={isConnected ? "default" : "destructive"}>
-                                            {isConnected ? "Connected" : "Disconnected"}
-                                        </Badge>
-                                        {myId && (
-                                            <Badge variant="outline" className="text-xs">
-                                                ID: {myId.slice(0, 8)}...
-                                            </Badge>
-                                        )}
-                                    </div>
 
-                                    {!callAccepted && !incomingCall && (
-                                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-[#1e40af] via-[#22c55e]/30 to-white dark:from-[#0f172a] dark:to-[#1e293b] p-0 sm:p-4 flex flex-col">
+            <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col gap-4">
+                <div className="flex flex-col gap-4 lg:gap-6 flex-1 w-full">
+                    {/* Video Section - now full width */}
+                    <div className="flex flex-col gap-4 lg:gap-6 w-full">
+                        {/* Connection Status & Call Input */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white/80 dark:bg-[#1e293b]/80 rounded-2xl shadow-lg border border-[#22c55e]/20 px-4 py-3">
+                            <div className="flex items-center space-x-2">
+                                <Badge variant={isConnected ? "default" : "destructive"} className={isConnected ? "bg-[#22c55e] text-white" : ""}>
+                                    {isConnected ? "Connected" : "Disconnected"}
+                                </Badge>
+                                {myId && (
+                                    <div className="flex items-center gap-2 bg-white/80 dark:bg-[#1e293b]/80 rounded-xl px-3 py-2 border border-[#1e40af]/20 shadow">
+                                        <span className="font-mono text-xs text-[#1e40af] select-all">My ID: {myId}</span>
+                                        <Button
+                                            size="icon"
+                                            variant="outline"
+                                            className="p-1 border-[#22c55e] text-[#22c55e] hover:bg-[#22c55e]/10"
+                                            onClick={() => { navigator.clipboard.writeText(myId); toast.success('Caller ID copied!'); }}
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 8.25V6.75A2.25 2.25 0 0014.25 4.5h-6A2.25 2.25 0 006 6.75v10.5A2.25 2.25 0 008.25 19.5h6a2.25 2.25 0 002.25-2.25v-1.5M9.75 15.75h6A2.25 2.25 0 0018 13.5v-6A2.25 2.25 0 0015.75 5.25h-6A2.25 2.25 0 007.5 7.5v6a2.25 2.25 0 002.25 2.25z" />
+                                            </svg>
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                            {!callAccepted && !incomingCall && (
+                                <>
+                                    {step === 'idle' && (
+                                        <Button
+                                            onClick={() => { setShowCallSetup(true); setStep('language'); }}
+                                            className="w-full sm:w-auto bg-gradient-to-r from-[#1e40af] to-[#22c55e] text-white font-bold shadow-md hover:from-[#1e40af]/90 hover:to-[#22c55e]/90"
+                                        >
+                                            Start a New Call
+                                        </Button>
+                                    )}
+                                    {step === 'language' && (
+                                        <div className="flex flex-col gap-2 w-full max-w-xs">
+                                            <label className="text-xs font-semibold text-[#22c55e] mb-1">Listen in (translated)</label>
+                                            <Select
+                                                options={languageOptions}
+                                                value={targetLanguage}
+                                                onChange={option => { handleTargetLanguageChange(option); if (option) setStep('callerId'); }}
+                                                placeholder="Select language..."
+                                                isSearchable
+                                                className="text-[#1f2937]"
+                                                styles={{
+                                                    control: (base, state) => ({
+                                                        ...base,
+                                                        backgroundColor: 'white',
+                                                        borderColor: state.isFocused ? '#22c55e' : '#cbd5e1',
+                                                        borderWidth: '1px',
+                                                        borderRadius: '0.75rem',
+                                                        boxShadow: 'none',
+                                                        minHeight: '36px',
+                                                        fontSize: '14px',
+                                                        '&:hover': {
+                                                            borderColor: '#22c55e',
+                                                        },
+                                                    }),
+                                                    placeholder: (base) => ({
+                                                        ...base,
+                                                        color: '#64748b',
+                                                        fontSize: '14px',
+                                                    }),
+                                                    singleValue: (base) => ({
+                                                        ...base,
+                                                        color: '#1f2937',
+                                                        fontSize: '14px',
+                                                    }),
+                                                    menu: (base) => ({
+                                                        ...base,
+                                                        backgroundColor: 'white',
+                                                        zIndex: 50,
+                                                        fontSize: '14px',
+                                                    }),
+                                                    option: (base, state) => ({
+                                                        ...base,
+                                                        backgroundColor: state.isSelected ? '#22c55e' : state.isFocused ? '#f0f9ff' : 'white',
+                                                        color: state.isSelected ? 'white' : '#1f2937',
+                                                        cursor: 'pointer',
+                                                        fontSize: '14px',
+                                                    })
+                                                }}
+                                            />
+                                        </div>
+                                    )}
+                                    {step === 'callerId' && (
+                                        <div className="flex flex-col sm:flex-row items-center gap-4 w-full">
                                             <Input
                                                 placeholder="Enter caller ID"
                                                 value={callerId}
                                                 onChange={(e) => setCallerId(e.target.value)}
-                                                className="w-full sm:w-48"
+                                                className="w-full sm:w-64 rounded-xl border-[#1e40af]/30"
                                             />
-                                            <Button onClick={callUser} disabled={!isConnected} className="w-full sm:w-auto">
+                                            <Button
+                                                onClick={callUser}
+                                                disabled={
+                                                    !isConnected ||
+                                                    !callerId.trim() ||
+                                                    !targetLanguage?.value
+                                                }
+                                                className="w-full sm:w-auto bg-gradient-to-r from-[#1e40af] to-[#22c55e] text-white font-bold shadow-md hover:from-[#1e40af]/90 hover:to-[#22c55e]/90"
+                                            >
                                                 <PhoneCall className="w-4 h-4 mr-2" />
                                                 Call
                                             </Button>
                                         </div>
                                     )}
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Video Grid */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
-                            {/* Local Video */}
-                            <Card className="relative overflow-hidden">
-                                <CardContent className="p-0">
-                                    <video
-                                        ref={localVideoRef}
-                                        autoPlay
-                                        muted
-                                        playsInline
-                                        className="w-full aspect-video bg-slate-800 object-cover"
-                                    />
-                                    <div className="absolute bottom-2 left-2 lg:bottom-4 lg:left-4">
-                                        <Badge className="text-xs">You</Badge>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            {/* Remote Video */}
-                            <Card className="relative overflow-hidden">
-                                <CardContent className="p-0">
-                                    <video
-                                        ref={remoteVideoRef}
-                                        autoPlay
-                                        playsInline
-                                        className="w-full aspect-video bg-slate-800 object-cover"
-                                    />
-                                    <div className="absolute bottom-2 left-2 lg:bottom-4 lg:left-4">
-                                        <Badge className="text-xs">Remote</Badge>
-                                    </div>
-                                    {!callAccepted && !incomingCall && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-slate-800/50">
-                                            <p className="text-white text-sm">No call active</p>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
+                                </>
+                            )}
                         </div>
 
-                        {/* Call Controls */}
-                        <Card>
-                            <CardContent className="p-3 sm:p-4">
-                                <div className="flex items-center justify-center space-x-2 sm:space-x-4">
-                                    <Button
-                                        variant={videoEnabled ? "default" : "destructive"}
-                                        size="sm"
-                                        className="sm:size-lg flex-1 sm:flex-none"
-                                        onClick={toggleVideo}
-                                    >
-                                        {videoEnabled ? <Video className="w-4 h-4 sm:w-5 sm:h-5" /> : <VideoOff className="w-4 h-4 sm:w-5 sm:h-5" />}
-                                        <span className="ml-2 sm:hidden">Video</span>
-                                    </Button>
-
-                                    <Button
-                                        variant={audioEnabled ? "default" : "destructive"}
-                                        size="sm"
-                                        className="sm:size-lg flex-1 sm:flex-none"
-                                        onClick={toggleAudio}
-                                    >
-                                        {audioEnabled ? <Mic className="w-4 h-4 sm:w-5 sm:h-5" /> : <MicOff className="w-4 h-4 sm:w-5 sm:h-5" />}
-                                        <span className="ml-2 sm:hidden">Audio</span>
-                                    </Button>
-
-                                    <Button
-                                        variant={speakerEnabled ? "default" : "destructive"}
-                                        size="sm"
-                                        className="sm:size-lg flex-1 sm:flex-none"
-                                        onClick={() => setSpeakerEnabled(!speakerEnabled)}
-                                    >
-                                        {speakerEnabled ? <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" /> : <VolumeX className="w-4 h-4 sm:w-5 sm:h-5" />}
-                                        <span className="ml-2 sm:hidden">Speaker</span>
-                                    </Button>
-
-                                    {(callAccepted || incomingCall) && (
-                                        <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            className="sm:size-lg flex-1 sm:flex-none"
-                                            onClick={endCall}
-                                        >
-                                            <PhoneOff className="w-4 h-4 sm:w-5 sm:h-5" />
-                                            <span className="ml-2 sm:hidden">End</span>
-                                        </Button>
-                                    )}
+                        {/* Video Grid */}
+                        <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
+                            {/* Local Video */}
+                            <div className="relative rounded-3xl overflow-hidden shadow-2xl border-2 border-[#1e40af]/20 bg-white/60 dark:bg-[#1e293b]/60 backdrop-blur-xl">
+                                <video
+                                    ref={localVideoRef}
+                                    autoPlay
+                                    muted
+                                    playsInline
+                                    className="w-full aspect-video object-cover rounded-3xl"
+                                />
+                                <div className="absolute top-3 left-3">
+                                    <Badge className="text-xs bg-[#1e40af] text-white shadow">You</Badge>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </div>
+                            </div>
 
-                    {/* Translation Panel */}
-                    <div className="space-y-4 lg:space-y-6">
-                        {/* Language Settings */}
-                        <Card>
-                            <CardContent className="p-3 sm:p-4 space-y-3 sm:space-y-4">
-                                <div className="flex items-center space-x-2">
-                                    <Languages className="w-4 h-4 sm:w-5 sm:h-5" />
-                                    <h3 className="font-semibold text-sm sm:text-base">Translation</h3>
+                            {/* Remote Video */}
+                            <div className="relative rounded-3xl overflow-hidden shadow-2xl border-2 border-[#22c55e]/20 bg-white/60 dark:bg-[#1e293b]/60 backdrop-blur-xl">
+                                <video
+                                    ref={remoteVideoRef}
+                                    autoPlay
+                                    playsInline
+                                    className="w-full aspect-video object-cover rounded-3xl"
+                                />
+                                <div className="absolute top-3 left-3">
+                                    <Badge className="text-xs bg-[#22c55e] text-white shadow">Remote</Badge>
                                 </div>
-
-                                <div className="space-y-3">
-                                    <div>
-                                        <label className="text-xs sm:text-sm font-medium mb-2 block">I speak</label>
-                                        <Select
-                                            options={languageOptions}
-                                            value={myLanguage}
-                                            onChange={handleMyLanguageChange}
-                                            placeholder="Select your language..."
-                                            isSearchable
-                                            className="text-[#1f2937]"
-                                            styles={{
-                                                control: (base, state) => ({
-                                                    ...base,
-                                                    backgroundColor: 'white',
-                                                    borderColor: state.isFocused ? '#1e40af' : '#cbd5e1',
-                                                    borderWidth: '1px',
-                                                    borderRadius: '0.5rem',
-                                                    boxShadow: 'none',
-                                                    minHeight: '36px',
-                                                    fontSize: '14px',
-                                                    '&:hover': {
-                                                        borderColor: '#1e40af',
-                                                    },
-                                                }),
-                                                placeholder: (base) => ({
-                                                    ...base,
-                                                    color: '#64748b',
-                                                    fontSize: '14px',
-                                                }),
-                                                singleValue: (base) => ({
-                                                    ...base,
-                                                    color: '#1f2937',
-                                                    fontSize: '14px',
-                                                }),
-                                                menu: (base) => ({
-                                                    ...base,
-                                                    backgroundColor: 'white',
-                                                    zIndex: 50,
-                                                    fontSize: '14px',
-                                                }),
-                                                option: (base, state) => ({
-                                                    ...base,
-                                                    backgroundColor: state.isSelected ? '#1e40af' : state.isFocused ? '#f0f9ff' : 'white',
-                                                    color: state.isSelected ? 'white' : '#1f2937',
-                                                    cursor: 'pointer',
-                                                    fontSize: '14px',
-                                                })
-                                            }}
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="text-xs sm:text-sm font-medium mb-2 block">Translate to</label>
-                                        <Select
-                                            options={languageOptions}
-                                            value={targetLanguage}
-                                            onChange={handleTargetLanguageChange}
-                                            placeholder="Select target language..."
-                                            isSearchable
-                                            className="text-[#1f2937]"
-                                            styles={{
-                                                control: (base, state) => ({
-                                                    ...base,
-                                                    backgroundColor: 'white',
-                                                    borderColor: state.isFocused ? '#1e40af' : '#cbd5e1',
-                                                    borderWidth: '1px',
-                                                    borderRadius: '0.5rem',
-                                                    boxShadow: 'none',
-                                                    minHeight: '36px',
-                                                    fontSize: '14px',
-                                                    '&:hover': {
-                                                        borderColor: '#1e40af',
-                                                    },
-                                                }),
-                                                placeholder: (base) => ({
-                                                    ...base,
-                                                    color: '#64748b',
-                                                    fontSize: '14px',
-                                                }),
-                                                singleValue: (base) => ({
-                                                    ...base,
-                                                    color: '#1f2937',
-                                                    fontSize: '14px',
-                                                }),
-                                                menu: (base) => ({
-                                                    ...base,
-                                                    backgroundColor: 'white',
-                                                    zIndex: 50,
-                                                    fontSize: '14px',
-                                                }),
-                                                option: (base, state) => ({
-                                                    ...base,
-                                                    backgroundColor: state.isSelected ? '#1e40af' : state.isFocused ? '#f0f9ff' : 'white',
-                                                    color: state.isSelected ? 'white' : '#1f2937',
-                                                    cursor: 'pointer',
-                                                    fontSize: '14px',
-                                                })
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-
-                                <Separator />
-
-                                <div className="space-y-2">
-                                    <Button
-                                        variant={isTranslationActive ? "default" : "outline"}
-                                        className="w-full text-xs sm:text-sm"
-                                        size="sm"
-                                        onClick={toggleTranslation}
-                                    >
-                                        {isTranslationActive ? "Stop Translation" : "Start Translation"}
-                                    </Button>
-
-                                    {isTranslationActive && (
-                                        <Button
-                                            variant={isListening ? "destructive" : "default"}
-                                            className="w-full text-xs sm:text-sm"
-                                            size="sm"
-                                            onClick={toggleListening}
-                                        >
-                                            {isListening ? "Stop Listening" : "Start Listening"}
-                                        </Button>
-                                    )}
-                                </div>
-
-                                {currentTranscript && (
-                                    <div className="p-2 bg-blue-100 rounded-lg">
-                                        <p className="text-xs sm:text-sm text-blue-800">
-                                            Listening: {currentTranscript}
-                                        </p>
+                                {!callAccepted && !incomingCall && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#1e40af]/80 to-[#22c55e]/80">
+                                        <p className="text-white text-lg font-semibold">No call active</p>
                                     </div>
                                 )}
-                            </CardContent>
-                        </Card>
+                            </div>
 
-                        {/* Translation Messages */}
-                        <Card className="flex-1">
-                            <CardContent className="p-3 sm:p-4">
-                                <div className="flex items-center space-x-2 mb-3 sm:mb-4">
-                                    <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                                    <h3 className="font-semibold text-sm sm:text-base">Translations</h3>
-                                </div>
-
-                                <div className="space-y-2 sm:space-y-3 max-h-64 sm:max-h-96 overflow-y-auto">
-                                    {messages.map((message) => (
-                                        <div
-                                            key={message.id}
-                                            className={`p-2 sm:p-3 rounded-lg ${message.isSent
-                                                ? 'bg-blue-100 ml-2 sm:ml-4'
-                                                : 'bg-gray-100 mr-2 sm:mr-4'
-                                                }`}
-                                        >
-                                            <div className="text-xs sm:text-sm font-medium">
-                                                {message.original}
-                                            </div>
-                                            <div className="text-xs sm:text-sm text-gray-600 mt-1">
-                                                → {message.translated}
-                                            </div>
-                                            <div className="text-xs text-gray-400 mt-1">
-                                                {message.timestamp.toLocaleTimeString()}
-                                            </div>
-                                        </div>
-                                    ))}
-                                    <div ref={messagesEndRef} />
-                                </div>
-                            </CardContent>
-                        </Card>
+                            {/* Floating Call Controls */}
+                            <div className="absolute left-1/2 -translate-x-1/2 bottom-4 z-20 flex items-center justify-center space-x-2 sm:space-x-4 bg-white/80 dark:bg-[#1e293b]/80 rounded-full shadow-xl px-4 py-2 border border-[#1e40af]/10 backdrop-blur-xl">
+                                <Button
+                                    variant={videoEnabled ? "default" : "destructive"}
+                                    size="icon"
+                                    className={`rounded-full ${videoEnabled ? 'bg-[#1e40af] text-white' : 'bg-red-500 text-white'} shadow`}
+                                    onClick={toggleVideo}
+                                >
+                                    {videoEnabled ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
+                                </Button>
+                                <Button
+                                    variant={audioEnabled ? "default" : "destructive"}
+                                    size="icon"
+                                    className={`rounded-full ${audioEnabled ? 'bg-[#22c55e] text-white' : 'bg-red-500 text-white'} shadow`}
+                                    onClick={toggleAudio}
+                                >
+                                    {audioEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+                                </Button>
+                                <Button
+                                    variant={speakerEnabled ? "default" : "destructive"}
+                                    size="icon"
+                                    className={`rounded-full ${speakerEnabled ? 'bg-[#1e40af] text-white' : 'bg-red-500 text-white'} shadow`}
+                                    onClick={() => setSpeakerEnabled(!speakerEnabled)}
+                                >
+                                    {speakerEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+                                </Button>
+                                {(callAccepted || incomingCall) && (
+                                    <Button
+                                        variant="destructive"
+                                        size="icon"
+                                        className="rounded-full bg-red-600 text-white shadow hover:bg-red-700"
+                                        onClick={endCall}
+                                    >
+                                        <PhoneOff className="w-5 h-5" />
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
                     </div>
+
+                    {/* Translation panel removed for full-width video/call UI */}
                 </div>
 
                 {/* Incoming Call Modal */}
                 {incomingCall && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                        <Card className="w-full max-w-sm sm:w-96">
-                            <CardContent className="p-4 sm:p-6 text-center space-y-3 sm:space-y-4">
-                                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                                    <Phone className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
-                                </div>
-                                <div>
-                                    <h3 className="text-base sm:text-lg font-semibold">Incoming Call</h3>
-                                    <p className="text-sm sm:text-base text-gray-600">
-                                        {incomingCall.name || incomingCall.from}
-                                    </p>
-                                    <p className="text-xs sm:text-sm text-gray-500">
-                                        {ISO6391.getName(incomingCall.fromLang)} → {ISO6391.getName(incomingCall.toLang)}
-                                    </p>
-                                </div>
-                                <div className="flex space-x-3">
-                                    <Button
-                                        variant="destructive"
-                                        className="flex-1 text-xs sm:text-sm"
-                                        size="sm"
-                                        onClick={rejectCall}
-                                    >
-                                        <PhoneOff className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                                        Decline
-                                    </Button>
-                                    <Button
-                                        variant="default"
-                                        className="flex-1 bg-green-600 hover:bg-green-700 text-xs sm:text-sm"
-                                        size="sm"
-                                        onClick={answerCall}
-                                    >
-                                        <Phone className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                                        Accept
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
+                    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+                        <div className="w-full max-w-sm sm:w-96 bg-white rounded-3xl shadow-2xl border-2 border-[#22c55e]/30 p-6 text-center space-y-4">
+                            <div className="w-16 h-16 bg-gradient-to-br from-[#22c55e]/80 to-[#1e40af]/80 rounded-full flex items-center justify-center mx-auto shadow-lg">
+                                <Phone className="w-8 h-8 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-[#1e40af]">Incoming Call</h3>
+                                <p className="text-base text-[#334155] font-medium">
+                                    {incomingCall.name || incomingCall.from}
+                                </p>
+                                <p className="text-sm text-[#22c55e] font-semibold">
+                                    {ISO6391.getName(incomingCall.fromLang)} → {ISO6391.getName(incomingCall.toLang)}
+                                </p>
+                            </div>
+                            <div className="flex space-x-3">
+                                <Button
+                                    variant="destructive"
+                                    className="flex-1 text-sm rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold shadow"
+                                    size="sm"
+                                    onClick={rejectCall}
+                                >
+                                    <PhoneOff className="w-4 h-4 mr-2" />
+                                    Decline
+                                </Button>
+                                <Button
+                                    variant="default"
+                                    className="flex-1 text-sm rounded-xl bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold shadow"
+                                    size="sm"
+                                    onClick={answerCall}
+                                >
+                                    <Phone className="w-4 h-4 mr-2" />
+                                    Accept
+                                </Button>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>

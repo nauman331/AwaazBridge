@@ -2,7 +2,6 @@ import {
     Video,
     Bell,
     User,
-    History,
     Home,
     Users,
     BarChart3,
@@ -11,8 +10,8 @@ import {
     MessageSquare
 } from 'lucide-react'
 
-export const backendUrl = "https://finance-fire-svpq.vercel.app/api/v1/";
-// export const backendUrl = "http://localhost:5000/api/v1/";
+// export const backendUrl = "https://finance-fire-svpq.vercel.app/api/v1/";
+export const backendUrl = "http://localhost:5000/api/v1/";
 export const socketUrl = "http://localhost:5000";
 // export const socketUrl = "https://finance-fire-svpq.vercel.app";
 
@@ -20,13 +19,8 @@ export const socketUrl = "http://localhost:5000";
 export const googleClientId = "268486767053-den8fcjmuhauvah75hp80a01rr0i6580.apps.googleusercontent.com";
 
 export const userNavigationItems = [
-    { icon: Home, label: 'Dashboard', path: '/user' },
-    { icon: User, label: 'Profile', path: '/user/profile' },
+    { icon: MessageSquare, label: 'Messages', path: '/user/chats' },
     { icon: Video, label: 'Start Call', path: '/user/video-call' },
-    { icon: History, label: 'Call History', path: '/user/history' },
-    { icon: Languages, label: 'Translation Settings', path: '/user/translation' },
-    { icon: MessageSquare, label: 'Messages', path: '/user/messages' },
-    { icon: Bell, label: 'Notifications', path: '/user/notifications' },
 ]
 
 export const adminnavigationItems = [
