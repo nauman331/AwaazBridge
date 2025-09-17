@@ -16,10 +16,10 @@ export const createTranscriptSchema = z.object({
     call: z.string().min(1, "Call ID is required"),
     roomId: z.string().min(1, "Room ID is required"),
     fromUser: z.string().min(1, "User ID is required"),
-    fromLang: z.enum(["ur", "en"], "From language must be 'ur' or 'en'"),
+    fromLang: z.string().min(1, "Source language is required"),
     originalText: z.string().min(1, "Original text is required"),
     translatedText: z.string().min(1, "Translated text is required"),
-    targetLang: z.enum(["ur", "en"], "Target language must be 'ur' or 'en'"),
+    targetLang: z.string().min(1, "Target language is required"),
 })
 
 export const getTranscriptsByCallSchema = z.object({
