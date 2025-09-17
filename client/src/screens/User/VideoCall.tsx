@@ -39,7 +39,6 @@ const VideoCall: React.FC = () => {
     const [callAccepted, setCallAccepted] = useState(false);
 
     // Media states
-    const [localStream, setLocalStream] = useState<MediaStream | null>(null);
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
     const [videoEnabled, setVideoEnabled] = useState(true);
     const [audioEnabled, setAudioEnabled] = useState(true);
@@ -49,7 +48,6 @@ const VideoCall: React.FC = () => {
     const [myLanguage, setMyLanguage] = useState<LanguageOption | null>({ value: 'en', label: 'English' });
     const [targetLanguage, setTargetLanguage] = useState<LanguageOption | null>(null);
     const [translations, setTranslations] = useState<TranslationMessage[]>([]);
-    const [isListening, setIsListening] = useState(false);
     const [showCallSetup, setShowCallSetup] = useState(false);
     const [step, setStep] = useState<'idle' | 'language' | 'callerId'>('idle');
 
@@ -147,7 +145,6 @@ const VideoCall: React.FC = () => {
             if (webRTC) {
                 try {
                     const stream = await webRTC.getUserMedia();
-                    setLocalStream(stream);
                     if (localVideoRef.current) {
                         localVideoRef.current.srcObject = stream;
                     }
@@ -176,14 +173,12 @@ const VideoCall: React.FC = () => {
                         handleTranslation(transcript);
                     }
                 },
-                onEnd: () => setIsListening(false),
                 onError: (err) => toast.error(err)
             });
 
             if (stt) {
                 sttRef.current = stt;
                 stt.start();
-                setIsListening(true);
             }
         } else {
             if (sttRef.current) {
@@ -284,7 +279,6 @@ const VideoCall: React.FC = () => {
         setIncomingCall(null);
         setRemoteStream(null);
         setTranslations([]);
-        setIsListening(false);
     };
 
     const toggleVideo = () => {
