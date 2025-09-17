@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mic, X, Send, Play } from 'lucide-react';
+import { Mic, X, Send } from 'lucide-react';
 
 interface VoiceChatProps {
     onSend: (audioUrl: string) => void;
