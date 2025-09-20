@@ -244,15 +244,26 @@ const VideoCall: React.FC = () => {
 
             // Force play after setting srcObject
             setTimeout(() => {
-                if (remoteVideoRef.current) {
-                    remoteVideoRef.current.play().catch(e => {
-                        console.error('❌ Failed to play remote video:', e.name + ':', e.message);
-                    });
+                if (remoteVideoRef.current && remoteVideoRef.current.srcObject === remoteStream) {
+                    const playPromise = remoteVideoRef.current.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            console.log('✅ Remote video started playing successfully');
+                        }).catch(e => {
+                            console.error('❌ Failed to play remote video:', e.name + ':', e.message);
+                            // Try to play with user interaction
+                            const playOnClick = () => {
+                                if (remoteVideoRef.current) {
+                                    remoteVideoRef.current.play().catch(console.error);
+                                }
+                                document.removeEventListener('click', playOnClick);
+                            };
+                            document.addEventListener('click', playOnClick);
+                        });
+                    }
                 }
             }, 100);
-        }
-
-        if (remoteStream && remoteAudioRef.current) {
+        } if (remoteStream && remoteAudioRef.current) {
             console.log('🔊 Setting remote audio stream');
             // Prevent multiple rapid assignments
             if (remoteAudioRef.current.srcObject !== remoteStream) {
@@ -576,6 +587,66 @@ const VideoCall: React.FC = () => {
         }
     };
 
+    // Debug function to check video/audio elements
+    const debugMediaElements = () => {
+        console.log('🔍 DEBUG: Media Elements Status');
+
+        if (remoteVideoRef.current) {
+            const video = remoteVideoRef.current;
+            console.log('📹 Remote Video Element:', {
+                srcObject: !!video.srcObject,
+                videoWidth: video.videoWidth,
+                videoHeight: video.videoHeight,
+                readyState: video.readyState,
+                paused: video.paused,
+                muted: video.muted,
+                volume: video.volume,
+                currentTime: video.currentTime,
+                duration: video.duration,
+                style: {
+                    display: getComputedStyle(video).display,
+                    visibility: getComputedStyle(video).visibility,
+                    width: getComputedStyle(video).width,
+                    height: getComputedStyle(video).height
+                }
+            });
+        }
+
+        if (remoteAudioRef.current) {
+            const audio = remoteAudioRef.current;
+            console.log('🔊 Remote Audio Element:', {
+                srcObject: !!audio.srcObject,
+                readyState: audio.readyState,
+                paused: audio.paused,
+                muted: audio.muted,
+                volume: audio.volume,
+                currentTime: audio.currentTime,
+                duration: audio.duration
+            });
+        }
+
+        if (remoteStream) {
+            console.log('🎵 Remote Stream:', {
+                id: remoteStream.id,
+                active: remoteStream.active,
+                videoTracks: remoteStream.getVideoTracks().map(track => ({
+                    id: track.id,
+                    kind: track.kind,
+                    enabled: track.enabled,
+                    readyState: track.readyState,
+                    settings: track.getSettings()
+                })),
+                audioTracks: remoteStream.getAudioTracks().map(track => ({
+                    id: track.id,
+                    kind: track.kind,
+                    enabled: track.enabled,
+                    readyState: track.readyState,
+                    settings: track.getSettings()
+                }))
+            });
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-[#1e40af] via-[#22c55e]/30 to-white dark:from-[#0f172a] dark:to-[#1e293b] p-0 sm:p-4 flex flex-col">
             {/* CRITICAL FIX: Hidden audio element for remote stream playback */}
@@ -685,19 +756,47 @@ const VideoCall: React.FC = () => {
                                         autoPlay
                                         playsInline
                                         controls={false}
-                                        muted={false}
+                                        muted={true}
+                                        style={{ width: '100%', height: '100%' }}
                                         className="w-full aspect-video object-cover rounded-3xl"
-                                        onLoadedMetadata={() => {
-                                            console.log('🔊 Remote video metadata loaded');
+                                        onLoadedMetadata={(e) => {
+                                            const video = e.target as HTMLVideoElement;
+                                            console.log('🔊 Remote video metadata loaded:', {
+                                                videoWidth: video.videoWidth,
+                                                videoHeight: video.videoHeight,
+                                                duration: video.duration,
+                                                srcObject: !!video.srcObject
+                                            });
                                         }}
-                                        onCanPlay={() => {
-                                            console.log('▶️ Remote video can play');
+                                        onCanPlay={(e) => {
+                                            const video = e.target as HTMLVideoElement;
+                                            console.log('▶️ Remote video can play:', {
+                                                readyState: video.readyState,
+                                                videoWidth: video.videoWidth,
+                                                videoHeight: video.videoHeight
+                                            });
                                         }}
-                                        onPlay={() => {
-                                            console.log('▶️ Remote video playing');
+                                        onPlay={(e) => {
+                                            const video = e.target as HTMLVideoElement;
+                                            console.log('▶️ Remote video playing:', {
+                                                currentTime: video.currentTime,
+                                                paused: video.paused,
+                                                videoWidth: video.videoWidth,
+                                                videoHeight: video.videoHeight
+                                            });
                                         }}
                                         onError={(e) => {
-                                            console.error('❌ Remote video error:', e);
+                                            const video = e.target as HTMLVideoElement;
+                                            console.error('❌ Remote video error:', video.error);
+                                        }}
+                                        onLoadStart={() => {
+                                            console.log('🔄 Remote video load start');
+                                        }}
+                                        onWaiting={() => {
+                                            console.log('⏳ Remote video waiting for data');
+                                        }}
+                                        onStalled={() => {
+                                            console.log('⏸️ Remote video stalled');
                                         }}
                                     />
                                 ) : (
@@ -705,7 +804,9 @@ const VideoCall: React.FC = () => {
                                         <p className="text-gray-600 dark:text-gray-400">Waiting for other user...</p>
                                     </div>
                                 )}
-                                <div className="absolute bottom-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">Remote</div>
+                                <div className="absolute bottom-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                                    Remote {remoteStream && `(${remoteStream.getVideoTracks().length}V/${remoteStream.getAudioTracks().length}A)`}
+                                </div>
                             </div>
 
                             {/* Call Controls */}
@@ -719,6 +820,9 @@ const VideoCall: React.FC = () => {
                                     </Button>
                                     <Button onClick={toggleSpeaker} variant="ghost" size="icon" className="rounded-full" title="Toggle Speaker">
                                         {speakerEnabled ? <Volume2 /> : <VolumeX className="text-red-500" />}
+                                    </Button>
+                                    <Button onClick={debugMediaElements} variant="ghost" size="icon" className="rounded-full" title="Debug Media">
+                                        🔍
                                     </Button>
                                     <Button onClick={endCall} variant="destructive" size="icon" className="rounded-full">
                                         <PhoneOff />
