@@ -24,11 +24,13 @@ export class WebRTCService {
     private onRemoteStreamCallback: ((stream: MediaStream) => void) | null = null;
 
     constructor(socket: Socket) {
+        console.log('🚀 Initializing WebRTC Service');
         this.socket = socket;
         this.initializePeerConnection();
     }
 
     private initializePeerConnection() {
+        console.log('🔄 Initializing peer connection');
         const configuration = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' }
@@ -39,6 +41,7 @@ export class WebRTCService {
 
         this.peerConnection.onicecandidate = (event) => {
             if (event.candidate) {
+                console.log('🧊 ICE candidate generated:', event.candidate);
                 this.socket.emit('ice-candidate', {
                     candidate: event.candidate,
                 });
@@ -46,10 +49,20 @@ export class WebRTCService {
         };
 
         this.peerConnection.ontrack = (event) => {
+            console.log('🎵 Remote track received:', event.streams.length, 'streams');
             this.remoteStream = event.streams[0];
             if (this.onRemoteStreamCallback) {
+                console.log('📞 Calling remote stream callback');
                 this.onRemoteStreamCallback(this.remoteStream);
             }
+        };
+
+        this.peerConnection.onconnectionstatechange = () => {
+            console.log('🔗 Connection state changed:', this.peerConnection?.connectionState);
+        };
+
+        this.peerConnection.oniceconnectionstatechange = () => {
+            console.log('🧊 ICE connection state changed:', this.peerConnection?.iceConnectionState);
         };
     }
 
@@ -59,20 +72,24 @@ export class WebRTCService {
 
     async getUserMedia(): Promise<MediaStream> {
         try {
+            console.log('🎤 Requesting user media access');
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: true,
                 audio: true
             });
+            console.log('✅ Media access granted. Video tracks:', stream.getVideoTracks().length, 'Audio tracks:', stream.getAudioTracks().length);
             this.localStream = stream;
 
             if (this.peerConnection) {
                 stream.getTracks().forEach(track => {
+                    console.log('➕ Adding track to peer connection:', track.kind);
                     this.peerConnection!.addTrack(track, stream);
                 });
             }
 
             return stream;
         } catch (error) {
+            console.error('❌ Failed to access camera/microphone:', error);
             throw new Error('Failed to access camera/microphone');
         }
     }
@@ -106,23 +123,29 @@ export class WebRTCService {
     }
 
     callUser(callData: CallData) {
+        console.log('📞 Calling user:', callData);
         this.socket.emit('callUser', callData);
     }
 
     answerCall(answerData: AnswerData) {
+        console.log('📞 Answering call:', answerData);
         this.socket.emit('answerCall', answerData);
     }
 
     rejectCall(to: string) {
+        console.log('❌ Rejecting call to:', to);
         this.socket.emit('rejectCall', { to });
     }
 
     endCall() {
+        console.log('📞 Ending call');
         if (this.peerConnection) {
+            console.log('🔐 Closing peer connection');
             this.peerConnection.close();
         }
 
         if (this.localStream) {
+            console.log('⏹️ Stopping local stream tracks');
             this.localStream.getTracks().forEach(track => track.stop());
             this.localStream = null;
         }
@@ -142,19 +165,27 @@ export class WebRTCService {
 
 
     toggleVideo(enabled: boolean) {
+        console.log('📹 Toggling video:', enabled);
         if (this.localStream) {
             const videoTrack = this.localStream.getVideoTracks()[0];
             if (videoTrack) {
                 videoTrack.enabled = enabled;
+                console.log('✅ Video track enabled:', enabled);
+            } else {
+                console.warn('⚠️ No video track found');
             }
         }
     }
 
     toggleAudio(enabled: boolean) {
+        console.log('🔊 Toggling audio:', enabled);
         if (this.localStream) {
             const audioTrack = this.localStream.getAudioTracks()[0];
             if (audioTrack) {
                 audioTrack.enabled = enabled;
+                console.log('✅ Audio track enabled:', enabled);
+            } else {
+                console.warn('⚠️ No audio track found');
             }
         }
     }

@@ -51,9 +51,10 @@ const VideoCall: React.FC = () => {
     const [showCallSetup, setShowCallSetup] = useState(false);
     const [step, setStep] = useState<'idle' | 'language' | 'callerId'>('idle');
 
-    // Refs
+    // Refs - THE KEY FIX: Adding remote audio element
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
+    const remoteAudioRef = useRef<HTMLAudioElement>(null);
     const sttRef = useRef<any>(null);
 
     // Language options
@@ -64,30 +65,41 @@ const VideoCall: React.FC = () => {
 
     // Initialize socket connection
     useEffect(() => {
+        console.log('🔌 Initializing socket connection');
         const newSocket = io(socketUrl, {
             transports: ['websocket'],
         });
         setSocket(newSocket);
 
         newSocket.on('me', (id: string) => {
+            console.log('✅ Socket connected with ID:', id);
             setMyId(id);
             setIsConnected(true);
         });
 
         newSocket.on('callUser', (data: any) => {
+            console.log('📞 Incoming call received:', data);
             setIncomingCall(data);
         });
 
         newSocket.on('callRejected', () => {
+            console.log('❌ Call was rejected');
             toast.error('Call was rejected');
             endCall();
         });
 
         newSocket.on('callEnded', () => {
+            console.log('📞 Call ended by remote user');
             endCall();
         });
 
+        newSocket.on('disconnect', () => {
+            console.log('🔌 Socket disconnected');
+            setIsConnected(false);
+        });
+
         return () => {
+            console.log('🔌 Disconnecting socket');
             newSocket.disconnect();
         };
     }, []);
@@ -97,20 +109,25 @@ const VideoCall: React.FC = () => {
         if (!socket || !webRTC) return;
 
         const handleCallAccepted = (signal: any) => {
+            console.log('✅ Call accepted, signal received:', signal);
             setCallAccepted(true);
             if (webRTC) {
+                console.log('📞 Handling answer signal');
                 webRTC.handleAnswer(signal);
             }
         };
 
         const handleTranslation = (data: any) => {
-            if (speakerEnabled) {
+            console.log('🌐 Translation received:', data);
+            if (speakerEnabled && data.translated) {
+                console.log('🔊 Playing TTS for translation:', data.translated);
                 TTS(data.translated, { language: data.toLang });
             }
             setTranslations(prev => [...prev, { ...data, isSent: false, id: `trans-${Date.now()}` }]);
         };
 
         const handleIceCandidate = (candidate: any) => {
+            console.log('🧊 ICE candidate received:', candidate);
             if (webRTC) {
                 webRTC.handleIceCandidate(candidate);
             }
@@ -130,11 +147,30 @@ const VideoCall: React.FC = () => {
     // Initialize WebRTC when socket is ready
     useEffect(() => {
         if (socket && !webRTC) {
+            console.log('🔄 Initializing WebRTC service');
             const rtcService = new WebRTCService(socket);
             setWebRTC(rtcService);
 
             rtcService.onRemoteStream((stream) => {
+                console.log('🎵 Remote stream received, setting up audio/video');
                 setRemoteStream(stream);
+
+                // CRITICAL FIX: Set up remote audio for speaker output
+                if (remoteAudioRef.current) {
+                    console.log('🔊 Connecting remote stream to audio element');
+                    remoteAudioRef.current.srcObject = stream;
+                    remoteAudioRef.current.play().catch(e => {
+                        console.error('❌ Failed to play remote audio:', e);
+                        // Retry on user interaction
+                        const enableAudio = () => {
+                            if (remoteAudioRef.current) {
+                                remoteAudioRef.current.play().catch(console.error);
+                            }
+                            document.removeEventListener('click', enableAudio);
+                        };
+                        document.addEventListener('click', enableAudio);
+                    });
+                }
             });
         }
     }, [socket]);
@@ -144,12 +180,13 @@ const VideoCall: React.FC = () => {
         const startLocalStream = async () => {
             if (webRTC) {
                 try {
+                    console.log('🎥 Starting local video stream');
                     const stream = await webRTC.getUserMedia();
-                    // Do NOT disable the audio track, so STT can hear the user
                     if (localVideoRef.current) {
                         localVideoRef.current.srcObject = stream;
                     }
                 } catch (error) {
+                    console.error('❌ Failed to access camera/microphone:', error);
                     toast.error('Failed to access camera/microphone');
                 }
             }
@@ -157,24 +194,42 @@ const VideoCall: React.FC = () => {
         startLocalStream();
     }, [webRTC]);
 
-    // Handle remote stream
+    // Handle remote stream updates
     useEffect(() => {
+        console.log('🎵 Remote stream updated:', !!remoteStream);
         if (remoteStream && remoteVideoRef.current) {
+            console.log('📹 Setting remote video stream');
             remoteVideoRef.current.srcObject = remoteStream;
+        }
+        if (remoteStream && remoteAudioRef.current) {
+            console.log('🔊 Setting remote audio stream');
+            remoteAudioRef.current.srcObject = remoteStream;
+            remoteAudioRef.current.play().catch(e => {
+                console.error('❌ Failed to play remote audio:', e);
+            });
         }
     }, [remoteStream]);
 
     // Initialize STT for translation (only when call is accepted and audioEnabled)
     useEffect(() => {
+        console.log('🎤 STT Effect - callAccepted:', callAccepted, 'myLanguage:', myLanguage?.value, 'audioEnabled:', audioEnabled);
         let lastEmit = 0;
         let interimTimeout: NodeJS.Timeout | null = null;
-        if (callAccepted && myLanguage && audioEnabled) {
-            const stt = STT({ language: myLanguage.value, continuous: true, interimResults: true }, {
+
+        if (callAccepted && myLanguage && audioEnabled && targetLanguage) {
+            console.log('✅ Starting STT with language:', myLanguage.value);
+            const stt = STT({
+                language: myLanguage.value,
+                continuous: true,
+                interimResults: true
+            }, {
                 onResult: ({ transcript, isFinal }) => {
                     if (!transcript.trim()) return;
-                    // Throttle interim translation emission to 1 per second
+                    console.log('🎤 STT Result:', { transcript, isFinal, fromLang: myLanguage.value, toLang: targetLanguage?.value });
+
                     const now = Date.now();
                     if (!isFinal) {
+                        // Handle interim results
                         setTranslations(prev => {
                             const filtered = prev.filter(msg => !msg.id.startsWith('interim-'));
                             return [
@@ -190,34 +245,49 @@ const VideoCall: React.FC = () => {
                                 }
                             ];
                         });
+                        // Throttle interim emissions
                         if (now - lastEmit > 1000) {
-                            handleTranslation(transcript, true); // true = interim
+                            console.log('📤 Sending interim translation');
+                            handleTranslation(transcript, true);
                             lastEmit = now;
                         } else {
                             if (interimTimeout) clearTimeout(interimTimeout);
                             interimTimeout = setTimeout(() => {
+                                console.log('📤 Sending delayed interim translation');
                                 handleTranslation(transcript, true);
                                 lastEmit = Date.now();
                             }, 1000 - (now - lastEmit));
                         }
                     } else {
+                        // Handle final results
+                        console.log('📤 Sending final translation');
                         handleTranslation(transcript, false);
                     }
                 },
-                onError: (err) => toast.error(err)
+                onError: (err) => {
+                    console.error('❌ STT Error:', err);
+                    toast.error(err);
+                }
             });
+
             if (stt) {
+                console.log('🎤 STT initialized successfully');
                 sttRef.current = stt;
                 stt.start();
+            } else {
+                console.error('❌ Failed to initialize STT');
             }
         } else {
+            console.log('⏹️ Stopping STT - requirements not met');
             if (sttRef.current) {
                 sttRef.current.stop();
                 sttRef.current = null;
             }
         }
+
         return () => {
             if (sttRef.current) {
+                console.log('🧹 Cleanup: Stopping STT');
                 sttRef.current.stop();
             }
             if (interimTimeout) clearTimeout(interimTimeout);
@@ -226,6 +296,7 @@ const VideoCall: React.FC = () => {
 
     // Send transcript for translation (interim or final)
     const handleTranslation = (text: string, isInterim = false) => {
+        console.log('🌐 handleTranslation called:', { text, isInterim, myLanguage: myLanguage?.value, targetLanguage: targetLanguage?.value });
         if (socket && webRTC && myLanguage && targetLanguage) {
             const payload = {
                 text,
@@ -233,7 +304,10 @@ const VideoCall: React.FC = () => {
                 toLang: targetLanguage.value,
                 isInterim
             };
+            console.log('📤 Emitting translation:', payload);
             socket.emit('translation', payload);
+
+            // Update local UI with sending status
             setTranslations(prev => [
                 ...prev,
                 {
@@ -246,20 +320,32 @@ const VideoCall: React.FC = () => {
                     isSent: true
                 }
             ]);
+        } else {
+            console.warn('❌ Cannot send translation - missing dependencies:', {
+                socket: !!socket,
+                webRTC: !!webRTC,
+                myLanguage: myLanguage?.value,
+                targetLanguage: targetLanguage?.value
+            });
         }
     };
 
     const callUser = async () => {
+        console.log('📞 Initiating call to:', callerId.trim());
         if (!webRTC || !callerId.trim()) {
+            console.error('❌ Missing WebRTC or caller ID');
             toast.error('Please enter a valid caller ID');
             return;
         }
         if (!targetLanguage) {
+            console.error('❌ Missing target language');
             toast.error('Please select a language to listen in');
             return;
         }
         try {
+            console.log('🔄 Creating offer');
             const offer = await webRTC.createOffer();
+            console.log('📤 Sending call with languages:', { from: myLanguage?.value, to: targetLanguage.value });
             webRTC.callUser({
                 phone: callerId,
                 signalData: offer,
@@ -268,18 +354,23 @@ const VideoCall: React.FC = () => {
                 toLang: targetLanguage.value
             });
         } catch (error) {
+            console.error('❌ Failed to start call:', error);
             toast.error('Failed to start call');
         }
     };
 
     const answerCall = async () => {
+        console.log('📞 Answering call from:', incomingCall?.from);
         if (!webRTC || !incomingCall || !myLanguage) {
+            console.error('❌ Missing requirements for answering call');
             toast.error("Please select a language first.");
-            return
-        };
+            return;
+        }
 
         try {
+            console.log('🔄 Creating answer');
             const answer = await webRTC.createAnswer(incomingCall.signal);
+            console.log('📤 Sending answer with languages:', { from: myLanguage.value, to: incomingCall.fromLang });
 
             webRTC.answerCall({
                 to: incomingCall.from,
@@ -292,11 +383,13 @@ const VideoCall: React.FC = () => {
             setCallAccepted(true);
             setIncomingCall(null);
         } catch (error) {
+            console.error('❌ Failed to answer call:', error);
             toast.error('Failed to answer call');
         }
     };
 
     const rejectCall = () => {
+        console.log('❌ Rejecting call from:', incomingCall?.from);
         if (webRTC && incomingCall) {
             webRTC.rejectCall(incomingCall.from);
             setIncomingCall(null);
@@ -304,6 +397,7 @@ const VideoCall: React.FC = () => {
     };
 
     const endCall = () => {
+        console.log('📞 Ending call');
         if (webRTC) {
             webRTC.endCall();
         }
@@ -325,10 +419,11 @@ const VideoCall: React.FC = () => {
         }
     };
 
-    // Toggle translation (STT) on/off, not original audio
+    // Toggle STT (translation) on/off
     const toggleAudio = () => {
         setAudioEnabled((prev) => {
             const newState = !prev;
+            console.log('🎤 Toggling STT/Translation audio:', newState);
             if (newState && callAccepted && sttRef.current) {
                 sttRef.current.start();
             } else if (!newState && sttRef.current) {
@@ -338,21 +433,35 @@ const VideoCall: React.FC = () => {
         });
     };
 
+    const toggleSpeaker = () => {
+        setSpeakerEnabled(!speakerEnabled);
+        console.log('🔊 Speaker enabled:', !speakerEnabled);
+    };
+
     const handleMyLanguageChange = (option: SingleValue<LanguageOption>) => {
         if (option) {
+            console.log('🌐 My language changed to:', option.value);
             setMyLanguage(option);
         }
     };
 
     const handleTargetLanguageChange = (option: SingleValue<LanguageOption>) => {
         if (option) {
+            console.log('🌐 Target language changed to:', option.value);
             setTargetLanguage(option);
         }
     };
 
-
     return (
         <div className="min-h-screen bg-gradient-to-br from-[#1e40af] via-[#22c55e]/30 to-white dark:from-[#0f172a] dark:to-[#1e293b] p-0 sm:p-4 flex flex-col">
+            {/* CRITICAL FIX: Hidden audio element for remote stream playback */}
+            <audio
+                ref={remoteAudioRef}
+                autoPlay
+                playsInline
+                style={{ display: 'none' }}
+            />
+
             <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col lg:flex-row gap-4">
                 <div className="flex flex-col gap-4 lg:gap-6 flex-1 w-full">
                     {/* Video Section */}
@@ -363,12 +472,18 @@ const VideoCall: React.FC = () => {
                                 <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
                                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                     {isConnected ? `Your ID: ${myId}` : 'Connecting...'}
-                                    <span className="inline-block ml-2 p-2 cursor-pointer border border-[#22c55e]/20 rounded hover:bg-gray-700" title="Copy to clipboard">
-                                        <Copy className="inline-block cursor-pointer" size={16} onClick={() => {
-                                            navigator.clipboard.writeText(myId);
-                                            toast.success('Copied to clipboard');
-                                        }} />
-                                    </span>
+                                    {isConnected && (
+                                        <span className="inline-block ml-2 p-2 cursor-pointer border border-[#22c55e]/20 rounded hover:bg-gray-100" title="Copy to clipboard">
+                                            <Copy
+                                                className="inline-block cursor-pointer"
+                                                size={16}
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(myId);
+                                                    toast.success('Copied to clipboard');
+                                                }}
+                                            />
+                                        </span>
+                                    )}
                                 </span>
                             </div>
                             {!callAccepted && !incomingCall && (
@@ -455,10 +570,10 @@ const VideoCall: React.FC = () => {
                                     <Button onClick={toggleVideo} variant="ghost" size="icon" className="rounded-full">
                                         {videoEnabled ? <Video /> : <VideoOff className="text-red-500" />}
                                     </Button>
-                                    <Button onClick={toggleAudio} variant="ghost" size="icon" className="rounded-full">
+                                    <Button onClick={toggleAudio} variant="ghost" size="icon" className="rounded-full" title="Toggle Translation">
                                         {audioEnabled ? <Mic /> : <MicOff className="text-red-500" />}
                                     </Button>
-                                    <Button onClick={() => setSpeakerEnabled(!speakerEnabled)} variant="ghost" size="icon" className="rounded-full">
+                                    <Button onClick={toggleSpeaker} variant="ghost" size="icon" className="rounded-full" title="Toggle Speaker">
                                         {speakerEnabled ? <Volume2 /> : <VolumeX className="text-red-500" />}
                                     </Button>
                                     <Button onClick={endCall} variant="destructive" size="icon" className="rounded-full">
@@ -473,7 +588,9 @@ const VideoCall: React.FC = () => {
                     {callAccepted && (
                         <Card className="w-full lg:w-96 bg-white/80 dark:bg-[#1e293b]/80 border-[#22c55e]/20 shadow-lg rounded-2xl">
                             <CardHeader>
-                                <CardTitle className="text-lg font-semibold text-gray-800 dark:text-white">Live Translation</CardTitle>
+                                <CardTitle className="text-lg font-semibold text-gray-800 dark:text-white">
+                                    Live Translation ({translations.length})
+                                </CardTitle>
                             </CardHeader>
                             <CardContent className="h-96 overflow-y-auto p-4 space-y-4">
                                 {translations.map((msg) => (
@@ -482,10 +599,17 @@ const VideoCall: React.FC = () => {
                                             <div className="text-xs opacity-60">{msg.fromLang} → {msg.toLang}</div>
                                             <div className="font-semibold">{msg.original}</div>
                                             <div className="italic">{msg.translated}</div>
-                                            <p className="text-xs opacity-70 mt-1">{msg.timestamp instanceof Date ? msg.timestamp.toLocaleTimeString() : ''}</p>
+                                            <p className="text-xs opacity-70 mt-1">
+                                                {msg.timestamp instanceof Date ? msg.timestamp.toLocaleTimeString() : ''}
+                                            </p>
                                         </div>
                                     </div>
                                 ))}
+                                {translations.length === 0 && (
+                                    <div className="text-center text-gray-500 dark:text-gray-400">
+                                        Start speaking to see translations here
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     )}
@@ -497,7 +621,9 @@ const VideoCall: React.FC = () => {
                         <div className="w-full max-w-sm sm:w-96 bg-white rounded-3xl shadow-2xl border-2 border-[#22c55e]/30 p-6 text-center space-y-4">
                             <h2 className="text-2xl font-bold text-gray-800">Incoming Call</h2>
                             <p className="text-gray-600">From: {incomingCall.from}</p>
-                            <p className="text-gray-600">Wants to speak in: <span className='font-bold'>{ISO6391.getName(incomingCall.fromLang)}</span></p>
+                            <p className="text-gray-600">
+                                Wants to speak in: <span className='font-bold'>{ISO6391.getName(incomingCall.fromLang)}</span>
+                            </p>
                             <div className="space-y-2">
                                 <p className="text-sm font-medium text-gray-700">I will speak in:</p>
                                 <Select
@@ -509,10 +635,17 @@ const VideoCall: React.FC = () => {
                                 />
                             </div>
                             <div className="flex justify-around items-center pt-4">
-                                <Button onClick={answerCall} disabled={!myLanguage} className="bg-green-500 hover:bg-green-600 text-white rounded-full w-20 h-20 flex items-center justify-center">
+                                <Button
+                                    onClick={answerCall}
+                                    disabled={!myLanguage}
+                                    className="bg-green-500 hover:bg-green-600 text-white rounded-full w-20 h-20 flex items-center justify-center"
+                                >
                                     <Phone size={30} />
                                 </Button>
-                                <Button onClick={rejectCall} className="bg-red-500 hover:bg-red-600 text-white rounded-full w-20 h-20 flex items-center justify-center">
+                                <Button
+                                    onClick={rejectCall}
+                                    className="bg-red-500 hover:bg-red-600 text-white rounded-full w-20 h-20 flex items-center justify-center"
+                                >
                                     <PhoneOff size={30} />
                                 </Button>
                             </div>

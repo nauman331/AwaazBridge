@@ -72,25 +72,47 @@ export const SocketConnection = (io: Server) => {
         });
 
         socket.on("translation", async (data) => {
+            console.log('🌐 Translation request received:', {
+                from: socket.id,
+                text: data.text?.substring(0, 50) + '...',
+                fromLang: data.fromLang,
+                toLang: data.toLang,
+                isInterim: data.isInterim
+            });
+
             const currentUser = users.get(socket.id);
             if (currentUser && currentUser.peerId && data.text && data.fromLang && data.toLang) {
                 try {
+                    console.log('🔄 Calling AI translate function');
                     const translatedText = await AITranslate(data.fromLang, data.toLang, data.text);
-                    io.to(currentUser.peerId).emit("translation", {
+                    console.log('✅ Translation successful:', translatedText?.substring(0, 50) + '...');
+
+                    const translationData = {
                         original: data.text,
                         translated: translatedText,
                         fromLang: data.fromLang,
                         toLang: data.toLang,
                         timestamp: new Date(),
                         isInterim: data.isInterim || false
-                    });
-                    // Optionally, also emit to sender for local UI update
-                    // socket.emit("translation", { ... });
-                    console.log(`Translated text from ${data.fromLang} to ${data.toLang}: ${translatedText}`);
+                    };
+
+                    console.log('📤 Sending translation to peer:', currentUser.peerId);
+                    io.to(currentUser.peerId).emit("translation", translationData);
+
+                    // Optional: also emit to sender for confirmation
+                    socket.emit("translationSent", translationData);
                 } catch (error) {
-                    console.error("Translation error:", error);
+                    console.error("❌ Translation error:", error);
                     socket.emit("error", "Translation failed");
                 }
+            } else {
+                console.warn('❌ Missing translation requirements:', {
+                    hasUser: !!currentUser,
+                    hasPeer: !!currentUser?.peerId,
+                    hasText: !!data.text,
+                    hasFromLang: !!data.fromLang,
+                    hasToLang: !!data.toLang
+                });
             }
         });
 
