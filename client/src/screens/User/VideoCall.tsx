@@ -169,16 +169,12 @@ const VideoCall: React.FC = () => {
     // Initialize STT for translation (only when call is accepted and audioEnabled)
     useEffect(() => {
         if (callAccepted && myLanguage && audioEnabled) {
-            let interimTranscript = '';
             const stt = STT({ language: myLanguage.value, continuous: true, interimResults: true }, {
                 onResult: ({ transcript, isFinal }) => {
                     // Always show interim/final transcript in UI (real-time)
                     if (isFinal && transcript.trim()) {
                         handleTranslation(transcript);
-                        interimTranscript = '';
                     } else if (transcript.trim()) {
-                        // Show interim transcript as a temporary translation
-                        interimTranscript = transcript;
                         setTranslations(prev => {
                             // Remove previous interim
                             const filtered = prev.filter(msg => !msg.id.startsWith('interim-'));
