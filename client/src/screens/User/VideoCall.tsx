@@ -145,9 +145,7 @@ const VideoCall: React.FC = () => {
             if (webRTC) {
                 try {
                     const stream = await webRTC.getUserMedia();
-                    // Mute the audio track so original voice is not sent
-                    const audioTrack = stream.getAudioTracks()[0];
-                    if (audioTrack) audioTrack.enabled = false;
+                    // Do NOT disable the audio track, so STT can hear the user
                     if (localVideoRef.current) {
                         localVideoRef.current.srcObject = stream;
                     }
