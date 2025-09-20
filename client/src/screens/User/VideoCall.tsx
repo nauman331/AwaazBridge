@@ -263,7 +263,9 @@ const VideoCall: React.FC = () => {
                     }
                 }
             }, 100);
-        } if (remoteStream && remoteAudioRef.current) {
+        }
+
+        if (remoteStream && remoteAudioRef.current) {
             console.log('🔊 Setting remote audio stream');
             // Prevent multiple rapid assignments
             if (remoteAudioRef.current.srcObject !== remoteStream) {
@@ -285,14 +287,17 @@ const VideoCall: React.FC = () => {
         console.log('🎤 STT Effect - callAccepted:', callAccepted, 'myLanguage:', myLanguage?.value, 'audioEnabled:', audioEnabled);
         let lastEmit = 0;
         let interimTimeout: NodeJS.Timeout | null = null;
+        let isActiveRef = { current: false }; // Use a ref to track if STT should be active
 
         if (callAccepted && myLanguage && audioEnabled && targetLanguage) {
             console.log('✅ Starting STT with language:', myLanguage.value);
+            isActiveRef.current = true; // Mark as active
+
             const stt = STT({
                 language: myLanguage.value,
                 continuous: true,
                 interimResults: true,
-                shouldContinue: () => callAccepted && audioEnabled // Only continue if call is active and audio enabled
+                shouldContinue: () => isActiveRef.current // Use ref for real-time check
             }, {
                 onResult: ({ transcript, isFinal }) => {
                     if (!transcript.trim()) return;
@@ -350,16 +355,20 @@ const VideoCall: React.FC = () => {
             }
         } else {
             console.log('⏹️ Stopping STT - requirements not met');
+            isActiveRef.current = false; // Mark as inactive immediately
             if (sttRef.current) {
+                console.log('🛑 Stopping and clearing STT reference');
                 sttRef.current.stop();
                 sttRef.current = null;
             }
         }
 
         return () => {
+            console.log('🧹 Cleanup: Stopping STT');
+            isActiveRef.current = false; // Ensure ref is marked inactive
             if (sttRef.current) {
-                console.log('🧹 Cleanup: Stopping STT');
                 sttRef.current.stop();
+                sttRef.current = null;
             }
             if (interimTimeout) clearTimeout(interimTimeout);
         };
@@ -533,12 +542,20 @@ const VideoCall: React.FC = () => {
 
     const endCall = () => {
         console.log('📞 Ending call');
+
+        // Stop STT immediately
+        if (sttRef.current) {
+            console.log('🛑 Force stopping STT in endCall');
+            sttRef.current.stop();
+            sttRef.current = null;
+        }
+
+        // End WebRTC connection
         if (webRTC) {
             webRTC.endCall();
         }
-        if (sttRef.current) {
-            sttRef.current.stop();
-        }
+
+        // Reset states
         setCallAccepted(false);
         setIncomingCall(null);
         setRemoteStream(null);
@@ -644,6 +661,33 @@ const VideoCall: React.FC = () => {
                     settings: track.getSettings()
                 }))
             });
+        }
+    };
+
+    // Force play media elements (for autoplay restrictions)
+    const forcePlayMedia = async () => {
+        console.log('🎬 Force playing media elements...');
+
+        if (remoteVideoRef.current) {
+            try {
+                await remoteVideoRef.current.play();
+                console.log('✅ Remote video force play successful');
+                toast.success('Remote video playing');
+            } catch (e) {
+                console.error('❌ Remote video force play failed:', e);
+                toast.error('Failed to play remote video: ' + (e as Error).message);
+            }
+        }
+
+        if (remoteAudioRef.current) {
+            try {
+                await remoteAudioRef.current.play();
+                console.log('✅ Remote audio force play successful');
+                toast.success('Remote audio playing');
+            } catch (e) {
+                console.error('❌ Remote audio force play failed:', e);
+                toast.error('Failed to play remote audio: ' + (e as Error).message);
+            }
         }
     };
 
@@ -823,6 +867,9 @@ const VideoCall: React.FC = () => {
                                     </Button>
                                     <Button onClick={debugMediaElements} variant="ghost" size="icon" className="rounded-full" title="Debug Media">
                                         🔍
+                                    </Button>
+                                    <Button onClick={forcePlayMedia} variant="ghost" size="icon" className="rounded-full" title="Force Play Media">
+                                        ▶️
                                     </Button>
                                     <Button onClick={endCall} variant="destructive" size="icon" className="rounded-full">
                                         <PhoneOff />
