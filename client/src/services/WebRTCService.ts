@@ -22,6 +22,9 @@ export class WebRTCService {
     private remoteStream: MediaStream | null = null;
     private socket: Socket;
     private onRemoteStreamCallback: ((stream: MediaStream) => void) | null = null;
+    private connectionRetryCount: number = 0;
+    private maxRetries: number = 3;
+    private retryTimeout: NodeJS.Timeout | null = null;
 
     constructor(socket: Socket) {
         console.log('🚀 Initializing WebRTC Service');
@@ -43,7 +46,10 @@ export class WebRTCService {
                     credential: 'openrelayproject'
                 }
             ],
-            iceCandidatePoolSize: 10
+            iceCandidatePoolSize: 10,
+            iceTransportPolicy: 'all' as RTCIceTransportPolicy,
+            bundlePolicy: 'balanced' as RTCBundlePolicy,
+            rtcpMuxPolicy: 'require' as RTCRtcpMuxPolicy
         };
 
         this.peerConnection = new RTCPeerConnection(configuration);
@@ -59,18 +65,36 @@ export class WebRTCService {
 
         // Avoid duplicate stream assignments
         this.peerConnection.ontrack = (event) => {
-            console.log('🎵 Remote track received:', event.streams.length, 'streams');
+            console.log('🎵 Remote track received:', {
+                streams: event.streams.length,
+                track: event.track.kind,
+                trackId: event.track.id,
+                trackEnabled: event.track.enabled,
+                trackReadyState: event.track.readyState
+            });
 
-            // Avoid duplicate stream assignments
-            if (this.remoteStream && this.remoteStream.id === event.streams[0].id) {
-                console.log('⏭️ Skipping duplicate stream assignment');
-                return;
-            }
+            if (event.streams.length > 0) {
+                const stream = event.streams[0];
+                console.log('📊 Stream details:', {
+                    id: stream.id,
+                    active: stream.active,
+                    videoTracks: stream.getVideoTracks().length,
+                    audioTracks: stream.getAudioTracks().length
+                });
 
-            this.remoteStream = event.streams[0];
-            if (this.onRemoteStreamCallback) {
-                console.log('📞 Calling remote stream callback');
-                this.onRemoteStreamCallback(this.remoteStream);
+                // Avoid duplicate stream assignments
+                if (this.remoteStream && this.remoteStream.id === stream.id) {
+                    console.log('⏭️ Skipping duplicate stream assignment');
+                    return;
+                }
+
+                this.remoteStream = stream;
+                if (this.onRemoteStreamCallback) {
+                    console.log('📞 Calling remote stream callback');
+                    this.onRemoteStreamCallback(this.remoteStream);
+                }
+            } else {
+                console.warn('⚠️ No streams in track event');
             }
         };
 
@@ -86,9 +110,31 @@ export class WebRTCService {
         this.peerConnection.oniceconnectionstatechange = () => {
             console.log('🧊 ICE connection state changed:', this.peerConnection?.iceConnectionState);
 
-            if (this.peerConnection?.iceConnectionState === 'failed') {
-                console.log('🧊 ICE connection failed, restarting ICE');
-                this.restartIce();
+            switch (this.peerConnection?.iceConnectionState) {
+                case 'failed':
+                    console.log('🧊 ICE connection failed, attempting recovery');
+                    this.handleIceFailure();
+                    break;
+                case 'disconnected':
+                    console.log('🧊 ICE connection disconnected, waiting for recovery');
+                    // Don't immediately restart on disconnect, give it time to recover
+                    if (this.retryTimeout) clearTimeout(this.retryTimeout);
+                    this.retryTimeout = setTimeout(() => {
+                        if (this.peerConnection?.iceConnectionState === 'disconnected') {
+                            console.log('🧊 ICE connection still disconnected, attempting restart');
+                            this.handleIceFailure();
+                        }
+                    }, 5000); // Wait 5 seconds before attempting recovery
+                    break;
+                case 'connected':
+                case 'completed':
+                    console.log('🧊 ICE connection recovered');
+                    this.connectionRetryCount = 0; // Reset retry count on successful connection
+                    if (this.retryTimeout) {
+                        clearTimeout(this.retryTimeout);
+                        this.retryTimeout = null;
+                    }
+                    break;
             }
         };
 
@@ -99,10 +145,34 @@ export class WebRTCService {
 
     private handleConnectionFailure() {
         console.log('🔧 Handling connection failure');
-        // In a real implementation, you might want to:
-        // 1. Retry the connection
-        // 2. Notify the user
-        // 3. Fall back to different TURN servers
+        this.connectionRetryCount++;
+
+        if (this.connectionRetryCount <= this.maxRetries) {
+            console.log(`🔄 Attempting connection recovery (${this.connectionRetryCount}/${this.maxRetries})`);
+            // Try restarting ICE first
+            this.restartIce();
+        } else {
+            console.error('❌ Max connection retries exceeded, giving up');
+            // Don't automatically end the call here - let the user decide
+            // this.endCall();
+        }
+    }
+
+    private handleIceFailure() {
+        console.log('🧊 Handling ICE failure');
+        this.connectionRetryCount++;
+
+        if (this.connectionRetryCount <= this.maxRetries) {
+            console.log(`🧊 Attempting ICE recovery (${this.connectionRetryCount}/${this.maxRetries})`);
+            this.restartIce();
+        } else {
+            console.error('❌ Max ICE retries exceeded');
+            // Emit an event to notify the UI about connection issues
+            this.socket.emit('connection-issues', {
+                type: 'ice-failure',
+                retries: this.connectionRetryCount
+            });
+        }
     }
 
     private restartIce() {
@@ -110,7 +180,9 @@ export class WebRTCService {
         if (this.peerConnection) {
             this.peerConnection.restartIce();
         }
-    } onRemoteStream(callback: (stream: MediaStream) => void) {
+    }
+
+    onRemoteStream(callback: (stream: MediaStream) => void) {
         this.onRemoteStreamCallback = callback;
     }
 
@@ -158,13 +230,35 @@ export class WebRTCService {
             }
 
             console.log('✅ Final stream - Video tracks:', stream.getVideoTracks().length, 'Audio tracks:', stream.getAudioTracks().length);
+
+            // Log track details
+            stream.getTracks().forEach(track => {
+                console.log(`📊 Local ${track.kind} track:`, {
+                    id: track.id,
+                    enabled: track.enabled,
+                    readyState: track.readyState,
+                    settings: track.getSettings?.() || 'not available'
+                });
+            });
+
             this.localStream = stream;
 
             if (this.peerConnection) {
                 stream.getTracks().forEach(track => {
-                    console.log('➕ Adding track to peer connection:', track.kind);
+                    console.log('➕ Adding track to peer connection:', {
+                        kind: track.kind,
+                        id: track.id,
+                        enabled: track.enabled
+                    });
                     this.peerConnection!.addTrack(track, stream);
                 });
+
+                console.log('🔄 Current senders after adding tracks:',
+                    this.peerConnection.getSenders().map(sender => ({
+                        track: sender.track?.kind,
+                        trackId: sender.track?.id
+                    }))
+                );
             }
 
             return stream;
@@ -177,23 +271,32 @@ export class WebRTCService {
     async createOffer(): Promise<RTCSessionDescriptionInit> {
         if (!this.peerConnection) throw new Error('Peer connection not initialized');
 
+        console.log('🔄 Creating offer with tracks:', this.peerConnection.getSenders().length);
         const offer = await this.peerConnection.createOffer();
+        console.log('📤 Created offer, setting local description');
         await this.peerConnection.setLocalDescription(offer);
+        console.log('✅ Local description set');
         return offer;
     }
 
     async createAnswer(offer: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
         if (!this.peerConnection) throw new Error('Peer connection not initialized');
 
+        console.log('📥 Setting remote description from offer');
         await this.peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+        console.log('🔄 Creating answer with tracks:', this.peerConnection.getSenders().length);
         const answer = await this.peerConnection.createAnswer();
+        console.log('📤 Created answer, setting local description');
         await this.peerConnection.setLocalDescription(answer);
+        console.log('✅ Answer created and local description set');
         return answer;
     }
 
     async handleAnswer(answer: RTCSessionDescriptionInit) {
         if (!this.peerConnection) throw new Error('Peer connection not initialized');
+        console.log('📥 Setting remote description from answer');
         await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+        console.log('✅ Remote description set from answer');
     }
 
     async handleIceCandidate(candidate: RTCIceCandidateInit) {
@@ -219,6 +322,16 @@ export class WebRTCService {
 
     endCall() {
         console.log('📞 Ending call');
+
+        // Clear any pending retry timeouts
+        if (this.retryTimeout) {
+            clearTimeout(this.retryTimeout);
+            this.retryTimeout = null;
+        }
+
+        // Reset retry count
+        this.connectionRetryCount = 0;
+
         if (this.peerConnection) {
             console.log('🔐 Closing peer connection');
             this.peerConnection.close();

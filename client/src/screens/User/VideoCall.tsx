@@ -115,6 +115,13 @@ const VideoCall: React.FC = () => {
             endCall();
         });
 
+        newSocket.on('connection-issues', (data: any) => {
+            console.log('⚠️ Connection issues reported:', data);
+            if (data.type === 'ice-failure' && data.retries >= 3) {
+                toast.error('Connection issues detected. The call may be unstable.');
+            }
+        });
+
         newSocket.on('disconnect', () => {
             console.log('🔌 Socket disconnected');
             setIsConnected(false);
@@ -218,11 +225,33 @@ const VideoCall: React.FC = () => {
 
     // Handle remote stream updates
     useEffect(() => {
-        console.log('🎵 Remote stream updated:', !!remoteStream);
+        console.log('🎵 Remote stream updated:', !!remoteStream, remoteStream ? `ID: ${remoteStream.id}` : 'No stream');
+
+        if (remoteStream) {
+            console.log('📊 Remote stream details:', {
+                id: remoteStream.id,
+                active: remoteStream.active,
+                videoTracks: remoteStream.getVideoTracks().length,
+                audioTracks: remoteStream.getAudioTracks().length,
+                videoTrackEnabled: remoteStream.getVideoTracks()[0]?.enabled,
+                audioTrackEnabled: remoteStream.getAudioTracks()[0]?.enabled
+            });
+        }
+
         if (remoteStream && remoteVideoRef.current) {
             console.log('📹 Setting remote video stream');
             remoteVideoRef.current.srcObject = remoteStream;
+
+            // Force play after setting srcObject
+            setTimeout(() => {
+                if (remoteVideoRef.current) {
+                    remoteVideoRef.current.play().catch(e => {
+                        console.error('❌ Failed to play remote video:', e.name + ':', e.message);
+                    });
+                }
+            }, 100);
         }
+
         if (remoteStream && remoteAudioRef.current) {
             console.log('🔊 Setting remote audio stream');
             // Prevent multiple rapid assignments
@@ -251,7 +280,8 @@ const VideoCall: React.FC = () => {
             const stt = STT({
                 language: myLanguage.value,
                 continuous: true,
-                interimResults: true
+                interimResults: true,
+                shouldContinue: () => callAccepted && audioEnabled // Only continue if call is active and audio enabled
             }, {
                 onResult: ({ transcript, isFinal }) => {
                     if (!transcript.trim()) return;
@@ -393,6 +423,21 @@ const VideoCall: React.FC = () => {
             toast.error('Please select a language to listen in');
             return;
         }
+
+        // Ensure we have a local stream before making the call
+        const localStream = webRTC.getLocalStream();
+        if (!localStream) {
+            console.warn('⚠️ No local stream, attempting to get media first');
+            try {
+                await webRTC.getUserMedia();
+                console.log('✅ Local stream acquired for call');
+            } catch (error) {
+                console.error('❌ Failed to get local stream for call:', error);
+                toast.error('Camera/microphone access required to make a call');
+                return;
+            }
+        }
+
         try {
             console.log('🔄 Creating offer');
             const offer = await webRTC.createOffer();
@@ -416,6 +461,20 @@ const VideoCall: React.FC = () => {
             console.error('❌ Missing requirements for answering call');
             toast.error("Please select a language first.");
             return;
+        }
+
+        // Ensure we have a local stream before answering the call
+        const localStream = webRTC.getLocalStream();
+        if (!localStream) {
+            console.warn('⚠️ No local stream, attempting to get media first');
+            try {
+                await webRTC.getUserMedia();
+                console.log('✅ Local stream acquired for answer');
+            } catch (error) {
+                console.error('❌ Failed to get local stream for answer:', error);
+                toast.error('Camera/microphone access required to answer the call');
+                return;
+            }
         }
 
         try {
@@ -625,7 +684,21 @@ const VideoCall: React.FC = () => {
                                         ref={remoteVideoRef}
                                         autoPlay
                                         playsInline
+                                        controls={false}
+                                        muted={false}
                                         className="w-full aspect-video object-cover rounded-3xl"
+                                        onLoadedMetadata={() => {
+                                            console.log('🔊 Remote video metadata loaded');
+                                        }}
+                                        onCanPlay={() => {
+                                            console.log('▶️ Remote video can play');
+                                        }}
+                                        onPlay={() => {
+                                            console.log('▶️ Remote video playing');
+                                        }}
+                                        onError={(e) => {
+                                            console.error('❌ Remote video error:', e);
+                                        }}
                                     />
                                 ) : (
                                     <div className="w-full aspect-video flex items-center justify-center">

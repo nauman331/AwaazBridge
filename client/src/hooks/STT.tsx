@@ -57,6 +57,7 @@ interface STTOptions {
     continuous?: boolean;
     interimResults?: boolean;
     maxAlternatives?: number;
+    shouldContinue?: () => boolean; // Function to check if recognition should continue
 }
 
 interface STTResult {
@@ -77,7 +78,8 @@ const STT = (options: STTOptions = {}, callbacks: STTCallbacks = {}) => {
         language = 'en',
         continuous = false,
         interimResults = true,
-        maxAlternatives = 1
+        maxAlternatives = 1,
+        shouldContinue
     } = options;
 
     const {
@@ -133,8 +135,8 @@ const STT = (options: STTOptions = {}, callbacks: STTCallbacks = {}) => {
             console.log('Speech recognition ended');
             onEnd?.();
 
-            // Auto-restart for continuous recognition if needed
-            if (continuous && recognition) {
+            // Auto-restart for continuous recognition if needed and allowed
+            if (continuous && recognition && (!shouldContinue || shouldContinue())) {
                 setTimeout(() => {
                     try {
                         console.log('🔄 Auto-restarting speech recognition');
@@ -143,6 +145,8 @@ const STT = (options: STTOptions = {}, callbacks: STTCallbacks = {}) => {
                         console.log('⏹️ Recognition already running or cannot restart');
                     }
                 }, 100);
+            } else if (shouldContinue && !shouldContinue()) {
+                console.log('⏹️ STT auto-restart stopped - shouldContinue returned false');
             }
         };
 
