@@ -166,20 +166,21 @@ const VideoCall: React.FC = () => {
 
     // Initialize STT for translation (only when call is accepted and audioEnabled)
     useEffect(() => {
+        let lastEmit = 0;
+        let interimTimeout: NodeJS.Timeout | null = null;
         if (callAccepted && myLanguage && audioEnabled) {
             const stt = STT({ language: myLanguage.value, continuous: true, interimResults: true }, {
                 onResult: ({ transcript, isFinal }) => {
-                    // Always show interim/final transcript in UI (real-time)
-                    if (isFinal && transcript.trim()) {
-                        handleTranslation(transcript);
-                    } else if (transcript.trim()) {
+                    if (!transcript.trim()) return;
+                    // Throttle interim translation emission to 1 per second
+                    const now = Date.now();
+                    if (!isFinal) {
                         setTranslations(prev => {
-                            // Remove previous interim
                             const filtered = prev.filter(msg => !msg.id.startsWith('interim-'));
                             return [
                                 ...filtered,
                                 {
-                                    id: `interim-${Date.now()}`,
+                                    id: `interim-${now}`,
                                     original: transcript,
                                     translated: '...',
                                     fromLang: myLanguage.value,
@@ -189,6 +190,18 @@ const VideoCall: React.FC = () => {
                                 }
                             ];
                         });
+                        if (now - lastEmit > 1000) {
+                            handleTranslation(transcript, true); // true = interim
+                            lastEmit = now;
+                        } else {
+                            if (interimTimeout) clearTimeout(interimTimeout);
+                            interimTimeout = setTimeout(() => {
+                                handleTranslation(transcript, true);
+                                lastEmit = Date.now();
+                            }, 1000 - (now - lastEmit));
+                        }
+                    } else {
+                        handleTranslation(transcript, false);
                     }
                 },
                 onError: (err) => toast.error(err)
@@ -207,26 +220,32 @@ const VideoCall: React.FC = () => {
             if (sttRef.current) {
                 sttRef.current.stop();
             }
+            if (interimTimeout) clearTimeout(interimTimeout);
         };
     }, [callAccepted, myLanguage, audioEnabled, targetLanguage]);
 
-    const handleTranslation = (text: string) => {
+    // Send transcript for translation (interim or final)
+    const handleTranslation = (text: string, isInterim = false) => {
         if (socket && webRTC && myLanguage && targetLanguage) {
             const payload = {
                 text,
                 fromLang: myLanguage.value,
                 toLang: targetLanguage.value,
+                isInterim
             };
             socket.emit('translation', payload);
-            setTranslations(prev => [...prev, {
-                id: `trans-${Date.now()}`,
-                original: text,
-                translated: '...',
-                fromLang: myLanguage.value,
-                toLang: targetLanguage.value,
-                timestamp: new Date(),
-                isSent: true
-            }]);
+            setTranslations(prev => [
+                ...prev,
+                {
+                    id: `${isInterim ? 'interim' : 'trans'}-${Date.now()}`,
+                    original: text,
+                    translated: '...',
+                    fromLang: myLanguage.value,
+                    toLang: targetLanguage.value,
+                    timestamp: new Date(),
+                    isSent: true
+                }
+            ]);
         }
     };
 

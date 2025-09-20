@@ -81,8 +81,12 @@ export const SocketConnection = (io: Server) => {
                         translated: translatedText,
                         fromLang: data.fromLang,
                         toLang: data.toLang,
-                        timestamp: new Date()
+                        timestamp: new Date(),
+                        isInterim: data.isInterim || false
                     });
+                    // Optionally, also emit to sender for local UI update
+                    // socket.emit("translation", { ... });
+                    console.log(`Translated text from ${data.fromLang} to ${data.toLang}: ${translatedText}`);
                 } catch (error) {
                     console.error("Translation error:", error);
                     socket.emit("error", "Translation failed");
