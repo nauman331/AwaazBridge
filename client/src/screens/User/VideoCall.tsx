@@ -63,6 +63,28 @@ const VideoCall: React.FC = () => {
         label: ISO6391.getName(code)
     }));
 
+    // Check permissions early
+    useEffect(() => {
+        const checkPermissions = async () => {
+            try {
+                console.log('🔐 Checking media permissions');
+                const permission = await navigator.permissions.query({ name: 'camera' as PermissionName });
+                console.log('📷 Camera permission:', permission.state);
+
+                const micPermission = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+                console.log('🎤 Microphone permission:', micPermission.state);
+
+                if (permission.state === 'denied' || micPermission.state === 'denied') {
+                    toast.error('Camera or microphone access denied. Please enable permissions in your browser settings.');
+                }
+            } catch (error) {
+                console.log('⚠️ Permission API not supported, will request during media access');
+            }
+        };
+
+        checkPermissions();
+    }, []);
+
     // Initialize socket connection
     useEffect(() => {
         console.log('🔌 Initializing socket connection');
@@ -203,10 +225,18 @@ const VideoCall: React.FC = () => {
         }
         if (remoteStream && remoteAudioRef.current) {
             console.log('🔊 Setting remote audio stream');
-            remoteAudioRef.current.srcObject = remoteStream;
-            remoteAudioRef.current.play().catch(e => {
-                console.error('❌ Failed to play remote audio:', e);
-            });
+            // Prevent multiple rapid assignments
+            if (remoteAudioRef.current.srcObject !== remoteStream) {
+                remoteAudioRef.current.srcObject = remoteStream;
+                // Add a small delay before playing to avoid interruption
+                setTimeout(() => {
+                    if (remoteAudioRef.current && remoteAudioRef.current.srcObject === remoteStream) {
+                        remoteAudioRef.current.play().catch(e => {
+                            console.error('❌ Failed to play remote audio:', e.name + ':', e.message);
+                        });
+                    }
+                }, 100);
+            }
         }
     }, [remoteStream]);
 
@@ -296,37 +326,58 @@ const VideoCall: React.FC = () => {
 
     // Send transcript for translation (interim or final)
     const handleTranslation = (text: string, isInterim = false) => {
-        console.log('🌐 handleTranslation called:', { text, isInterim, myLanguage: myLanguage?.value, targetLanguage: targetLanguage?.value });
-        if (socket && webRTC && myLanguage && targetLanguage) {
-            const payload = {
-                text,
-                fromLang: myLanguage.value,
-                toLang: targetLanguage.value,
-                isInterim
-            };
-            console.log('📤 Emitting translation:', payload);
-            socket.emit('translation', payload);
+        console.log('🌐 handleTranslation called:', {
+            text: text.substring(0, 50) + '...',
+            isInterim,
+            myLanguage: myLanguage?.value,
+            targetLanguage: targetLanguage?.value,
+            hasSocket: !!socket,
+            hasWebRTC: !!webRTC
+        });
 
-            // Update local UI with sending status
+        if (!socket) {
+            console.error('❌ No socket connection for translation');
+            return;
+        }
+
+        if (!webRTC) {
+            console.error('❌ No WebRTC connection for translation');
+            return;
+        }
+
+        if (!myLanguage || !targetLanguage) {
+            console.error('❌ Missing language configuration for translation');
+            return;
+        }
+
+        if (!text.trim()) {
+            console.warn('⚠️ Empty text, skipping translation');
+            return;
+        }
+
+        const payload = {
+            text,
+            fromLang: myLanguage.value,
+            toLang: targetLanguage.value,
+            isInterim
+        };
+        console.log('📤 Emitting translation:', payload);
+        socket.emit('translation', payload);
+
+        // Update local UI with sending status
+        if (!isInterim) { // Only show final translations in UI
             setTranslations(prev => [
                 ...prev,
                 {
-                    id: `${isInterim ? 'interim' : 'trans'}-${Date.now()}`,
+                    id: `trans-${Date.now()}`,
                     original: text,
-                    translated: '...',
+                    translated: 'Translating...',
                     fromLang: myLanguage.value,
                     toLang: targetLanguage.value,
                     timestamp: new Date(),
                     isSent: true
                 }
             ]);
-        } else {
-            console.warn('❌ Cannot send translation - missing dependencies:', {
-                socket: !!socket,
-                webRTC: !!webRTC,
-                myLanguage: myLanguage?.value,
-                targetLanguage: targetLanguage?.value
-            });
         }
     };
 
@@ -370,16 +421,30 @@ const VideoCall: React.FC = () => {
         try {
             console.log('🔄 Creating answer');
             const answer = await webRTC.createAnswer(incomingCall.signal);
-            console.log('📤 Sending answer with languages:', { from: myLanguage.value, to: incomingCall.fromLang });
+
+            // When answering:
+            // - My fromLang is my selected language
+            // - My toLang is the caller's original language (fromLang)
+            // - I want to translate TO the caller's language
+            console.log('📤 Sending answer with languages:', {
+                from: myLanguage.value,
+                to: incomingCall.fromLang,
+                callerWantsToTranslateTo: incomingCall.toLang
+            });
 
             webRTC.answerCall({
                 to: incomingCall.from,
                 signal: answer,
                 fromLang: myLanguage.value,
-                toLang: incomingCall.fromLang
+                toLang: incomingCall.fromLang  // Translate TO caller's language
             });
 
-            setTargetLanguage({ value: incomingCall.fromLang, label: ISO6391.getName(incomingCall.fromLang) });
+            // Set target language to the caller's original language 
+            // so I translate my speech TO their language
+            setTargetLanguage({
+                value: incomingCall.fromLang,
+                label: ISO6391.getName(incomingCall.fromLang)
+            });
             setCallAccepted(true);
             setIncomingCall(null);
         } catch (error) {
@@ -459,7 +524,13 @@ const VideoCall: React.FC = () => {
                 ref={remoteAudioRef}
                 autoPlay
                 playsInline
+                controls={false}
+                muted={false}
                 style={{ display: 'none' }}
+                onLoadedMetadata={() => console.log('🔊 Remote audio metadata loaded')}
+                onPlay={() => console.log('▶️ Remote audio playing')}
+                onPause={() => console.log('⏸️ Remote audio paused')}
+                onError={(e) => console.error('❌ Remote audio error:', e)}
             />
 
             <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col lg:flex-row gap-4">

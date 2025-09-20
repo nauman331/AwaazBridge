@@ -132,6 +132,18 @@ const STT = (options: STTOptions = {}, callbacks: STTCallbacks = {}) => {
         recognition.onend = () => {
             console.log('Speech recognition ended');
             onEnd?.();
+
+            // Auto-restart for continuous recognition if needed
+            if (continuous && recognition) {
+                setTimeout(() => {
+                    try {
+                        console.log('🔄 Auto-restarting speech recognition');
+                        recognition.start();
+                    } catch (error) {
+                        console.log('⏹️ Recognition already running or cannot restart');
+                    }
+                }, 100);
+            }
         };
 
         recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
@@ -139,9 +151,12 @@ const STT = (options: STTOptions = {}, callbacks: STTCallbacks = {}) => {
             console.error(errorMsg);
 
             let userFriendlyError = "Speech recognition failed";
+            let shouldShowToast = true;
+
             switch (event.error) {
                 case 'no-speech':
-                    userFriendlyError = "No speech detected. Please try again.";
+                    userFriendlyError = "No speech detected. Listening...";
+                    shouldShowToast = false; // Don't spam user with no-speech errors
                     break;
                 case 'audio-capture':
                     userFriendlyError = "Microphone access denied or unavailable.";
@@ -155,11 +170,17 @@ const STT = (options: STTOptions = {}, callbacks: STTCallbacks = {}) => {
                 case 'language-not-supported':
                     userFriendlyError = "Selected language is not supported.";
                     break;
+                case 'aborted':
+                    userFriendlyError = "Speech recognition was stopped.";
+                    shouldShowToast = false;
+                    break;
                 default:
                     userFriendlyError = errorMsg;
             }
 
-            toast.error(userFriendlyError);
+            if (shouldShowToast) {
+                toast.error(userFriendlyError);
+            }
             onError?.(userFriendlyError);
         };
 

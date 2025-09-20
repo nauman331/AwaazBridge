@@ -33,8 +33,17 @@ export class WebRTCService {
         console.log('🔄 Initializing peer connection');
         const configuration = {
             iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' }
-            ]
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                // Add TURN servers for better connectivity
+                {
+                    urls: 'turn:openrelay.metered.ca:80',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                }
+            ],
+            iceCandidatePoolSize: 10
         };
 
         this.peerConnection = new RTCPeerConnection(configuration);
@@ -48,8 +57,16 @@ export class WebRTCService {
             }
         };
 
+        // Avoid duplicate stream assignments
         this.peerConnection.ontrack = (event) => {
             console.log('🎵 Remote track received:', event.streams.length, 'streams');
+
+            // Avoid duplicate stream assignments
+            if (this.remoteStream && this.remoteStream.id === event.streams[0].id) {
+                console.log('⏭️ Skipping duplicate stream assignment');
+                return;
+            }
+
             this.remoteStream = event.streams[0];
             if (this.onRemoteStreamCallback) {
                 console.log('📞 Calling remote stream callback');
@@ -59,25 +76,88 @@ export class WebRTCService {
 
         this.peerConnection.onconnectionstatechange = () => {
             console.log('🔗 Connection state changed:', this.peerConnection?.connectionState);
+
+            if (this.peerConnection?.connectionState === 'failed') {
+                console.log('🔄 Connection failed, attempting restart');
+                this.handleConnectionFailure();
+            }
         };
 
         this.peerConnection.oniceconnectionstatechange = () => {
             console.log('🧊 ICE connection state changed:', this.peerConnection?.iceConnectionState);
+
+            if (this.peerConnection?.iceConnectionState === 'failed') {
+                console.log('🧊 ICE connection failed, restarting ICE');
+                this.restartIce();
+            }
+        };
+
+        this.peerConnection.onicegatheringstatechange = () => {
+            console.log('🧊 ICE gathering state changed:', this.peerConnection?.iceGatheringState);
         };
     }
 
-    onRemoteStream(callback: (stream: MediaStream) => void) {
+    private handleConnectionFailure() {
+        console.log('🔧 Handling connection failure');
+        // In a real implementation, you might want to:
+        // 1. Retry the connection
+        // 2. Notify the user
+        // 3. Fall back to different TURN servers
+    }
+
+    private restartIce() {
+        console.log('🔄 Restarting ICE connection');
+        if (this.peerConnection) {
+            this.peerConnection.restartIce();
+        }
+    } onRemoteStream(callback: (stream: MediaStream) => void) {
         this.onRemoteStreamCallback = callback;
     }
 
     async getUserMedia(): Promise<MediaStream> {
         try {
             console.log('🎤 Requesting user media access');
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: true
-            });
-            console.log('✅ Media access granted. Video tracks:', stream.getVideoTracks().length, 'Audio tracks:', stream.getAudioTracks().length);
+
+            // First, check if devices are available
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const hasVideo = devices.some(device => device.kind === 'videoinput');
+            const hasAudio = devices.some(device => device.kind === 'audioinput');
+
+            console.log('📱 Available devices:', { hasVideo, hasAudio });
+
+            // Try different constraint combinations based on available devices
+            const constraints: MediaStreamConstraints = {
+                video: hasVideo,
+                audio: hasAudio
+            };
+
+            let stream: MediaStream;
+
+            try {
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                console.log('✅ Media access granted with full constraints');
+            } catch (firstError) {
+                console.warn('⚠️ Full constraints failed, trying audio-only:', firstError);
+
+                // Fallback: Try audio-only
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+                    console.log('✅ Audio-only access granted');
+                } catch (secondError) {
+                    console.warn('⚠️ Audio-only failed, trying video-only:', secondError);
+
+                    // Fallback: Try video-only
+                    try {
+                        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                        console.log('✅ Video-only access granted');
+                    } catch (thirdError) {
+                        console.error('❌ All media access attempts failed');
+                        throw new Error('No camera or microphone available. Please check your device permissions and hardware.');
+                    }
+                }
+            }
+
+            console.log('✅ Final stream - Video tracks:', stream.getVideoTracks().length, 'Audio tracks:', stream.getAudioTracks().length);
             this.localStream = stream;
 
             if (this.peerConnection) {
@@ -90,7 +170,7 @@ export class WebRTCService {
             return stream;
         } catch (error) {
             console.error('❌ Failed to access camera/microphone:', error);
-            throw new Error('Failed to access camera/microphone');
+            throw new Error(error instanceof Error ? error.message : 'Failed to access camera/microphone');
         }
     }
 
@@ -157,8 +237,6 @@ export class WebRTCService {
     getLocalStream(): MediaStream | null {
         return this.localStream;
     }
-    // ...existing code...
-
     getRemoteStream(): MediaStream | null {
         return this.remoteStream;
     }
