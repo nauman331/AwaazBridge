@@ -145,6 +145,9 @@ const VideoCall: React.FC = () => {
             if (webRTC) {
                 try {
                     const stream = await webRTC.getUserMedia();
+                    // Mute the audio track so original voice is not sent
+                    const audioTrack = stream.getAudioTracks()[0];
+                    if (audioTrack) audioTrack.enabled = false;
                     if (localVideoRef.current) {
                         localVideoRef.current.srcObject = stream;
                     }
@@ -153,7 +156,6 @@ const VideoCall: React.FC = () => {
                 }
             }
         };
-
         startLocalStream();
     }, [webRTC]);
 
@@ -164,18 +166,39 @@ const VideoCall: React.FC = () => {
         }
     }, [remoteStream]);
 
-    // Initialize STT
+    // Initialize STT for translation (only when call is accepted and audioEnabled)
     useEffect(() => {
-        if (callAccepted && myLanguage) {
+        if (callAccepted && myLanguage && audioEnabled) {
+            let interimTranscript = '';
             const stt = STT({ language: myLanguage.value, continuous: true, interimResults: true }, {
                 onResult: ({ transcript, isFinal }) => {
-                    if (isFinal) {
+                    // Always show interim/final transcript in UI (real-time)
+                    if (isFinal && transcript.trim()) {
                         handleTranslation(transcript);
+                        interimTranscript = '';
+                    } else if (transcript.trim()) {
+                        // Show interim transcript as a temporary translation
+                        interimTranscript = transcript;
+                        setTranslations(prev => {
+                            // Remove previous interim
+                            const filtered = prev.filter(msg => !msg.id.startsWith('interim-'));
+                            return [
+                                ...filtered,
+                                {
+                                    id: `interim-${Date.now()}`,
+                                    original: transcript,
+                                    translated: '...',
+                                    fromLang: myLanguage.value,
+                                    toLang: targetLanguage?.value || '',
+                                    timestamp: new Date(),
+                                    isSent: true
+                                }
+                            ];
+                        });
                     }
                 },
                 onError: (err) => toast.error(err)
             });
-
             if (stt) {
                 sttRef.current = stt;
                 stt.start();
@@ -186,13 +209,12 @@ const VideoCall: React.FC = () => {
                 sttRef.current = null;
             }
         }
-
         return () => {
             if (sttRef.current) {
                 sttRef.current.stop();
             }
         };
-    }, [callAccepted, myLanguage]);
+    }, [callAccepted, myLanguage, audioEnabled, targetLanguage]);
 
     const handleTranslation = (text: string) => {
         if (socket && webRTC && myLanguage && targetLanguage) {
@@ -281,6 +303,7 @@ const VideoCall: React.FC = () => {
         setTranslations([]);
     };
 
+    // Toggle video on/off
     const toggleVideo = () => {
         if (webRTC) {
             const newState = !videoEnabled;
@@ -289,17 +312,17 @@ const VideoCall: React.FC = () => {
         }
     };
 
+    // Toggle translation (STT) on/off, not original audio
     const toggleAudio = () => {
-        if (webRTC) {
-            const newState = !audioEnabled;
-            webRTC.toggleAudio(newState);
-            setAudioEnabled(newState);
+        setAudioEnabled((prev) => {
+            const newState = !prev;
             if (newState && callAccepted && sttRef.current) {
                 sttRef.current.start();
             } else if (!newState && sttRef.current) {
                 sttRef.current.stop();
             }
-        }
+            return newState;
+        });
     };
 
     const handleMyLanguageChange = (option: SingleValue<LanguageOption>) => {
@@ -437,8 +460,10 @@ const VideoCall: React.FC = () => {
                                 {translations.map((msg) => (
                                     <div key={msg.id} className={`flex flex-col ${msg.isSent ? 'items-end' : 'items-start'}`}>
                                         <div className={`max-w-xs p-3 rounded-xl ${msg.isSent ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}>
-                                            <p className="text-sm">{msg.isSent ? msg.original : msg.translated}</p>
-                                            <p className="text-xs opacity-70 mt-1">{new Date(msg.timestamp).toLocaleTimeString()}</p>
+                                            <div className="text-xs opacity-60">{msg.fromLang} → {msg.toLang}</div>
+                                            <div className="font-semibold">{msg.original}</div>
+                                            <div className="italic">{msg.translated}</div>
+                                            <p className="text-xs opacity-70 mt-1">{msg.timestamp instanceof Date ? msg.timestamp.toLocaleTimeString() : ''}</p>
                                         </div>
                                     </div>
                                 ))}
@@ -477,7 +502,7 @@ const VideoCall: React.FC = () => {
                 )}
             </div>
         </div>
-    )
+    );
 }
 
-export default VideoCall
+export default VideoCall;
