@@ -44,6 +44,7 @@ const VideoCall: React.FC = () => {
     const [audioEnabled, setAudioEnabled] = useState(true);
     const [speakerEnabled, setSpeakerEnabled] = useState(true);
     const [remoteVideoHasContent, setRemoteVideoHasContent] = useState(false);
+    const [showAudioOnlyOverlay, setShowAudioOnlyOverlay] = useState(false);
 
     // Translation and call setup state
     const [myLanguage, setMyLanguage] = useState<LanguageOption | null>({ value: 'en', label: 'English' });
@@ -230,6 +231,7 @@ const VideoCall: React.FC = () => {
 
         // Reset video content state when stream changes
         setRemoteVideoHasContent(false);
+        setShowAudioOnlyOverlay(false);
 
         if (remoteStream) {
             console.log('📊 Remote stream details:', {
@@ -240,6 +242,34 @@ const VideoCall: React.FC = () => {
                 videoTrackEnabled: remoteStream.getVideoTracks()[0]?.enabled,
                 audioTrackEnabled: remoteStream.getAudioTracks()[0]?.enabled
             });
+
+            // Wait 3 seconds before showing audio-only overlay if no video content is detected
+            const audioOnlyTimeout = setTimeout(() => {
+                if (!remoteVideoHasContent) {
+                    console.log('⏱️ No video content detected after 3s, showing audio-only overlay');
+                    setShowAudioOnlyOverlay(true);
+                }
+            }, 3000);
+
+            // Periodically check for video content (some videos load slowly)
+            const videoCheckInterval = setInterval(() => {
+                if (remoteVideoRef.current) {
+                    const video = remoteVideoRef.current;
+                    const hasVideoContent = video.videoWidth > 0 && video.videoHeight > 0;
+                    if (hasVideoContent && !remoteVideoHasContent) {
+                        console.log('🔄 Periodic check: Video content detected!');
+                        setRemoteVideoHasContent(true);
+                        setShowAudioOnlyOverlay(false);
+                    }
+                }
+            }, 500); // Check every 500ms
+
+            return () => {
+                clearTimeout(audioOnlyTimeout);
+                clearInterval(videoCheckInterval);
+            };
+        } else {
+            setShowAudioOnlyOverlay(false);
         }
 
         if (remoteStream && remoteVideoRef.current) {
@@ -284,7 +314,7 @@ const VideoCall: React.FC = () => {
                 }, 100);
             }
         }
-    }, [remoteStream]);
+    }, [remoteStream, remoteVideoHasContent]);
 
     // Initialize STT for translation (only when call is accepted and audioEnabled)
     useEffect(() => {
@@ -820,7 +850,10 @@ const VideoCall: React.FC = () => {
                                                 });
                                                 setRemoteVideoHasContent(hasVideoContent);
 
-                                                if (!hasVideoContent) {
+                                                if (hasVideoContent) {
+                                                    console.log('✅ Remote video content detected - hiding audio-only overlay');
+                                                    setShowAudioOnlyOverlay(false);
+                                                } else {
                                                     console.log('⚠️ Remote video track has no content (likely audio-only call)');
                                                 }
                                             }}
@@ -834,6 +867,10 @@ const VideoCall: React.FC = () => {
                                                     hasContent: hasVideoContent
                                                 });
                                                 setRemoteVideoHasContent(hasVideoContent);
+
+                                                if (hasVideoContent) {
+                                                    setShowAudioOnlyOverlay(false);
+                                                }
                                             }}
                                             onPlay={(e) => {
                                                 const video = e.target as HTMLVideoElement;
@@ -846,6 +883,10 @@ const VideoCall: React.FC = () => {
                                                     hasContent: hasVideoContent
                                                 });
                                                 setRemoteVideoHasContent(hasVideoContent);
+
+                                                if (hasVideoContent) {
+                                                    setShowAudioOnlyOverlay(false);
+                                                }
                                             }}
                                             onError={(e) => {
                                                 const video = e.target as HTMLVideoElement;
@@ -862,7 +903,7 @@ const VideoCall: React.FC = () => {
                                             }}
                                         />
                                         {/* Overlay for audio-only calls */}
-                                        {!remoteVideoHasContent && (
+                                        {showAudioOnlyOverlay && (
                                             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#1e40af]/80 to-[#22c55e]/40 rounded-3xl">
                                                 <div className="text-center text-white">
                                                     <div className="text-6xl mb-4">🎤</div>
