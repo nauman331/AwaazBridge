@@ -7,7 +7,7 @@ import TTS from '../../hooks/TTS';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Phone, PhoneOff, Video, VideoOff, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import { Phone, PhoneOff, Video, VideoOff, Mic, MicOff, Volume2, VolumeX, Copy } from 'lucide-react';
 import Select from 'react-select';
 import type { SingleValue } from 'react-select';
 import ISO6391 from 'iso-639-1';
@@ -350,6 +350,12 @@ const VideoCall: React.FC = () => {
                                 <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
                                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                     {isConnected ? `Your ID: ${myId}` : 'Connecting...'}
+                                    <span className="inline-block ml-2 p-2 cursor-pointer border border-[#22c55e]/20 rounded hover:bg-gray-700" title="Copy to clipboard">
+                                        <Copy className="inline-block cursor-pointer" size={16} onClick={() => {
+                                            navigator.clipboard.writeText(myId);
+                                            toast.success('Copied to clipboard');
+                                        }} />
+                                    </span>
                                 </span>
                             </div>
                             {!callAccepted && !incomingCall && (
