@@ -43,6 +43,7 @@ const VideoCall: React.FC = () => {
     const [videoEnabled, setVideoEnabled] = useState(true);
     const [audioEnabled, setAudioEnabled] = useState(true);
     const [speakerEnabled, setSpeakerEnabled] = useState(true);
+    const [remoteVideoHasContent, setRemoteVideoHasContent] = useState(false);
 
     // Translation and call setup state
     const [myLanguage, setMyLanguage] = useState<LanguageOption | null>({ value: 'en', label: 'English' });
@@ -226,6 +227,9 @@ const VideoCall: React.FC = () => {
     // Handle remote stream updates
     useEffect(() => {
         console.log('🎵 Remote stream updated:', !!remoteStream, remoteStream ? `ID: ${remoteStream.id}` : 'No stream');
+
+        // Reset video content state when stream changes
+        setRemoteVideoHasContent(false);
 
         if (remoteStream) {
             console.log('📊 Remote stream details:', {
@@ -795,61 +799,90 @@ const VideoCall: React.FC = () => {
                             {/* Remote Video */}
                             <div className="relative rounded-3xl overflow-hidden shadow-2xl border-2 border-[#22c55e]/20 bg-black/20 dark:bg-black/40 backdrop-blur-xl">
                                 {remoteStream ? (
-                                    <video
-                                        ref={remoteVideoRef}
-                                        autoPlay
-                                        playsInline
-                                        controls={false}
-                                        muted={true}
-                                        style={{ width: '100%', height: '100%' }}
-                                        className="w-full aspect-video object-cover rounded-3xl"
-                                        onLoadedMetadata={(e) => {
-                                            const video = e.target as HTMLVideoElement;
-                                            console.log('🔊 Remote video metadata loaded:', {
-                                                videoWidth: video.videoWidth,
-                                                videoHeight: video.videoHeight,
-                                                duration: video.duration,
-                                                srcObject: !!video.srcObject
-                                            });
-                                        }}
-                                        onCanPlay={(e) => {
-                                            const video = e.target as HTMLVideoElement;
-                                            console.log('▶️ Remote video can play:', {
-                                                readyState: video.readyState,
-                                                videoWidth: video.videoWidth,
-                                                videoHeight: video.videoHeight
-                                            });
-                                        }}
-                                        onPlay={(e) => {
-                                            const video = e.target as HTMLVideoElement;
-                                            console.log('▶️ Remote video playing:', {
-                                                currentTime: video.currentTime,
-                                                paused: video.paused,
-                                                videoWidth: video.videoWidth,
-                                                videoHeight: video.videoHeight
-                                            });
-                                        }}
-                                        onError={(e) => {
-                                            const video = e.target as HTMLVideoElement;
-                                            console.error('❌ Remote video error:', video.error);
-                                        }}
-                                        onLoadStart={() => {
-                                            console.log('🔄 Remote video load start');
-                                        }}
-                                        onWaiting={() => {
-                                            console.log('⏳ Remote video waiting for data');
-                                        }}
-                                        onStalled={() => {
-                                            console.log('⏸️ Remote video stalled');
-                                        }}
-                                    />
+                                    <div className="relative w-full aspect-video">
+                                        <video
+                                            ref={remoteVideoRef}
+                                            autoPlay
+                                            playsInline
+                                            controls={false}
+                                            muted={true}
+                                            style={{ width: '100%', height: '100%' }}
+                                            className="w-full aspect-video object-cover rounded-3xl"
+                                            onLoadedMetadata={(e) => {
+                                                const video = e.target as HTMLVideoElement;
+                                                const hasVideoContent = video.videoWidth > 0 && video.videoHeight > 0;
+                                                console.log('🔊 Remote video metadata loaded:', {
+                                                    videoWidth: video.videoWidth,
+                                                    videoHeight: video.videoHeight,
+                                                    duration: video.duration,
+                                                    srcObject: !!video.srcObject,
+                                                    hasContent: hasVideoContent
+                                                });
+                                                setRemoteVideoHasContent(hasVideoContent);
+
+                                                if (!hasVideoContent) {
+                                                    console.log('⚠️ Remote video track has no content (likely audio-only call)');
+                                                }
+                                            }}
+                                            onCanPlay={(e) => {
+                                                const video = e.target as HTMLVideoElement;
+                                                const hasVideoContent = video.videoWidth > 0 && video.videoHeight > 0;
+                                                console.log('▶️ Remote video can play:', {
+                                                    readyState: video.readyState,
+                                                    videoWidth: video.videoWidth,
+                                                    videoHeight: video.videoHeight,
+                                                    hasContent: hasVideoContent
+                                                });
+                                                setRemoteVideoHasContent(hasVideoContent);
+                                            }}
+                                            onPlay={(e) => {
+                                                const video = e.target as HTMLVideoElement;
+                                                const hasVideoContent = video.videoWidth > 0 && video.videoHeight > 0;
+                                                console.log('▶️ Remote video playing:', {
+                                                    currentTime: video.currentTime,
+                                                    paused: video.paused,
+                                                    videoWidth: video.videoWidth,
+                                                    videoHeight: video.videoHeight,
+                                                    hasContent: hasVideoContent
+                                                });
+                                                setRemoteVideoHasContent(hasVideoContent);
+                                            }}
+                                            onError={(e) => {
+                                                const video = e.target as HTMLVideoElement;
+                                                console.error('❌ Remote video error:', video.error);
+                                            }}
+                                            onLoadStart={() => {
+                                                console.log('🔄 Remote video load start');
+                                            }}
+                                            onWaiting={() => {
+                                                console.log('⏳ Remote video waiting for data');
+                                            }}
+                                            onStalled={() => {
+                                                console.log('⏸️ Remote video stalled');
+                                            }}
+                                        />
+                                        {/* Overlay for audio-only calls */}
+                                        {!remoteVideoHasContent && (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#1e40af]/80 to-[#22c55e]/40 rounded-3xl">
+                                                <div className="text-center text-white">
+                                                    <div className="text-6xl mb-4">🎤</div>
+                                                    <p className="text-lg font-medium">Audio Only Call</p>
+                                                    <p className="text-sm opacity-80">Remote user has no video</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 ) : (
                                     <div className="w-full aspect-video flex items-center justify-center">
                                         <p className="text-gray-600 dark:text-gray-400">Waiting for other user...</p>
                                     </div>
                                 )}
                                 <div className="absolute bottom-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-                                    Remote {remoteStream && `(${remoteStream.getVideoTracks().length}V/${remoteStream.getAudioTracks().length}A)`}
+                                    Remote {remoteStream && (
+                                        remoteVideoHasContent
+                                            ? `(${remoteStream.getVideoTracks().length}V/${remoteStream.getAudioTracks().length}A)`
+                                            : `(Audio Only - ${remoteStream.getAudioTracks().length}A)`
+                                    )}
                                 </div>
                             </div>
 
