@@ -84,12 +84,27 @@ const VideoCall: React.FC = () => {
             console.log('📹 Local stream received:', stream.getTracks().map(t => t.kind));
             if (localVideoRef.current) {
                 localVideoRef.current.srcObject = stream;
-                // Auto-play and handle video/audio tracks
-                setTimeout(() => {
-                    if (localVideoRef.current) {
-                        localVideoRef.current.play().catch(e => console.log('Local video autoplay prevented:', e));
+
+                // Force load and play
+                const playVideo = async () => {
+                    try {
+                        localVideoRef.current!.load();
+                        await localVideoRef.current!.play();
+                        console.log('✅ Local video playing');
+                    } catch (e) {
+                        console.log('⚠️ Local video autoplay prevented:', e);
+                        // Try to play on user interaction
+                        const playOnClick = () => {
+                            localVideoRef.current?.play().then(() => {
+                                console.log('✅ Local video started on user interaction');
+                                document.removeEventListener('click', playOnClick);
+                            });
+                        };
+                        document.addEventListener('click', playOnClick, { once: true });
                     }
-                }, 100);
+                };
+
+                setTimeout(playVideo, 100);
             }
 
             // Update media state based on available tracks
@@ -106,12 +121,27 @@ const VideoCall: React.FC = () => {
             console.log('📹 Remote stream received:', stream.getTracks().map(t => t.kind));
             if (remoteVideoRef.current) {
                 remoteVideoRef.current.srcObject = stream;
-                // Auto-play remote stream
-                setTimeout(() => {
-                    if (remoteVideoRef.current) {
-                        remoteVideoRef.current.play().catch(e => console.log('Remote video autoplay prevented:', e));
+
+                // Force load and play remote video
+                const playRemoteVideo = async () => {
+                    try {
+                        remoteVideoRef.current!.load();
+                        await remoteVideoRef.current!.play();
+                        console.log('✅ Remote video playing');
+                    } catch (e) {
+                        console.log('⚠️ Remote video autoplay prevented:', e);
+                        // Try to play on user interaction
+                        const playOnClick = () => {
+                            remoteVideoRef.current?.play().then(() => {
+                                console.log('✅ Remote video started on user interaction');
+                                document.removeEventListener('click', playOnClick);
+                            });
+                        };
+                        document.addEventListener('click', playOnClick, { once: true });
                     }
-                }, 100);
+                };
+
+                setTimeout(playRemoteVideo, 100);
             }
         };
 
@@ -554,10 +584,16 @@ const VideoCall: React.FC = () => {
                                             autoPlay
                                             muted
                                             playsInline
+                                            controls={false}
+                                            webkit-playsinline="true"
                                             className="w-full h-64 bg-gray-900 rounded-lg object-cover"
                                             style={{
                                                 display: mediaState.isVideoEnabled ? 'block' : 'none'
                                             }}
+                                            onLoadedMetadata={() => console.log('📹 Local video metadata loaded')}
+                                            onPlay={() => console.log('▶️ Local video started playing')}
+                                            onPause={() => console.log('⏸️ Local video paused')}
+                                            onError={(e) => console.error('❌ Local video error:', e)}
                                         />
                                         {!mediaState.isVideoEnabled && (
                                             <div className="w-full h-64 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
@@ -587,9 +623,21 @@ const VideoCall: React.FC = () => {
                                             ref={remoteVideoRef}
                                             autoPlay
                                             playsInline
+                                            controls={false}
+                                            webkit-playsinline="true"
                                             className="w-full h-64 bg-gray-900 rounded-lg object-cover"
+                                            onLoadedMetadata={() => console.log('📹 Remote video metadata loaded')}
+                                            onPlay={() => console.log('▶️ Remote video started playing')}
+                                            onPause={() => console.log('⏸️ Remote video paused')}
+                                            onError={(e) => console.error('❌ Remote video error:', e)}
                                         />
-                                        <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 rounded-lg pointer-events-none">
+                                        {/* Fallback overlay - will hide when video plays */}
+                                        <div
+                                            className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 rounded-lg pointer-events-none"
+                                            style={{
+                                                display: (remoteVideoRef.current?.readyState || 0) >= 2 ? 'none' : 'flex'
+                                            }}
+                                        >
                                             <div className="text-center text-white">
                                                 <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
                                                 <p className="text-sm opacity-75">Waiting for remote video...</p>
