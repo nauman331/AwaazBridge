@@ -1,5 +1,5 @@
 import { Server, Socket } from "socket.io";
-import { AITranslate } from "../config/openAI";
+import { enhancedTranslate, shouldTranslate } from "../config/openAI";
 
 interface User {
     id: string;
@@ -83,9 +83,15 @@ export const SocketConnection = (io: Server) => {
 
             const currentUser = users.get(socket.id);
             if (currentUser && currentUser.peerId && data.text && data.fromLang && data.toLang) {
+                // Skip translation for very short or invalid texts
+                if (!shouldTranslate(data.text, data.fromLang, data.toLang)) {
+                    console.log('⏭️ Skipping translation - text too short or same language');
+                    return;
+                }
+
                 try {
-                    console.log('🔄 Calling AI translate function');
-                    const translatedText = await AITranslate(data.fromLang, data.toLang, data.text);
+                    console.log('🔄 Calling enhanced translate function');
+                    const translatedText = await enhancedTranslate(data.fromLang, data.toLang, data.text);
                     console.log('✅ Translation successful:', translatedText?.substring(0, 50) + '...');
 
                     const translationData = {
