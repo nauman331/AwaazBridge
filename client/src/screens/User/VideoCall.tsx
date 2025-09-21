@@ -307,36 +307,72 @@ const VideoCall: React.FC = () => {
             console.log('📹 Setting remote video stream');
             // Prevent multiple rapid assignments
             if (remoteVideoRef.current.srcObject !== remoteStream) {
-                remoteVideoRef.current.srcObject = remoteStream;
-                const stream = remoteStream as MediaStream; // Type assertion to help TypeScript
-                console.log('✅ Remote video srcObject assigned:', {
-                    hasStream: !!remoteStream,
-                    videoTracks: stream.getVideoTracks?.()?.length || 0,
-                    audioTracks: stream.getAudioTracks?.()?.length || 0,
-                    srcObjectSet: !!remoteVideoRef.current.srcObject
-                });
+                const video = remoteVideoRef.current;
 
-                // Force play after setting srcObject
+                // Force complete reset before assignment
+                video.srcObject = null;
+                video.load(); // Clear any previous state
+
+                // Wait a moment then assign the new stream
                 setTimeout(() => {
-                    if (remoteVideoRef.current && remoteVideoRef.current.srcObject === remoteStream) {
-                        const playPromise = remoteVideoRef.current.play();
+                    if (video && remoteStream) {
+                        video.srcObject = remoteStream;
+                        const stream = remoteStream as MediaStream;
+                        console.log('✅ Remote video srcObject assigned:', {
+                            hasStream: !!remoteStream,
+                            videoTracks: stream.getVideoTracks?.()?.length || 0,
+                            audioTracks: stream.getAudioTracks?.()?.length || 0,
+                            srcObjectSet: !!video.srcObject,
+                            videoTracksEnabled: stream.getVideoTracks?.()?.every(t => t.enabled) || false
+                        });
+
+                        // Immediate play attempt
+                        const playPromise = video.play();
                         if (playPromise !== undefined) {
                             playPromise.then(() => {
                                 console.log('✅ Remote video started playing successfully');
+
+                                // Monitor video readiness
+                                let checkCount = 0;
+                                const checkVideo = () => {
+                                    checkCount++;
+                                    if (video.videoWidth > 0 && video.videoHeight > 0) {
+                                        console.log('✅ Video content loaded:', {
+                                            width: video.videoWidth,
+                                            height: video.videoHeight,
+                                            readyState: video.readyState
+                                        });
+                                        setRemoteVideoHasContent(true);
+                                        setShowAudioOnlyOverlay(false);
+                                    } else if (checkCount < 10) {
+                                        console.log(`🔍 Video check ${checkCount}/10: readyState=${video.readyState}, dimensions=${video.videoWidth}x${video.videoHeight}`);
+                                        setTimeout(checkVideo, 500);
+                                    } else {
+                                        console.warn('⚠️ Video content not loaded after 5 seconds - showing audio-only overlay');
+                                        setShowAudioOnlyOverlay(true);
+                                    }
+                                };
+                                setTimeout(checkVideo, 100);
+
                             }).catch(e => {
                                 console.error('❌ Failed to play remote video:', e.name + ':', e.message);
-                                // Try to play with user interaction
-                                const playOnClick = () => {
-                                    if (remoteVideoRef.current) {
-                                        remoteVideoRef.current.play().catch(console.error);
-                                    }
-                                    document.removeEventListener('click', playOnClick);
-                                };
-                                document.addEventListener('click', playOnClick);
+                                // Force load and retry
+                                video.load();
+                                setTimeout(() => {
+                                    video.play().catch(err => {
+                                        console.error('❌ Retry play failed:', err);
+                                        // Final fallback - user interaction required
+                                        const playOnClick = () => {
+                                            video.play().catch(console.error);
+                                            document.removeEventListener('click', playOnClick);
+                                        };
+                                        document.addEventListener('click', playOnClick);
+                                    });
+                                }, 200);
                             });
                         }
                     }
-                }, 100);
+                }, 50);
             } else {
                 console.log('📹 Remote video srcObject already assigned, skipping');
             }
@@ -879,6 +915,64 @@ const VideoCall: React.FC = () => {
                                             muted={false}
                                             style={{ width: '100%', height: '100%' }}
                                             className="w-full aspect-video object-cover rounded-3xl"
+                                            onLoadStart={(e) => {
+                                                console.log('🔄 Remote video load start');
+                                                const video = e.target as HTMLVideoElement;
+                                                // Force immediate play attempt when loading starts
+                                                setTimeout(() => {
+                                                    video.play().catch(e => console.log('Early play attempt failed:', e.name));
+                                                }, 50);
+                                            }}
+                                            onWaiting={(e) => {
+                                                console.log('⏳ Remote video waiting for data');
+                                                const video = e.target as HTMLVideoElement;
+                                                // If video is waiting but we have tracks, force reset
+                                                if (remoteStream) {
+                                                    const videoTracks = remoteStream.getVideoTracks();
+                                                    if (videoTracks.length > 0 && videoTracks[0].enabled) {
+                                                        console.log('🔧 Video waiting but tracks available - attempting reset');
+                                                        setTimeout(() => {
+                                                            video.load();
+                                                            setTimeout(() => video.play().catch(console.error), 100);
+                                                        }, 200);
+                                                    }
+                                                }
+                                            }}
+                                            onStalled={(e) => {
+                                                console.log('⚠️ Remote video stalled - attempting recovery');
+                                                const video = e.target as HTMLVideoElement;
+                                                // Force refresh on stall
+                                                setTimeout(() => {
+                                                    if (video.readyState === 0 && remoteStream) {
+                                                        console.log('🔄 Forcing video stream refresh due to stall');
+                                                        video.srcObject = null;
+                                                        setTimeout(() => {
+                                                            video.srcObject = remoteStream;
+                                                            video.load();
+                                                            video.play().catch(console.error);
+                                                        }, 100);
+                                                    }
+                                                }, 500);
+                                            }}
+                                            onError={(e) => {
+                                                const video = e.target as HTMLVideoElement;
+                                                console.error('❌ Remote video error:', {
+                                                    error: video.error,
+                                                    code: video.error?.code,
+                                                    message: video.error?.message,
+                                                    readyState: video.readyState,
+                                                    networkState: video.networkState
+                                                });
+
+                                                // Attempt recovery on error
+                                                if (remoteStream && video.error?.code !== 1) { // Not MEDIA_ERR_ABORTED
+                                                    console.log('🔄 Attempting video recovery after error');
+                                                    setTimeout(() => {
+                                                        video.load();
+                                                        video.play().catch(console.error);
+                                                    }, 1000);
+                                                }
+                                            }}
                                             onLoadedMetadata={(e) => {
                                                 const video = e.target as HTMLVideoElement;
                                                 const hasVideoContent = video.videoWidth > 0 && video.videoHeight > 0;
@@ -887,7 +981,9 @@ const VideoCall: React.FC = () => {
                                                     videoHeight: video.videoHeight,
                                                     duration: video.duration,
                                                     srcObject: !!video.srcObject,
-                                                    hasContent: hasVideoContent
+                                                    hasContent: hasVideoContent,
+                                                    readyState: video.readyState,
+                                                    networkState: video.networkState
                                                 });
                                                 setRemoteVideoHasContent(hasVideoContent);
 
@@ -895,7 +991,8 @@ const VideoCall: React.FC = () => {
                                                     console.log('✅ Remote video content detected - hiding audio-only overlay');
                                                     setShowAudioOnlyOverlay(false);
                                                 } else {
-                                                    console.log('⚠️ Remote video track has no content (likely audio-only call)');
+                                                    console.log('⚠️ Remote video track has no content - likely audio-only call');
+                                                    setShowAudioOnlyOverlay(true);
                                                 }
                                             }}
                                             onCanPlay={(e) => {
@@ -954,19 +1051,6 @@ const VideoCall: React.FC = () => {
                                                 if (hasVideoContent) {
                                                     setShowAudioOnlyOverlay(false);
                                                 }
-                                            }}
-                                            onError={(e) => {
-                                                const video = e.target as HTMLVideoElement;
-                                                console.error('❌ Remote video error:', video.error);
-                                            }}
-                                            onLoadStart={() => {
-                                                console.log('🔄 Remote video load start');
-                                            }}
-                                            onWaiting={() => {
-                                                console.log('⏳ Remote video waiting for data');
-                                            }}
-                                            onStalled={() => {
-                                                console.log('⏸️ Remote video stalled');
                                             }}
                                         />
                                         {/* Overlay for audio-only calls */}
@@ -1247,6 +1331,66 @@ const VideoCall: React.FC = () => {
                                         }
                                     }} variant="ghost" size="icon" className="rounded-full" title="Quick Video Status Check">
                                         📊
+                                    </Button>
+                                    <Button onClick={() => {
+                                        console.log('🔧 ReadyState 0 Fix - Force Reload Video Element...');
+                                        if (remoteVideoRef.current && remoteStream) {
+                                            const video = remoteVideoRef.current;
+
+                                            if (video.readyState === 0) {
+                                                console.log('🎯 Detected readyState: 0 - applying comprehensive fix');
+
+                                                // Step 1: Complete element reset
+                                                video.pause();
+                                                video.removeAttribute('src');
+                                                video.srcObject = null;
+                                                video.load();
+
+                                                // Step 2: Force all video tracks to be enabled
+                                                const videoTracks = remoteStream.getVideoTracks();
+                                                videoTracks.forEach(track => {
+                                                    track.enabled = false;
+                                                    setTimeout(() => track.enabled = true, 50);
+                                                });
+
+                                                // Step 3: Reassign stream with delay
+                                                setTimeout(() => {
+                                                    video.srcObject = remoteStream;
+                                                    video.autoplay = true;
+                                                    video.playsInline = true;
+                                                    video.muted = false;
+
+                                                    // Step 4: Force load and play
+                                                    video.load();
+                                                    setTimeout(() => {
+                                                        video.play().then(() => {
+                                                            console.log('✅ ReadyState fix successful');
+                                                            toast.success('Video element reset successful!');
+
+                                                            // Monitor for improvement
+                                                            setTimeout(() => {
+                                                                if (video.readyState > 0 && video.videoWidth > 0) {
+                                                                    setRemoteVideoHasContent(true);
+                                                                    setShowAudioOnlyOverlay(false);
+                                                                    toast.success(`Video now working: ${video.videoWidth}x${video.videoHeight}`);
+                                                                } else {
+                                                                    toast.error(`Still readyState: ${video.readyState}, may need user interaction`);
+                                                                }
+                                                            }, 2000);
+                                                        }).catch(e => {
+                                                            console.error('❌ ReadyState fix play failed:', e);
+                                                            toast.error('Fix applied but play failed: ' + e.name);
+                                                        });
+                                                    }, 100);
+                                                }, 200);
+                                            } else {
+                                                toast.info(`ReadyState is ${video.readyState}, not 0. No fix needed.`);
+                                            }
+                                        } else {
+                                            toast.error('No video element or stream available for fix');
+                                        }
+                                    }} variant="ghost" size="icon" className="rounded-full" title="Fix ReadyState 0 Issue">
+                                        🔧
                                     </Button>
                                     <Button onClick={endCall} variant="destructive" size="icon" className="rounded-full">
                                         <PhoneOff />
