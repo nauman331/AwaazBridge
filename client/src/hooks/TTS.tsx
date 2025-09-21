@@ -16,7 +16,7 @@ const TTS = (text: string, options: TTSOptions = {}) => {
             // Configure voice settings
             utterance.rate = 0.9;
             utterance.pitch = gender === 'female' ? 1.2 : 0.8;
-            utterance.volume = 0.8;
+            utterance.volume = 1.0; // Maximum volume for translations
 
             // Use language map if available, otherwise use the language directly
             utterance.lang = languageMap[language] || `${language}-US`;
@@ -58,8 +58,22 @@ const TTS = (text: string, options: TTSOptions = {}) => {
 
             if (preferredVoice) {
                 utterance.voice = preferredVoice;
+                console.log('🎤 Selected TTS voice:', {
+                    name: preferredVoice.name,
+                    lang: preferredVoice.lang,
+                    gender: gender,
+                    textLength: text.length
+                });
+            } else {
+                console.warn('⚠️ No preferred voice found for language:', language);
             }
 
+            // Add event listeners for debugging
+            utterance.onstart = () => console.log('🎵 TTS started speaking');
+            utterance.onend = () => console.log('✅ TTS finished speaking');
+            utterance.onerror = (event) => console.error('❌ TTS error:', event.error);
+
+            console.log('🔊 Starting TTS playback:', text.substring(0, 50) + '...');
             window.speechSynthesis.speak(utterance);
 
         } catch (error) {

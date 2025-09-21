@@ -150,11 +150,37 @@ const VideoCall: React.FC = () => {
 
         const handleTranslation = (data: any) => {
             console.log('🌐 Translation received:', data);
-            if (speakerEnabled && data.translated) {
-                console.log('🔊 Playing TTS for translation:', data.translated);
-                TTS(data.translated, { language: data.toLang });
+            console.log('🔊 Speaker enabled status:', speakerEnabled);
+            console.log('🎵 Translation data:', {
+                original: data.original,
+                translated: data.translated,
+                fromLang: data.fromLang,
+                toLang: data.toLang,
+                hasTranslatedText: !!data.translated
+            });
+
+            // Always play TTS for incoming translations (unless explicitly disabled)
+            if (data.translated && data.translated.trim()) {
+                console.log('🎤 Playing TTS for incoming translation:', data.translated.substring(0, 50) + '...');
+                try {
+                    TTS(data.translated, {
+                        language: data.toLang || 'en',
+                        gender: 'female' // Default to female voice
+                    });
+                } catch (error) {
+                    console.error('❌ TTS Error:', error);
+                }
+            } else {
+                console.warn('⚠️ No translated text to play via TTS');
             }
-            setTranslations(prev => [...prev, { ...data, isSent: false, id: `trans-${Date.now()}` }]);
+
+            // Add to translations list
+            setTranslations(prev => [...prev, {
+                ...data,
+                isSent: false,
+                id: `trans-${Date.now()}`,
+                timestamp: new Date(data.timestamp || Date.now())
+            }]);
         };
 
         const handleIceCandidate = (candidate: any) => {
@@ -243,30 +269,35 @@ const VideoCall: React.FC = () => {
                 audioTrackEnabled: remoteStream.getAudioTracks()[0]?.enabled
             });
 
-            // Wait 3 seconds before showing audio-only overlay if no video content is detected
-            const audioOnlyTimeout = setTimeout(() => {
-                if (!remoteVideoHasContent) {
-                    console.log('⏱️ No video content detected after 3s, showing audio-only overlay');
-                    setShowAudioOnlyOverlay(true);
-                }
-            }, 3000);
+            // Assume video is available if there are video tracks - don't wait too long
+            const hasVideoTracks = remoteStream.getVideoTracks().length > 0;
+            if (hasVideoTracks) {
+                console.log('✅ Video tracks detected, assuming video content available');
+                setRemoteVideoHasContent(true);
+                setShowAudioOnlyOverlay(false);
+            } else {
+                console.log('⚠️ No video tracks detected, showing audio-only overlay');
+                setShowAudioOnlyOverlay(true);
+            }
 
-            // Periodically check for video content (some videos load slowly)
-            const videoCheckInterval = setInterval(() => {
+            // Simple delayed check for video content as backup
+            const videoCheckTimeout = setTimeout(() => {
                 if (remoteVideoRef.current) {
                     const video = remoteVideoRef.current;
                     const hasVideoContent = video.videoWidth > 0 && video.videoHeight > 0;
-                    if (hasVideoContent && !remoteVideoHasContent) {
-                        console.log('🔄 Periodic check: Video content detected!');
-                        setRemoteVideoHasContent(true);
-                        setShowAudioOnlyOverlay(false);
-                    }
+                    console.log('🔍 Delayed video check:', {
+                        hasVideoContent,
+                        videoWidth: video.videoWidth,
+                        videoHeight: video.videoHeight,
+                        readyState: video.readyState
+                    });
+                    setRemoteVideoHasContent(hasVideoContent);
+                    setShowAudioOnlyOverlay(!hasVideoContent);
                 }
-            }, 500); // Check every 500ms
+            }, 2000); // Check after 2 seconds
 
             return () => {
-                clearTimeout(audioOnlyTimeout);
-                clearInterval(videoCheckInterval);
+                clearTimeout(videoCheckTimeout);
             };
         } else {
             setShowAudioOnlyOverlay(false);
@@ -304,11 +335,26 @@ const VideoCall: React.FC = () => {
             // Prevent multiple rapid assignments
             if (remoteAudioRef.current.srcObject !== remoteStream) {
                 remoteAudioRef.current.srcObject = remoteStream;
+                // Set volume to maximum for remote audio
+                remoteAudioRef.current.volume = 1.0;
+                console.log('🔊 Remote audio volume set to:', remoteAudioRef.current.volume);
+
                 // Add a small delay before playing to avoid interruption
                 setTimeout(() => {
                     if (remoteAudioRef.current && remoteAudioRef.current.srcObject === remoteStream) {
-                        remoteAudioRef.current.play().catch(e => {
+                        console.log('🎵 Attempting to play remote audio...');
+                        remoteAudioRef.current.play().then(() => {
+                            console.log('✅ Remote audio playing successfully');
+                        }).catch(e => {
                             console.error('❌ Failed to play remote audio:', e.name + ':', e.message);
+                            // Try manual play on next user interaction
+                            const enableAudioOnClick = () => {
+                                if (remoteAudioRef.current) {
+                                    remoteAudioRef.current.play().catch(console.error);
+                                }
+                                document.removeEventListener('click', enableAudioOnClick);
+                            };
+                            document.addEventListener('click', enableAudioOnClick);
                         });
                     }
                 }, 100);
@@ -735,10 +781,20 @@ const VideoCall: React.FC = () => {
                 controls={false}
                 muted={false}
                 style={{ display: 'none' }}
-                onLoadedMetadata={() => console.log('🔊 Remote audio metadata loaded')}
+                onLoadedMetadata={() => {
+                    console.log('🔊 Remote audio metadata loaded');
+                    if (remoteAudioRef.current) {
+                        remoteAudioRef.current.volume = 1.0; // Full volume
+                    }
+                }}
                 onPlay={() => console.log('▶️ Remote audio playing')}
                 onPause={() => console.log('⏸️ Remote audio paused')}
                 onError={(e) => console.error('❌ Remote audio error:', e)}
+                onVolumeChange={() => {
+                    if (remoteAudioRef.current) {
+                        console.log('🔊 Remote audio volume:', remoteAudioRef.current.volume);
+                    }
+                }}
             />
 
             <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col lg:flex-row gap-4">
@@ -835,7 +891,7 @@ const VideoCall: React.FC = () => {
                                             autoPlay
                                             playsInline
                                             controls={false}
-                                            muted={true}
+                                            muted={false}
                                             style={{ width: '100%', height: '100%' }}
                                             className="w-full aspect-video object-cover rounded-3xl"
                                             onLoadedMetadata={(e) => {
@@ -938,6 +994,9 @@ const VideoCall: React.FC = () => {
                                     </Button>
                                     <Button onClick={toggleSpeaker} variant="ghost" size="icon" className="rounded-full" title="Toggle Speaker">
                                         {speakerEnabled ? <Volume2 /> : <VolumeX className="text-red-500" />}
+                                    </Button>
+                                    <Button onClick={forcePlayMedia} variant="ghost" size="icon" className="rounded-full" title="Force Play Media">
+                                        🎬
                                     </Button>
                                     <Button onClick={debugMediaElements} variant="ghost" size="icon" className="rounded-full" title="Debug Media">
                                         🔍
