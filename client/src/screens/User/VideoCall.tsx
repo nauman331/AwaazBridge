@@ -74,7 +74,9 @@ const VideoCall: React.FC = () => {
     const [isListening, setIsListening] = useState(false);
     const [currentTranscript, setCurrentTranscript] = useState('');
     const [mySocketId, setMySocketId] = useState<string>('');
-    const [isCopied, setIsCopied] = useState(false);    // Initialize WebRTC service
+    const [isCopied, setIsCopied] = useState(false);
+    const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
+    const [remoteVideoPlaying, setRemoteVideoPlaying] = useState(false);    // Initialize WebRTC service
     useEffect(() => {
         const webRTC = new WebRTCService();
         webRTCRef.current = webRTC;
@@ -119,6 +121,8 @@ const VideoCall: React.FC = () => {
 
         webRTC.onRemoteStream = (stream) => {
             console.log('📹 Remote stream received:', stream.getTracks().map(t => t.kind));
+            setHasRemoteVideo(stream.getVideoTracks().length > 0);
+
             if (remoteVideoRef.current) {
                 remoteVideoRef.current.srcObject = stream;
 
@@ -128,12 +132,14 @@ const VideoCall: React.FC = () => {
                         remoteVideoRef.current!.load();
                         await remoteVideoRef.current!.play();
                         console.log('✅ Remote video playing');
+                        setRemoteVideoPlaying(true);
                     } catch (e) {
                         console.log('⚠️ Remote video autoplay prevented:', e);
                         // Try to play on user interaction
                         const playOnClick = () => {
                             remoteVideoRef.current?.play().then(() => {
                                 console.log('✅ Remote video started on user interaction');
+                                setRemoteVideoPlaying(true);
                                 document.removeEventListener('click', playOnClick);
                             });
                         };
@@ -339,6 +345,8 @@ const VideoCall: React.FC = () => {
         });
         setTranslations([]);
         setCurrentTranscript('');
+        setHasRemoteVideo(false);
+        setRemoteVideoPlaying(false);
 
         // Clear video elements
         if (localVideoRef.current) {
@@ -397,7 +405,21 @@ const VideoCall: React.FC = () => {
         if (remoteVideoRef.current) {
             console.log('Remote video element srcObject:', remoteVideoRef.current.srcObject);
             console.log('Remote video element readyState:', remoteVideoRef.current.readyState);
+
+            // Try to force play remote video
+            if (remoteVideoRef.current.srcObject && remoteVideoRef.current.paused) {
+                console.log('🔄 Attempting to force play remote video...');
+                remoteVideoRef.current.play()
+                    .then(() => {
+                        console.log('✅ Remote video force played successfully');
+                        setRemoteVideoPlaying(true);
+                    })
+                    .catch(e => console.error('❌ Failed to force play remote video:', e));
+            }
         }
+
+        console.log('hasRemoteVideo:', hasRemoteVideo);
+        console.log('remoteVideoPlaying:', remoteVideoPlaying);
     };
 
     const toggleSpeaker = () => {
@@ -626,21 +648,37 @@ const VideoCall: React.FC = () => {
                                             controls={false}
                                             webkit-playsinline="true"
                                             className="w-full h-64 bg-gray-900 rounded-lg object-cover"
-                                            onLoadedMetadata={() => console.log('📹 Remote video metadata loaded')}
-                                            onPlay={() => console.log('▶️ Remote video started playing')}
-                                            onPause={() => console.log('⏸️ Remote video paused')}
+                                            onLoadedMetadata={() => {
+                                                console.log('📹 Remote video metadata loaded');
+                                                if (hasRemoteVideo) {
+                                                    setRemoteVideoPlaying(true);
+                                                }
+                                            }}
+                                            onPlay={() => {
+                                                console.log('▶️ Remote video started playing');
+                                                setRemoteVideoPlaying(true);
+                                            }}
+                                            onPause={() => {
+                                                console.log('⏸️ Remote video paused');
+                                                setRemoteVideoPlaying(false);
+                                            }}
                                             onError={(e) => console.error('❌ Remote video error:', e)}
                                         />
                                         {/* Fallback overlay - will hide when video plays */}
                                         <div
                                             className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 rounded-lg pointer-events-none"
                                             style={{
-                                                display: (remoteVideoRef.current?.readyState || 0) >= 2 ? 'none' : 'flex'
+                                                display: hasRemoteVideo && remoteVideoPlaying ? 'none' : 'flex'
                                             }}
                                         >
                                             <div className="text-center text-white">
                                                 <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                                <p className="text-sm opacity-75">Waiting for remote video...</p>
+                                                <p className="text-sm opacity-75">
+                                                    {hasRemoteVideo
+                                                        ? 'Loading remote video...'
+                                                        : 'Remote user is audio only'
+                                                    }
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
