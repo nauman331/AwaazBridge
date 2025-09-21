@@ -52,6 +52,7 @@ export const SocketConnection = (io: Server) => {
             const callee = users.get(socket.id);
 
             if (caller && callee) {
+                // Correctly link both peers to each other
                 caller.peerId = callee.id;
                 callee.peerId = caller.id;
                 io.to(data.to).emit("callAccepted", data.signal);

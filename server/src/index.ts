@@ -39,7 +39,7 @@ connectDB()
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*",
+        origin: process.env.CLIENT_URL, // Use the same origin as express cors
         methods: ["GET", "POST"],
         credentials: true,
     },
