@@ -380,4 +380,91 @@ export class WebRTCService {
             }
         }
     }
+
+    debugVideoTracks() {
+        console.log('🔍 WebRTC Service Video Debug:');
+
+        // Debug local stream
+        if (this.localStream) {
+            const localVideoTracks = this.localStream.getVideoTracks();
+            console.log('📹 Local video tracks:', localVideoTracks.map(track => ({
+                id: track.id,
+                label: track.label,
+                enabled: track.enabled,
+                readyState: track.readyState,
+                kind: track.kind,
+                settings: track.getSettings ? track.getSettings() : {}
+            })));
+        }
+
+        // Debug remote stream
+        if (this.remoteStream) {
+            const remoteVideoTracks = this.remoteStream.getVideoTracks();
+            console.log('📺 Remote video tracks:', remoteVideoTracks.map(track => ({
+                id: track.id,
+                label: track.label,
+                enabled: track.enabled,
+                readyState: track.readyState,
+                kind: track.kind,
+                settings: track.getSettings ? track.getSettings() : {}
+            })));
+        }
+
+        // Debug peer connection senders/receivers
+        if (this.peerConnection) {
+            const senders = this.peerConnection.getSenders();
+            const receivers = this.peerConnection.getReceivers();
+
+            console.log('📤 Peer connection senders:', senders.map(sender => ({
+                track: sender.track ? {
+                    kind: sender.track.kind,
+                    id: sender.track.id,
+                    enabled: sender.track.enabled,
+                    readyState: sender.track.readyState
+                } : null,
+                transport: sender.transport ? sender.transport.state : 'none'
+            })));
+
+            console.log('📥 Peer connection receivers:', receivers.map(receiver => ({
+                track: receiver.track ? {
+                    kind: receiver.track.kind,
+                    id: receiver.track.id,
+                    enabled: receiver.track.enabled,
+                    readyState: receiver.track.readyState
+                } : null,
+                transport: receiver.transport ? receiver.transport.state : 'none'
+            })));
+        }
+    }
+
+    forceEnableRemoteVideo(): boolean {
+        console.log('🎯 Force enabling remote video tracks...');
+        let tracksEnabled = false;
+
+        if (this.remoteStream) {
+            const videoTracks = this.remoteStream.getVideoTracks();
+            console.log(`🔧 Found ${videoTracks.length} remote video tracks`);
+
+            videoTracks.forEach((track, index) => {
+                console.log(`🔧 Enabling remote video track ${index}:`, track.id);
+                track.enabled = true;
+                tracksEnabled = true;
+            });
+
+            // Also check receivers
+            if (this.peerConnection) {
+                const receivers = this.peerConnection.getReceivers();
+                receivers.forEach(receiver => {
+                    if (receiver.track && receiver.track.kind === 'video') {
+                        console.log('🔧 Enabling receiver video track:', receiver.track.id);
+                        receiver.track.enabled = true;
+                        tracksEnabled = true;
+                    }
+                });
+            }
+        }
+
+        console.log(tracksEnabled ? '✅ Remote video tracks enabled' : '❌ No remote video tracks found');
+        return tracksEnabled;
+    }
 }
