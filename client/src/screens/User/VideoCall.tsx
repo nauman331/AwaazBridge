@@ -263,14 +263,14 @@ const VideoCall: React.FC = () => {
             console.log('📊 Remote stream details:', {
                 id: remoteStream.id,
                 active: remoteStream.active,
-                videoTracks: remoteStream.getVideoTracks().length,
-                audioTracks: remoteStream.getAudioTracks().length,
-                videoTrackEnabled: remoteStream.getVideoTracks()[0]?.enabled,
-                audioTrackEnabled: remoteStream.getAudioTracks()[0]?.enabled
+                videoTracks: remoteStream.getVideoTracks?.()?.length || 0,
+                audioTracks: remoteStream.getAudioTracks?.()?.length || 0,
+                videoTrackEnabled: remoteStream.getVideoTracks?.()?.[0]?.enabled,
+                audioTrackEnabled: remoteStream.getAudioTracks?.()?.[0]?.enabled
             });
 
             // Assume video is available if there are video tracks - don't wait too long
-            const hasVideoTracks = remoteStream.getVideoTracks().length > 0;
+            const hasVideoTracks = (remoteStream.getVideoTracks?.()?.length || 0) > 0;
             if (hasVideoTracks) {
                 console.log('✅ Video tracks detected, assuming video content available');
                 setRemoteVideoHasContent(true);
@@ -305,29 +305,41 @@ const VideoCall: React.FC = () => {
 
         if (remoteStream && remoteVideoRef.current) {
             console.log('📹 Setting remote video stream');
-            remoteVideoRef.current.srcObject = remoteStream;
+            // Prevent multiple rapid assignments
+            if (remoteVideoRef.current.srcObject !== remoteStream) {
+                remoteVideoRef.current.srcObject = remoteStream;
+                const stream = remoteStream as MediaStream; // Type assertion to help TypeScript
+                console.log('✅ Remote video srcObject assigned:', {
+                    hasStream: !!remoteStream,
+                    videoTracks: stream.getVideoTracks?.()?.length || 0,
+                    audioTracks: stream.getAudioTracks?.()?.length || 0,
+                    srcObjectSet: !!remoteVideoRef.current.srcObject
+                });
 
-            // Force play after setting srcObject
-            setTimeout(() => {
-                if (remoteVideoRef.current && remoteVideoRef.current.srcObject === remoteStream) {
-                    const playPromise = remoteVideoRef.current.play();
-                    if (playPromise !== undefined) {
-                        playPromise.then(() => {
-                            console.log('✅ Remote video started playing successfully');
-                        }).catch(e => {
-                            console.error('❌ Failed to play remote video:', e.name + ':', e.message);
-                            // Try to play with user interaction
-                            const playOnClick = () => {
-                                if (remoteVideoRef.current) {
-                                    remoteVideoRef.current.play().catch(console.error);
-                                }
-                                document.removeEventListener('click', playOnClick);
-                            };
-                            document.addEventListener('click', playOnClick);
-                        });
+                // Force play after setting srcObject
+                setTimeout(() => {
+                    if (remoteVideoRef.current && remoteVideoRef.current.srcObject === remoteStream) {
+                        const playPromise = remoteVideoRef.current.play();
+                        if (playPromise !== undefined) {
+                            playPromise.then(() => {
+                                console.log('✅ Remote video started playing successfully');
+                            }).catch(e => {
+                                console.error('❌ Failed to play remote video:', e.name + ':', e.message);
+                                // Try to play with user interaction
+                                const playOnClick = () => {
+                                    if (remoteVideoRef.current) {
+                                        remoteVideoRef.current.play().catch(console.error);
+                                    }
+                                    document.removeEventListener('click', playOnClick);
+                                };
+                                document.addEventListener('click', playOnClick);
+                            });
+                        }
                     }
-                }
-            }, 100);
+                }, 100);
+            } else {
+                console.log('📹 Remote video srcObject already assigned, skipping');
+            }
         }
 
         if (remoteStream && remoteAudioRef.current) {
@@ -360,7 +372,7 @@ const VideoCall: React.FC = () => {
                 }, 100);
             }
         }
-    }, [remoteStream, remoteVideoHasContent]);
+    }, [remoteStream]); // Remove remoteVideoHasContent from dependencies to prevent infinite loops
 
     // Initialize STT for translation (only when call is accepted and audioEnabled)
     useEffect(() => {
@@ -726,20 +738,20 @@ const VideoCall: React.FC = () => {
             console.log('🎵 Remote Stream:', {
                 id: remoteStream.id,
                 active: remoteStream.active,
-                videoTracks: remoteStream.getVideoTracks().map(track => ({
+                videoTracks: remoteStream.getVideoTracks?.()?.map(track => ({
                     id: track.id,
                     kind: track.kind,
                     enabled: track.enabled,
                     readyState: track.readyState,
-                    settings: track.getSettings()
-                })),
-                audioTracks: remoteStream.getAudioTracks().map(track => ({
+                    settings: track.getSettings?.() || {}
+                })) || [],
+                audioTracks: remoteStream.getAudioTracks?.()?.map(track => ({
                     id: track.id,
                     kind: track.kind,
                     enabled: track.enabled,
                     readyState: track.readyState,
-                    settings: track.getSettings()
-                }))
+                    settings: track.getSettings?.() || {}
+                })) || []
             });
         }
     };
@@ -977,8 +989,8 @@ const VideoCall: React.FC = () => {
                                 <div className="absolute bottom-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
                                     Remote {remoteStream && (
                                         remoteVideoHasContent
-                                            ? `(${remoteStream.getVideoTracks().length}V/${remoteStream.getAudioTracks().length}A)`
-                                            : `(Audio Only - ${remoteStream.getAudioTracks().length}A)`
+                                            ? `(${remoteStream.getVideoTracks?.()?.length || 0}V/${remoteStream.getAudioTracks?.()?.length || 0}A)`
+                                            : `(Audio Only - ${remoteStream.getAudioTracks?.()?.length || 0}A)`
                                     )}
                                 </div>
                             </div>
@@ -1001,8 +1013,71 @@ const VideoCall: React.FC = () => {
                                     <Button onClick={debugMediaElements} variant="ghost" size="icon" className="rounded-full" title="Debug Media">
                                         🔍
                                     </Button>
-                                    <Button onClick={forcePlayMedia} variant="ghost" size="icon" className="rounded-full" title="Force Play Media">
-                                        ▶️
+                                    <Button onClick={() => {
+                                        console.log('🎤 Testing TTS...');
+                                        TTS('Hello, this is a test translation from English to your language', {
+                                            language: targetLanguage?.value || 'en',
+                                            gender: 'female'
+                                        });
+                                    }} variant="ghost" size="icon" className="rounded-full" title="Test TTS">
+                                        🗣️
+                                    </Button>
+                                    <Button onClick={() => {
+                                        console.log('🔄 Resetting video stream...');
+                                        if (remoteStream && remoteVideoRef.current) {
+                                            remoteVideoRef.current.srcObject = null;
+                                            setTimeout(() => {
+                                                if (remoteVideoRef.current) {
+                                                    remoteVideoRef.current.srcObject = remoteStream;
+                                                    remoteVideoRef.current.play().catch(console.error);
+                                                }
+                                            }, 100);
+                                        }
+                                    }} variant="ghost" size="icon" className="rounded-full" title="Reset Video">
+                                        🔄
+                                    </Button>
+                                    <Button onClick={() => {
+                                        console.log('🧪 Testing incoming translation...');
+                                        const testTranslation = {
+                                            original: 'Hello, how are you?',
+                                            translated: 'مرحبا كيف حالك؟',
+                                            fromLang: 'en',
+                                            toLang: targetLanguage?.value || 'ar',
+                                            timestamp: new Date(),
+                                            isInterim: false
+                                        };
+                                        // Simulate receiving a translation from socket
+                                        console.log('🌐 Translation received:', testTranslation);
+                                        console.log('🔊 Speaker enabled status:', speakerEnabled);
+                                        if (testTranslation.translated && testTranslation.translated.trim()) {
+                                            console.log('🎤 Playing TTS for test translation:', testTranslation.translated);
+                                            try {
+                                                TTS(testTranslation.translated, {
+                                                    language: testTranslation.toLang || 'en',
+                                                    gender: 'female'
+                                                });
+                                            } catch (error) {
+                                                console.error('❌ TTS Error:', error);
+                                            }
+                                        }
+                                        setTranslations(prev => [...prev, {
+                                            ...testTranslation,
+                                            isSent: false,
+                                            id: `test-${Date.now()}`
+                                        }]);
+                                    }} variant="ghost" size="icon" className="rounded-full" title="Test Incoming Translation">
+                                        📥
+                                    </Button>
+                                    <Button onClick={() => {
+                                        console.log('🧪 Testing translation flow...');
+                                        if (myLanguage && targetLanguage) {
+                                            handleTranslation('Hello, this is a test message for translation', false);
+                                        } else {
+                                            console.error('❌ Languages not set for test');
+                                            toast.error('Please set both languages first');
+                                        }
+                                    }} variant="ghost" size="icon" className="rounded-full" title="Test Translation">
+                                        🧪
                                     </Button>
                                     <Button onClick={endCall} variant="destructive" size="icon" className="rounded-full">
                                         <PhoneOff />
