@@ -9,10 +9,9 @@ import { Server } from "socket.io";
 import { SocketConnection } from "./sockets/SocketConnection";
 import connectDB from "./config/connectDB";
 import authRoutes from "./routes/auth.route"
-import { AITranslate } from "./config/openAI"
 
 const corsoptions = {
-    origin: process.env.CLIENT_URL,
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true,
 };
@@ -26,20 +25,13 @@ app.get("/", (req, res) => {
     res.json({ msg: "Routes Working Perfectly" })
 })
 
-app.get("/translate", async (req, res) => {
-    AITranslate("en", "ur", "Hello, how are you?").then((translatedText) => {
-        res.json({ translatedText });
-    }).catch((error) => {
-        res.status(500).json({ error: "Translation failed" });
-    })
-})
 
 connectDB()
 
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: process.env.CLIENT_URL, // Use the same origin as express cors
+        origin: "*",
         methods: ["GET", "POST"],
         credentials: true,
     },
