@@ -121,23 +121,55 @@ export class WebRTCService {
         });
     }
 
-    async initializeLocalStream(constraints: MediaStreamConstraints = { video: true, audio: true }): Promise<MediaStream> {
+    async initializeLocalStream(constraints: MediaStreamConstraints = { video: false, audio: true }): Promise<MediaStream> {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            // Try with video first, fallback to audio only
+            let stream: MediaStream;
+
+            try {
+                // First attempt: try with video if available
+                const videoConstraints = {
+                    video: constraints.video !== false ? {
+                        width: { ideal: 1280, max: 1920 },
+                        height: { ideal: 720, max: 1080 },
+                        frameRate: { ideal: 30, max: 60 }
+                    } : false,
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                };
+
+                stream = await navigator.mediaDevices.getUserMedia(videoConstraints);
+                console.log('🎥 Local stream initialized with video and audio');
+            } catch (videoError) {
+                console.warn('⚠️ Video not available, trying audio only:', videoError);
+
+                // Fallback: audio only
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: false,
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
+                console.log('� Local stream initialized with audio only');
+                toast.info('Video not available, continuing with audio only');
+            }
+
             this.localStream = stream;
             this.onLocalStream?.(stream);
-            console.log('🎥 Local stream initialized');
             return stream;
         } catch (error) {
             console.error('❌ Failed to get local stream:', error);
-            const errorMsg = 'Failed to access camera/microphone. Please check permissions.';
+            const errorMsg = 'Failed to access microphone. Please check permissions and ensure microphone is available.';
             this.onError?.(errorMsg);
             toast.error(errorMsg);
             throw error;
         }
-    }
-
-    private createPeerConnection(): RTCPeerConnection {
+    } private createPeerConnection(): RTCPeerConnection {
         const pc = new RTCPeerConnection(this.config);
 
         pc.onicecandidate = (event) => {
@@ -181,7 +213,8 @@ export class WebRTCService {
     async callUser(callUser: CallUser): Promise<void> {
         try {
             if (!this.localStream) {
-                await this.initializeLocalStream();
+                // Initialize with video preference but audio required
+                await this.initializeLocalStream({ video: true, audio: true });
             }
 
             this.peerConnection = this.createPeerConnection();
@@ -189,6 +222,7 @@ export class WebRTCService {
             // Add local stream to peer connection
             if (this.localStream) {
                 this.localStream.getTracks().forEach(track => {
+                    console.log(`🎵 Adding ${track.kind} track to peer connection`);
                     this.peerConnection!.addTrack(track, this.localStream!);
                 });
             }
@@ -219,12 +253,11 @@ export class WebRTCService {
             this.onError?.('Failed to initiate call');
             toast.error('Failed to initiate call');
         }
-    }
-
-    async answerCall(callData: CallData): Promise<void> {
+    } async answerCall(callData: CallData): Promise<void> {
         try {
             if (!this.localStream) {
-                await this.initializeLocalStream();
+                // Initialize with video preference but audio required
+                await this.initializeLocalStream({ video: true, audio: true });
             }
 
             this.peerConnection = this.createPeerConnection();
@@ -232,6 +265,7 @@ export class WebRTCService {
             // Add local stream to peer connection
             if (this.localStream) {
                 this.localStream.getTracks().forEach(track => {
+                    console.log(`🎵 Adding ${track.kind} track to peer connection`);
                     this.peerConnection!.addTrack(track, this.localStream!);
                 });
             }

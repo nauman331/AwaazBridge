@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Phone, PhoneOff, Mic, MicOff, Video, VideoOff, Settings, Volume2, VolumeX, Copy, CheckCircle2 } from 'lucide-react';
+import { Phone, PhoneOff, Mic, MicOff, Video, VideoOff, Settings, Volume2, VolumeX, Copy, CheckCircle2, Users } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { LanguageSelector } from '../../components/ui/language-selector';
@@ -81,14 +81,37 @@ const VideoCall: React.FC = () => {
 
         // Setup WebRTC event handlers
         webRTC.onLocalStream = (stream) => {
+            console.log('📹 Local stream received:', stream.getTracks().map(t => t.kind));
             if (localVideoRef.current) {
                 localVideoRef.current.srcObject = stream;
+                // Auto-play and handle video/audio tracks
+                setTimeout(() => {
+                    if (localVideoRef.current) {
+                        localVideoRef.current.play().catch(e => console.log('Local video autoplay prevented:', e));
+                    }
+                }, 100);
             }
+
+            // Update media state based on available tracks
+            const videoTrack = stream.getVideoTracks()[0];
+            const audioTrack = stream.getAudioTracks()[0];
+            setMediaState(prev => ({
+                ...prev,
+                isVideoEnabled: videoTrack ? videoTrack.enabled : false,
+                isAudioEnabled: audioTrack ? audioTrack.enabled : true,
+            }));
         };
 
         webRTC.onRemoteStream = (stream) => {
+            console.log('📹 Remote stream received:', stream.getTracks().map(t => t.kind));
             if (remoteVideoRef.current) {
                 remoteVideoRef.current.srcObject = stream;
+                // Auto-play remote stream
+                setTimeout(() => {
+                    if (remoteVideoRef.current) {
+                        remoteVideoRef.current.play().catch(e => console.log('Remote video autoplay prevented:', e));
+                    }
+                }, 100);
             }
         };
 
@@ -303,6 +326,7 @@ const VideoCall: React.FC = () => {
             if (audioTrack) {
                 audioTrack.enabled = !audioTrack.enabled;
                 setMediaState(prev => ({ ...prev, isAudioEnabled: audioTrack.enabled }));
+                console.log(`🎤 Audio ${audioTrack.enabled ? 'enabled' : 'disabled'}`);
             }
         }
     };
@@ -314,15 +338,41 @@ const VideoCall: React.FC = () => {
             if (videoTrack) {
                 videoTrack.enabled = !videoTrack.enabled;
                 setMediaState(prev => ({ ...prev, isVideoEnabled: videoTrack.enabled }));
+                console.log(`🎥 Video ${videoTrack.enabled ? 'enabled' : 'disabled'}`);
+            } else {
+                // No video track available
+                toast.info('Camera not available for this call');
             }
+        }
+    };
+
+    // Debug function to check stream status
+    const checkStreamStatus = () => {
+        const localStream = webRTCRef.current?.getLocalStream();
+        const remoteStream = webRTCRef.current?.getRemoteStream();
+
+        console.log('🔍 Stream Debug Info:');
+        console.log('Local stream:', localStream);
+        console.log('Local video tracks:', localStream?.getVideoTracks());
+        console.log('Local audio tracks:', localStream?.getAudioTracks());
+        console.log('Remote stream:', remoteStream);
+        console.log('Remote video tracks:', remoteStream?.getVideoTracks());
+        console.log('Remote audio tracks:', remoteStream?.getAudioTracks());
+
+        if (localVideoRef.current) {
+            console.log('Local video element srcObject:', localVideoRef.current.srcObject);
+            console.log('Local video element readyState:', localVideoRef.current.readyState);
+        }
+
+        if (remoteVideoRef.current) {
+            console.log('Remote video element srcObject:', remoteVideoRef.current.srcObject);
+            console.log('Remote video element readyState:', remoteVideoRef.current.readyState);
         }
     };
 
     const toggleSpeaker = () => {
         setMediaState(prev => ({ ...prev, isSpeakerEnabled: !prev.isSpeakerEnabled }));
-    };
-
-    const copySocketId = async () => {
+    }; const copySocketId = async () => {
         if (mySocketId) {
             try {
                 await navigator.clipboard.writeText(mySocketId);
@@ -490,30 +540,62 @@ const VideoCall: React.FC = () => {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>You</CardTitle>
+                                    <CardTitle className="flex items-center gap-2">
+                                        You
+                                        {!mediaState.isVideoEnabled && (
+                                            <Badge variant="secondary" className="text-xs">Audio Only</Badge>
+                                        )}
+                                    </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <video
-                                        ref={localVideoRef}
-                                        autoPlay
-                                        muted
-                                        playsInline
-                                        className="w-full h-64 bg-gray-900 rounded-lg object-cover"
-                                    />
+                                    <div className="relative">
+                                        <video
+                                            ref={localVideoRef}
+                                            autoPlay
+                                            muted
+                                            playsInline
+                                            className="w-full h-64 bg-gray-900 rounded-lg object-cover"
+                                            style={{
+                                                display: mediaState.isVideoEnabled ? 'block' : 'none'
+                                            }}
+                                        />
+                                        {!mediaState.isVideoEnabled && (
+                                            <div className="w-full h-64 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                                <div className="text-center text-white">
+                                                    <Mic className="h-12 w-12 mx-auto mb-2" />
+                                                    <p className="text-lg font-semibold">Audio Only</p>
+                                                    <p className="text-sm opacity-75">Camera is off</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </CardContent>
                             </Card>
 
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Remote User</CardTitle>
+                                    <CardTitle className="flex items-center gap-2">
+                                        Remote User
+                                        <Badge variant="outline" className="text-xs">
+                                            {callState.connectionState}
+                                        </Badge>
+                                    </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <video
-                                        ref={remoteVideoRef}
-                                        autoPlay
-                                        playsInline
-                                        className="w-full h-64 bg-gray-900 rounded-lg object-cover"
-                                    />
+                                    <div className="relative">
+                                        <video
+                                            ref={remoteVideoRef}
+                                            autoPlay
+                                            playsInline
+                                            className="w-full h-64 bg-gray-900 rounded-lg object-cover"
+                                        />
+                                        <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 rounded-lg pointer-events-none">
+                                            <div className="text-center text-white">
+                                                <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                                <p className="text-sm opacity-75">Waiting for remote video...</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </CardContent>
                             </Card>
                         </div>
@@ -526,6 +608,7 @@ const VideoCall: React.FC = () => {
                                         onClick={toggleAudio}
                                         variant={mediaState.isAudioEnabled ? "default" : "destructive"}
                                         size="lg"
+                                        title={mediaState.isAudioEnabled ? "Mute microphone" : "Unmute microphone"}
                                     >
                                         {mediaState.isAudioEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
                                     </Button>
@@ -534,6 +617,7 @@ const VideoCall: React.FC = () => {
                                         onClick={toggleVideo}
                                         variant={mediaState.isVideoEnabled ? "default" : "destructive"}
                                         size="lg"
+                                        title={mediaState.isVideoEnabled ? "Turn off camera" : "Turn on camera"}
                                     >
                                         {mediaState.isVideoEnabled ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
                                     </Button>
@@ -542,14 +626,25 @@ const VideoCall: React.FC = () => {
                                         onClick={toggleSpeaker}
                                         variant={mediaState.isSpeakerEnabled ? "default" : "destructive"}
                                         size="lg"
+                                        title={mediaState.isSpeakerEnabled ? "Mute speaker" : "Unmute speaker"}
                                     >
                                         {mediaState.isSpeakerEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+                                    </Button>
+
+                                    <Button
+                                        onClick={checkStreamStatus}
+                                        variant="outline"
+                                        size="lg"
+                                        title="Debug stream info (Check console)"
+                                    >
+                                        🔍
                                     </Button>
 
                                     <Button
                                         onClick={() => webRTCRef.current?.endCall()}
                                         variant="destructive"
                                         size="lg"
+                                        title="End call"
                                     >
                                         <PhoneOff className="h-5 w-5" />
                                     </Button>
