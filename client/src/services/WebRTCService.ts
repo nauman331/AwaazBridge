@@ -183,18 +183,30 @@ export class WebRTCService {
         };
 
         pc.ontrack = (event) => {
-            console.log('🎵 Remote track received:', event.track.kind);
-            if (event.streams && event.streams[0] && !this.remoteStream) {
-                this.remoteStream = event.streams[0];
-                console.log('📹 Setting remote stream for first time');
-                // Only call callback once when we first get the stream
-                setTimeout(() => {
-                    this.onRemoteStream?.(event.streams[0]);
-                }, 100);
-            } else if (event.streams && event.streams[0] && this.remoteStream) {
-                // Stream already exists, just add the new track
-                console.log('🎵 Adding track to existing remote stream');
-                // Don't call onRemoteStream again to avoid reloading video element
+            console.log('🎵 Remote track received:', event.track.kind, 'Stream ID:', event.streams[0]?.id);
+
+            if (event.streams && event.streams[0]) {
+                // If this is the first stream or a different stream
+                if (!this.remoteStream || this.remoteStream.id !== event.streams[0].id) {
+                    this.remoteStream = event.streams[0];
+                    console.log('📹 Setting remote stream for first time or new stream');
+
+                    // Call callback for new stream
+                    setTimeout(() => {
+                        this.onRemoteStream?.(event.streams[0]);
+                    }, 100);
+                } else {
+                    // Same stream, just log the track addition
+                    console.log('🎵 Track added to existing remote stream:', event.track.kind);
+
+                    // For existing streams, we might need to trigger a refresh if video track is added
+                    if (event.track.kind === 'video' && this.remoteStream) {
+                        console.log('📹 Video track added to existing stream - triggering refresh');
+                        setTimeout(() => {
+                            this.onRemoteStream?.(this.remoteStream!);
+                        }, 200);
+                    }
+                }
             }
         };
 

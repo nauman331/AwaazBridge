@@ -115,40 +115,78 @@ const VideoCall: React.FC = () => {
         };
 
         webRTC.onRemoteStream = (stream) => {
-            console.log('📹 Remote stream received:', stream.getTracks().map(t => t.kind));
+            console.log('📹 Remote stream received:', stream.getTracks().map(t => `${t.kind}:${t.enabled}`));
             const hasVideo = stream.getVideoTracks().length > 0;
+            const videoTrack = stream.getVideoTracks()[0];
+
+            console.log('Video track details:', {
+                hasVideo,
+                trackEnabled: videoTrack?.enabled,
+                trackReadyState: videoTrack?.readyState,
+                trackMuted: videoTrack?.muted
+            });
+
             setHasRemoteVideo(hasVideo);
 
-            if (remoteVideoRef.current && remoteVideoRef.current.srcObject !== stream) {
-                remoteVideoRef.current.srcObject = stream;
-                console.log('✅ Remote video element srcObject set');
+            if (remoteVideoRef.current) {
+                // Always assign the stream, even if it's the same reference
+                const currentSrc = remoteVideoRef.current.srcObject as MediaStream;
+                const isSameStream = currentSrc && currentSrc.id === stream.id;
 
-                // Force load and play remote video with better error handling
+                if (!isSameStream) {
+                    console.log('✅ Assigning new remote stream to video element');
+                    remoteVideoRef.current.srcObject = stream;
+                } else {
+                    console.log('📹 Same stream - checking for track updates');
+                    // Stream is same but tracks might have changed
+                    const currentVideoTracks = currentSrc.getVideoTracks();
+                    if (hasVideo && currentVideoTracks.length === 0) {
+                        console.log('🔄 Video track added to existing stream - refreshing video element');
+                        remoteVideoRef.current.load();
+                    }
+                }
+
+                // Handle video playback
                 const playRemoteVideo = async () => {
                     try {
                         if (remoteVideoRef.current && remoteVideoRef.current.srcObject) {
-                            // Cancel any pending play requests first
-                            remoteVideoRef.current.load();
-
+                            // For mobile video streams, ensure proper loading
                             if (hasVideo) {
-                                await remoteVideoRef.current.play();
-                                console.log('✅ Remote video playing');
-                                setRemoteVideoPlaying(true);
+                                remoteVideoRef.current.load();
+
+                                // Wait a bit for mobile video to be ready
+                                await new Promise(resolve => setTimeout(resolve, 500));
+
+                                if (remoteVideoRef.current.readyState >= 2) { // HAVE_CURRENT_DATA
+                                    await remoteVideoRef.current.play();
+                                    console.log('✅ Remote video playing');
+                                    setRemoteVideoPlaying(true);
+                                } else {
+                                    console.log('⏳ Video not ready yet, will retry...');
+                                    // Retry after metadata loads
+                                    remoteVideoRef.current.addEventListener('loadedmetadata', async () => {
+                                        try {
+                                            await remoteVideoRef.current!.play();
+                                            console.log('✅ Remote video playing after metadata loaded');
+                                            setRemoteVideoPlaying(true);
+                                        } catch (retryError) {
+                                            console.log('⚠️ Retry play failed:', retryError);
+                                            setRemoteVideoPlaying(false);
+                                        }
+                                    }, { once: true });
+                                }
                             }
                         }
                     } catch (e: any) {
                         if (e.name !== 'AbortError') {
                             console.log('⚠️ Remote video autoplay prevented:', e);
-                            // Set up click handler for manual play
                             setRemoteVideoPlaying(false);
                         }
                     }
                 };
 
-                // Delay to ensure stream is ready
+                // Delay to ensure stream is ready, especially for mobile
                 setTimeout(playRemoteVideo, 300);
-            } else if (remoteVideoRef.current && remoteVideoRef.current.srcObject === stream) {
-                console.log('📹 Remote stream already assigned, skipping reassignment');
             }
         };
 
@@ -409,37 +447,77 @@ const VideoCall: React.FC = () => {
         console.log('🔍 Stream Debug Info:');
         console.log('Call State:', callState);
         console.log('Local stream:', localStream);
-        console.log('Local video tracks:', localStream?.getVideoTracks());
-        console.log('Local audio tracks:', localStream?.getAudioTracks());
+        console.log('Local video tracks:', localStream?.getVideoTracks().map(t => ({
+            kind: t.kind,
+            enabled: t.enabled,
+            readyState: t.readyState,
+            muted: t.muted
+        })));
+        console.log('Local audio tracks:', localStream?.getAudioTracks().map(t => ({
+            kind: t.kind,
+            enabled: t.enabled,
+            readyState: t.readyState,
+            muted: t.muted
+        })));
+
         console.log('Remote stream:', remoteStream);
-        console.log('Remote video tracks:', remoteStream?.getVideoTracks());
-        console.log('Remote audio tracks:', remoteStream?.getAudioTracks());
+        console.log('Remote video tracks:', remoteStream?.getVideoTracks().map(t => ({
+            kind: t.kind,
+            enabled: t.enabled,
+            readyState: t.readyState,
+            muted: t.muted
+        })));
+        console.log('Remote audio tracks:', remoteStream?.getAudioTracks().map(t => ({
+            kind: t.kind,
+            enabled: t.enabled,
+            readyState: t.readyState,
+            muted: t.muted
+        })));
 
         if (localVideoRef.current) {
-            console.log('Local video element srcObject:', localVideoRef.current.srcObject);
-            console.log('Local video element readyState:', localVideoRef.current.readyState);
-            console.log('Local video element paused:', localVideoRef.current.paused);
+            console.log('Local video element:', {
+                srcObject: !!localVideoRef.current.srcObject,
+                readyState: localVideoRef.current.readyState,
+                paused: localVideoRef.current.paused,
+                videoWidth: localVideoRef.current.videoWidth,
+                videoHeight: localVideoRef.current.videoHeight
+            });
         }
 
         if (remoteVideoRef.current) {
-            console.log('Remote video element srcObject:', remoteVideoRef.current.srcObject);
-            console.log('Remote video element readyState:', remoteVideoRef.current.readyState);
-            console.log('Remote video element paused:', remoteVideoRef.current.paused);
+            console.log('Remote video element:', {
+                srcObject: !!remoteVideoRef.current.srcObject,
+                readyState: remoteVideoRef.current.readyState,
+                paused: remoteVideoRef.current.paused,
+                videoWidth: remoteVideoRef.current.videoWidth,
+                videoHeight: remoteVideoRef.current.videoHeight
+            });
 
             // Try to manually assign the stream if it's missing
             if (!remoteVideoRef.current.srcObject && remoteStream) {
                 console.log('🔄 Manually assigning remote stream to video element...');
                 remoteVideoRef.current.srcObject = remoteStream;
                 remoteVideoRef.current.load();
-                remoteVideoRef.current.play()
-                    .then(() => {
+
+                // Wait for metadata and then play
+                const tryPlay = async () => {
+                    try {
+                        await remoteVideoRef.current!.play();
                         console.log('✅ Manual remote video assignment successful');
                         setRemoteVideoPlaying(true);
-                    })
-                    .catch(e => console.error('❌ Manual remote video assignment failed:', e));
+                    } catch (e) {
+                        console.error('❌ Manual remote video assignment failed:', e);
+                    }
+                };
+
+                if (remoteVideoRef.current.readyState >= 1) {
+                    tryPlay();
+                } else {
+                    remoteVideoRef.current.addEventListener('loadedmetadata', tryPlay, { once: true });
+                }
             }
 
-            // Try to force play if paused
+            // Try to force play if paused and has video
             if (remoteVideoRef.current.srcObject && remoteVideoRef.current.paused && hasRemoteVideo) {
                 console.log('🔄 Attempting to force play remote video...');
                 remoteVideoRef.current.play()
@@ -451,8 +529,11 @@ const VideoCall: React.FC = () => {
             }
         }
 
-        console.log('hasRemoteVideo:', hasRemoteVideo);
-        console.log('remoteVideoPlaying:', remoteVideoPlaying);
+        console.log('UI State:', {
+            hasRemoteVideo,
+            remoteVideoPlaying,
+            mediaState
+        });
 
         // Check if call state is incorrectly reset
         if (!callState.isInCall && webRTCRef.current?.isCallActive()) {
@@ -683,6 +764,9 @@ const VideoCall: React.FC = () => {
                                         {callState.connectionState === 'connected' && !hasRemoteVideo && (
                                             <Badge variant="secondary" className="text-xs">Audio Only</Badge>
                                         )}
+                                        {callState.connectionState === 'connected' && hasRemoteVideo && (
+                                            <Badge variant="default" className="text-xs">Video</Badge>
+                                        )}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
@@ -692,12 +776,28 @@ const VideoCall: React.FC = () => {
                                             autoPlay
                                             playsInline
                                             controls={false}
+                                            muted={false}
                                             className="w-full h-full object-cover"
                                             style={{
                                                 display: hasRemoteVideo && callState.connectionState === 'connected' ? 'block' : 'none'
                                             }}
                                             onLoadedMetadata={() => {
                                                 console.log('📹 Remote video metadata loaded');
+                                                const videoElement = remoteVideoRef.current;
+                                                if (videoElement) {
+                                                    console.log('Video dimensions:', videoElement.videoWidth, 'x', videoElement.videoHeight);
+                                                }
+                                            }}
+                                            onCanPlay={() => {
+                                                console.log('📹 Remote video can play');
+                                                if (remoteVideoRef.current && remoteVideoRef.current.paused) {
+                                                    remoteVideoRef.current.play()
+                                                        .then(() => {
+                                                            console.log('✅ Auto-play after canplay event');
+                                                            setRemoteVideoPlaying(true);
+                                                        })
+                                                        .catch(e => console.log('⚠️ Auto-play after canplay failed:', e));
+                                                }
                                             }}
                                             onPlay={() => {
                                                 console.log('▶️ Remote video started playing');
@@ -714,6 +814,7 @@ const VideoCall: React.FC = () => {
                                                     if (remoteVideoRef.current && remoteVideoRef.current.paused) {
                                                         await remoteVideoRef.current.play();
                                                         setRemoteVideoPlaying(true);
+                                                        console.log('✅ Manual play successful');
                                                     }
                                                 } catch (e) {
                                                     console.error('❌ Manual play failed:', e);
@@ -742,17 +843,18 @@ const VideoCall: React.FC = () => {
                                                 onClick={async () => {
                                                     try {
                                                         if (remoteVideoRef.current) {
+                                                            console.log('🔄 Manual play attempt from overlay click');
                                                             await remoteVideoRef.current.play();
                                                             setRemoteVideoPlaying(true);
                                                         }
                                                     } catch (e) {
-                                                        console.error('❌ Click to play failed:', e);
+                                                        console.error('❌ Overlay click play failed:', e);
                                                     }
                                                 }}>
                                                 <div className="text-center text-white">
                                                     <Video className="h-12 w-12 mx-auto mb-2" />
                                                     <p className="text-lg font-semibold">Click to Play Video</p>
-                                                    <p className="text-sm opacity-75">Browser requires user interaction</p>
+                                                    <p className="text-sm opacity-75">Tap to start video from mobile</p>
                                                 </div>
                                             </div>
                                         )}
