@@ -184,12 +184,17 @@ export class WebRTCService {
 
         pc.ontrack = (event) => {
             console.log('🎵 Remote track received:', event.track.kind);
-            if (event.streams && event.streams[0]) {
+            if (event.streams && event.streams[0] && !this.remoteStream) {
                 this.remoteStream = event.streams[0];
-                // Ensure callback is called immediately with a slight delay
+                console.log('📹 Setting remote stream for first time');
+                // Only call callback once when we first get the stream
                 setTimeout(() => {
                     this.onRemoteStream?.(event.streams[0]);
                 }, 100);
+            } else if (event.streams && event.streams[0] && this.remoteStream) {
+                // Stream already exists, just add the new track
+                console.log('🎵 Adding track to existing remote stream');
+                // Don't call onRemoteStream again to avoid reloading video element
             }
         };
 

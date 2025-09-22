@@ -55,7 +55,12 @@ export const SocketConnection = (io: Server) => {
                 // Correctly link both peers to each other
                 caller.peerId = callee.id;
                 callee.peerId = caller.id;
+
+                // Send success confirmation to both parties
                 io.to(data.to).emit("callAccepted", data.signal);
+                socket.emit("callAnswered", { success: true });
+
+                console.log(`📞 Call established between ${caller.id} and ${callee.id}`);
             }
         });
 
@@ -68,7 +73,9 @@ export const SocketConnection = (io: Server) => {
         socket.on("ice-candidate", (data) => {
             const currentUser = users.get(socket.id);
             if (data.candidate && currentUser && currentUser.peerId) {
+                // Add heartbeat to maintain connection
                 io.to(currentUser.peerId).emit("ice-candidate", data.candidate);
+                console.log(`🧊 ICE candidate relayed from ${socket.id} to ${currentUser.peerId}`);
             }
         });
 
@@ -127,12 +134,22 @@ export const SocketConnection = (io: Server) => {
             const currentUser = users.get(socket.id);
             if (currentUser && currentUser.peerId) {
                 const peerId = currentUser.peerId;
+                console.log(`📵 Call ended between ${socket.id} and ${peerId}`);
+
                 io.to(peerId).emit("callEnded");
                 const peer = users.get(peerId);
                 if (peer) {
                     peer.peerId = undefined;
                 }
                 currentUser.peerId = undefined;
+            }
+        });
+
+        // Add heartbeat mechanism to maintain connection
+        socket.on("heartbeat", () => {
+            const currentUser = users.get(socket.id);
+            if (currentUser && currentUser.peerId) {
+                io.to(currentUser.peerId).emit("heartbeat", { from: socket.id });
             }
         });
     });

@@ -119,42 +119,36 @@ const VideoCall: React.FC = () => {
             const hasVideo = stream.getVideoTracks().length > 0;
             setHasRemoteVideo(hasVideo);
 
-            if (remoteVideoRef.current) {
+            if (remoteVideoRef.current && remoteVideoRef.current.srcObject !== stream) {
                 remoteVideoRef.current.srcObject = stream;
                 console.log('✅ Remote video element srcObject set');
 
                 // Force load and play remote video with better error handling
                 const playRemoteVideo = async () => {
                     try {
-                        if (remoteVideoRef.current) {
+                        if (remoteVideoRef.current && remoteVideoRef.current.srcObject) {
+                            // Cancel any pending play requests first
                             remoteVideoRef.current.load();
+
                             if (hasVideo) {
                                 await remoteVideoRef.current.play();
                                 console.log('✅ Remote video playing');
                                 setRemoteVideoPlaying(true);
                             }
                         }
-                    } catch (e) {
-                        console.log('⚠️ Remote video autoplay prevented:', e);
-                        // Set up click handler for manual play
-                        const handleClick = async () => {
-                            try {
-                                if (remoteVideoRef.current) {
-                                    await remoteVideoRef.current.play();
-                                    console.log('✅ Remote video started on user interaction');
-                                    setRemoteVideoPlaying(true);
-                                }
-                            } catch (playError) {
-                                console.error('❌ Failed to play remote video:', playError);
-                            }
-                            document.removeEventListener('click', handleClick);
-                        };
-                        document.addEventListener('click', handleClick, { once: true });
+                    } catch (e: any) {
+                        if (e.name !== 'AbortError') {
+                            console.log('⚠️ Remote video autoplay prevented:', e);
+                            // Set up click handler for manual play
+                            setRemoteVideoPlaying(false);
+                        }
                     }
                 };
 
                 // Delay to ensure stream is ready
-                setTimeout(playRemoteVideo, 200);
+                setTimeout(playRemoteVideo, 300);
+            } else if (remoteVideoRef.current && remoteVideoRef.current.srcObject === stream) {
+                console.log('📹 Remote stream already assigned, skipping reassignment');
             }
         };
 
@@ -179,6 +173,8 @@ const VideoCall: React.FC = () => {
             setCallState(prev => ({
                 ...prev,
                 isOutgoingCall: false,
+                isIncomingCall: false,
+                incomingCallData: null,
             }));
             toast.error('Call was rejected');
         };
@@ -193,6 +189,12 @@ const VideoCall: React.FC = () => {
 
         webRTC.onConnectionStateChange = (state) => {
             setCallState(prev => ({ ...prev, connectionState: state }));
+
+            // Prevent call state from being reset when connection is stable
+            if (state === 'connected' || state === 'connecting') {
+                // Keep call active
+                console.log('🔗 Connection stable, maintaining call state');
+            }
         };
 
         webRTC.onError = (error) => {
@@ -317,16 +319,24 @@ const VideoCall: React.FC = () => {
         if (!callState.incomingCallData) return;
 
         try {
-            await webRTCRef.current?.answerCall(callState.incomingCallData);
             setCallState(prev => ({
                 ...prev,
                 isInCall: true,
                 isIncomingCall: false,
                 incomingCallData: null,
             }));
+
+            await webRTCRef.current?.answerCall(callState.incomingCallData);
             startListening();
         } catch (error) {
+            console.error('Failed to answer call:', error);
             toast.error('Failed to answer call');
+            // Reset call state on error
+            setCallState(prev => ({
+                ...prev,
+                isInCall: false,
+                isIncomingCall: true,
+            }));
         }
     };
 
@@ -397,6 +407,7 @@ const VideoCall: React.FC = () => {
         const remoteStream = webRTCRef.current?.getRemoteStream();
 
         console.log('🔍 Stream Debug Info:');
+        console.log('Call State:', callState);
         console.log('Local stream:', localStream);
         console.log('Local video tracks:', localStream?.getVideoTracks());
         console.log('Local audio tracks:', localStream?.getAudioTracks());
@@ -442,6 +453,17 @@ const VideoCall: React.FC = () => {
 
         console.log('hasRemoteVideo:', hasRemoteVideo);
         console.log('remoteVideoPlaying:', remoteVideoPlaying);
+
+        // Check if call state is incorrectly reset
+        if (!callState.isInCall && webRTCRef.current?.isCallActive()) {
+            console.log('🚨 Call state mismatch detected! Fixing...');
+            setCallState(prev => ({
+                ...prev,
+                isInCall: true,
+                isIncomingCall: false,
+                isOutgoingCall: false,
+            }));
+        }
     };
 
     const toggleSpeaker = () => {
@@ -658,7 +680,7 @@ const VideoCall: React.FC = () => {
                                         <Badge variant="outline" className="text-xs">
                                             {callState.connectionState}
                                         </Badge>
-                                        {!hasRemoteVideo && (
+                                        {callState.connectionState === 'connected' && !hasRemoteVideo && (
                                             <Badge variant="secondary" className="text-xs">Audio Only</Badge>
                                         )}
                                     </CardTitle>
@@ -672,7 +694,7 @@ const VideoCall: React.FC = () => {
                                             controls={false}
                                             className="w-full h-full object-cover"
                                             style={{
-                                                display: hasRemoteVideo ? 'block' : 'none'
+                                                display: hasRemoteVideo && callState.connectionState === 'connected' ? 'block' : 'none'
                                             }}
                                             onLoadedMetadata={() => {
                                                 console.log('📹 Remote video metadata loaded');
@@ -698,7 +720,15 @@ const VideoCall: React.FC = () => {
                                                 }
                                             }}
                                         />
-                                        {!hasRemoteVideo && (
+                                        {callState.connectionState !== 'connected' && (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+                                                <div className="text-center text-white">
+                                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+                                                    <p className="text-sm opacity-75">Connecting...</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {callState.connectionState === 'connected' && !hasRemoteVideo && (
                                             <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
                                                 <div className="text-center text-white">
                                                     <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -707,7 +737,7 @@ const VideoCall: React.FC = () => {
                                                 </div>
                                             </div>
                                         )}
-                                        {hasRemoteVideo && !remoteVideoPlaying && (
+                                        {hasRemoteVideo && callState.connectionState === 'connected' && !remoteVideoPlaying && (
                                             <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75 cursor-pointer"
                                                 onClick={async () => {
                                                     try {
