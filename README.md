@@ -1,244 +1,120 @@
-# 🔥 AwazBridge
+# 🚀 AwazBridge Development Setup
 
-> **Breaking language barriers with AI-powered Urdu ↔ English voice translation**
+## Quick Start Instructions
 
-AwazBridge is a cutting-edge SaaS platform that enables seamless real-time voice communication between Urdu and English speakers. Using advanced AI technology specifically trained on Pakistani dialects and cultural contexts, AwazBridge bridges communities, families, and businesses across language barriers.
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
-[![React](https://img.shields.io/badge/React-18%2B-blue.svg)](https://reactjs.org/)
-
-## 🌟 Features
-
-### 🗣️ Voice Translation
-
-- **Real-time Translation**: Instant Urdu ↔ English voice translation with <1.2s latency
-- **Cultural Intelligence**: AI trained on Pakistani dialects and cultural expressions
-- **Natural Conversations**: Maintains conversation flow without awkward pauses
-- **96%+ Accuracy**: Industry-leading translation accuracy for Urdu-English pairs
-
-### 👥 Multi-User Communication
-
-- **Group Calls**: Support for up to 20 participants (Pro) or unlimited (Enterprise)
-- **Conference Mode**: Multi-participant conversations with seamless translation
-- **Role Management**: Admin, moderator, and participant roles
-- **Session Recording**: Call recording and transcript generation
-
-### 🌐 Platform Features
-
-- **Cross-Platform**: Web, iOS, and Android applications
-- **HD Voice Quality**: Crystal clear audio with noise cancellation
-- **Offline Mode**: Basic translation capabilities without internet
-- **API Integration**: RESTful APIs for third-party platform integration
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Node.js 18 or higher
-- MongoDB 6.0+
-- Redis (for session management)
-- WebRTC support
-
-### Installation
-
-1. **Clone the repository**
-
-   ```bash
-   git clone https://github.com/yourusername/AwazBridge.git
-   cd AwazBridge
-   ```
-
-2. **Install dependencies**
-
-   ```bash
-   # Backend dependencies
-   cd server
-   npm install
-
-   # Frontend dependencies
-   cd ../client
-   npm install
-   ```
-
-3. **Environment Setup**
-
-   ```bash
-   cp .env.example .env
-   # Configure your environment variables
-   ```
-
-4. **Start the application**
-
-   ```bash
-   # Development mode
-   npm run dev
-
-   # Production build
-   npm run build && npm start
-   ```
-
-## 🏗️ Technology Stack
-
-### Backend
-
-- **Node.js & Express.js** - Server runtime and framework
-- **Socket.io** - Real-time WebRTC signaling
-- **MongoDB** - User data and session storage
-- **Redis** - Session management and caching
-- **TensorFlow.js** - AI translation models
-
-### Frontend
-
-- **React 18 + TypeScript** - Modern UI framework
-- **Tailwind CSS** - Utility-first styling
-- **WebRTC** - Peer-to-peer voice communication
-- **React Query** - Server state management
-- **Framer Motion** - Smooth animations
-
-### AI & Voice Processing
-
-- **Custom NLP Models** - Urdu-English translation
-- **Speech-to-Text** - Voice recognition for both languages
-- **Text-to-Speech** - Natural voice synthesis
-- **Cultural Context Engine** - Preserves meaning and nuance
-
-## 📖 Usage
-
-### Getting Started
-
-1. **Create Account**: Sign up for free or enterprise account
-2. **Voice Test**: Calibrate microphone and test translation
-3. **Start Session**: Create or join translation sessions
-4. **Invite Others**: Add participants to your bridge session
-
-### Supported Languages & Dialects
-
-- **Urdu Variants**: Standard Urdu, Karachi, Lahori, Peshawari accents
-- **English Variants**: American, British, Pakistani English
-- **Mixed Speech**: Urdu-English code-switching recognition
-
-## 🔧 API Documentation
-
-### Session Management
-
-```http
-POST   /api/sessions/create
-GET    /api/sessions/:id
-DELETE /api/sessions/:id
-POST   /api/sessions/:id/join
-```
-
-### Translation
-
-```http
-POST   /api/translate/voice
-POST   /api/translate/text
-GET    /api/translate/languages
-```
-
-### User Management
-
-```http
-POST   /api/auth/register
-POST   /api/auth/login
-GET    /api/users/profile
-PUT    /api/users/profile
-```
-
-Complete API documentation available at `/docs` after server startup.
-
-## 🧪 Testing
+### 1. Backend Server Setup
 
 ```bash
-# Run all tests
-npm test
-
-# Voice quality tests
-npm run test:voice
-
-# Translation accuracy tests
-npm run test:translation
-
-# Load testing
-npm run test:load
+cd server
+npm install
+npm run dev
 ```
 
-## 🚀 Deployment
+The server will start on `http://localhost:5000`
 
-### Docker Deployment
+### 2. Frontend Client Setup
 
 ```bash
-docker-compose up -d
+cd client
+npm install
+npm run dev
 ```
 
-### Cloud Deployment
+The client will start on `http://localhost:5173`
 
-- **AWS**: ECS with Application Load Balancer
-- **Google Cloud**: GKE with Cloud Speech API integration
-- **Azure**: Container Instances with Cognitive Services
+### 3. Environment Variables
 
-## 📊 Performance Metrics
+Create a `.env` file in the server directory:
 
-- **Translation Latency**: <1.2 seconds average
-- **Voice Quality**: HD audio (48kHz sampling rate)
-- **Uptime**: 99.9% SLA for Enterprise customers
-- **Concurrent Users**: Scales to 10,000+ simultaneous sessions
-- **Accuracy**: 96%+ for standard Urdu/English translation
+```env
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/awaazbridge
+OPENAI_API_KEY=your_openrouter_api_key_here
+JWT_SECRET=your_jwt_secret_here
+```
 
-## 🤝 Contributing
+### 4. Test the Application
 
-We welcome contributions to improve AwazBridge! Please see [CONTRIBUTING.md](CONTRIBUTING.md).
+1. Open two browser windows/tabs to `http://localhost:5173`
+2. Navigate to Video Call section in both windows
+3. Set language preferences:
+   - User 1: I speak English, I want to hear Urdu
+   - User 2: I speak Urdu, I want to hear English
+4. Copy the socket ID from one window and paste in the other to make a call
+5. Start speaking and watch real-time translation!
 
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open Pull Request
+## Features Implemented ✅
 
-## 📄 License
+### Real-time Voice Translation
 
-Licensed under the MIT License - see [LICENSE](LICENSE) for details.
+- Speech Recognition (STT) with Web Speech API
+- AI-powered translation using OpenAI GPT-4o-mini
+- Text-to-Speech (TTS) playback
+- Support for 15+ languages including Urdu, English, Arabic, Hindi
 
-## 🆘 Support
+### Video Calling
 
-- 📧 **General**: hello@awazbridge.com
-- 🛠️ **Technical**: support@awazbridge.com
-- 🏢 **Enterprise**: enterprise@awazbridge.com
-- 💬 **Community**: [Discord Server](https://discord.gg/awazbridge)
-- 📖 **Documentation**: [docs.awazbridge.com](https://docs.awazbridge.com)
+- WebRTC peer-to-peer video calls
+- Audio/video controls (mute/unmute, camera on/off)
+- Connection state monitoring
+- Proper cleanup on call end
 
-## 🗺️ Roadmap
+### UI/UX
 
-- [ ] **Q1 2024**: iOS and Android mobile apps
-- [ ] **Q2 2024**: Arabic language support
-- [ ] **Q3 2024**: WhatsApp and Telegram integration
-- [ ] **Q4 2024**: AI-powered cultural context suggestions
-- [ ] **2025**: Punjabi, Sindhi, and Pashto language support
+- Modern shadcn/ui components
+- Responsive design with Tailwind CSS
+- Real-time translation history display
+- Language selector with flags
+- Beautiful gradients and animations
 
-## 🌍 Global Impact
+### Backend Services
 
-- **50,000+** active users across 85 countries
-- **10M+** messages translated daily
-- **99.9%** customer satisfaction rate
-- **Fortune 500** companies trust AwazBridge for international communication
+- Socket.io for real-time communication
+- Enhanced translation service with fallbacks
+- Error handling and logging
+- MongoDB integration ready
 
----
+## How It Works
 
-**Made with ❤️ by the AwazBridge Team**
+1. **Call Initiation**: User A calls User B using socket ID
+2. **Language Setup**: Both users select their input/output languages
+3. **Speech Recognition**: When User A speaks, STT converts speech to text
+4. **Translation**: Text is sent to backend, translated via AI
+5. **Audio Playback**: Translated text is converted to speech for User B
+6. **Bidirectional**: Same process works in reverse for User B
 
-_Connecting cultures, one conversation at a time_
+## Technical Architecture
 
-- [ ] Third-party integrations (QuickBooks, Xero)
-- [ ] Automated expense categorization
-- [ ] Advanced reporting dashboards
+```
+Frontend (React + TypeScript)
+├── WebRTC Service (Peer-to-peer calls)
+├── STT Hook (Speech recognition)
+├── TTS Hook (Text-to-speech)
+├── Socket.io Client (Real-time messaging)
+└── shadcn/ui Components
 
-## 📊 Screenshots
+Backend (Node.js + Express)
+├── Socket.io Server (Real-time events)
+├── OpenAI Translation Service
+├── MongoDB Models
+└── Authentication (JWT)
+```
 
-_Coming soon - Screenshots of the application interface_
+## Development Notes
 
----
+- The system supports real-time continuous speech recognition
+- Translation happens only for final speech results to avoid spam
+- Fallback to Google Translate if OpenAI fails
+- Automatic speech recognition restart for continuous listening
+- Proper WebRTC cleanup prevents memory leaks
 
-**Made with ❤️ by the FinanceFire Team**
+## Next Steps for Production
 
-_Empowering businesses with intelligent financial management_
+1. Add user authentication and registration
+2. Implement call recording and transcript storage
+3. Add mobile app support
+4. Implement TURN servers for better connectivity
+5. Add call quality metrics and analytics
+6. Implement group calling features
+
+Happy coding! 🎉
