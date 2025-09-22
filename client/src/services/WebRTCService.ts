@@ -155,12 +155,15 @@ export class WebRTCService {
                         autoGainControl: true
                     }
                 });
-                console.log('� Local stream initialized with audio only');
+                console.log('🎤 Local stream initialized with audio only');
                 toast.info('Video not available, continuing with audio only');
             }
 
             this.localStream = stream;
-            this.onLocalStream?.(stream);
+            // Ensure callback is called immediately
+            setTimeout(() => {
+                this.onLocalStream?.(stream);
+            }, 0);
             return stream;
         } catch (error) {
             console.error('❌ Failed to get local stream:', error);
@@ -180,10 +183,13 @@ export class WebRTCService {
         };
 
         pc.ontrack = (event) => {
-            console.log('🎵 Remote track received');
+            console.log('🎵 Remote track received:', event.track.kind);
             if (event.streams && event.streams[0]) {
                 this.remoteStream = event.streams[0];
-                this.onRemoteStream?.(event.streams[0]);
+                // Ensure callback is called immediately with a slight delay
+                setTimeout(() => {
+                    this.onRemoteStream?.(event.streams[0]);
+                }, 100);
             }
         };
 
