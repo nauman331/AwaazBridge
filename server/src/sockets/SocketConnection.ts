@@ -29,6 +29,11 @@ export const SocketConnection = (io: Server) => {
                 return;
             }
 
+            if (data.phone === socket.id) {
+                socket.emit("error", "You cannot call yourself.");
+                return;
+            }
+
             const callee = Array.from(users.values()).find(u => u.id === data.phone);
             if (callee) {
                 io.to(callee.id).emit("callUser", {

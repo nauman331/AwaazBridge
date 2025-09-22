@@ -180,7 +180,7 @@ const STT = (options: STTOptions = {}, callbacks: STTCallbacks = {}) => {
                     break;
                 case 'aborted':
                     userFriendlyError = `Speech recognition was stopped [${instanceId}].`;
-                    shouldShowToast = false;
+                    shouldShowToast = false; // Do not show toast for intentional stops
                     break;
                 default:
                     userFriendlyError = errorMsg;

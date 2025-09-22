@@ -36,15 +36,12 @@ export class WebRTCService {
     private remoteStream: MediaStream | null = null;
     private peerConnection: RTCPeerConnection | null = null;
     private callActive = false;
-    private remoteAudioContext: AudioContext | null = null;
-    private remoteAudioSource: MediaStreamAudioSourceNode | null = null;
     private reconnectAttempts = 0;
     private maxReconnectAttempts = 5;
 
     // Event callbacks
     public onLocalStream?: (stream: MediaStream) => void;
     public onRemoteStream?: (stream: MediaStream) => void;
-    public onRemoteAudioForSTT?: (stream: MediaStream) => void; // New callback for STT processing
     public onCallReceived?: (data: CallData) => void;
     public onCallAccepted?: () => void;
     public onCallRejected?: () => void;
@@ -162,30 +159,30 @@ export class WebRTCService {
         });
     }
 
-    async initializeLocalStream(constraints: MediaStreamConstraints = { video: false, audio: true }): Promise<MediaStream> {
+    async initializeLocalStream(constraints: MediaStreamConstraints = { video: true, audio: true }): Promise<MediaStream> {
         try {
             // Try with video first, fallback to audio only
             let stream: MediaStream;
+            const hasVideo = constraints.video;
 
             try {
-                // First attempt: try with video if available
-                const videoConstraints = {
-                    video: constraints.video !== false ? {
-                        width: { ideal: 1280, max: 1920 },
-                        height: { ideal: 720, max: 1080 },
-                        frameRate: { ideal: 30, max: 60 }
-                    } : false,
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true
-                    }
-                };
-
-                stream = await navigator.mediaDevices.getUserMedia(videoConstraints);
-                console.log('🎥 Local stream initialized with video and audio');
+                if (hasVideo) {
+                    // First attempt: try with video if requested
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: typeof hasVideo === 'object' ? hasVideo : true,
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true
+                        }
+                    });
+                    console.log('🎥 Local stream initialized with video and audio');
+                } else {
+                    // If video is explicitly false, go straight to audio-only
+                    throw new Error("Video explicitly disabled");
+                }
             } catch (videoError) {
-                console.warn('⚠️ Video not available, trying audio only:', videoError);
+                console.warn('⚠️ Video not available or disabled, trying audio only:', videoError);
 
                 // Fallback: audio only
                 stream = await navigator.mediaDevices.getUserMedia({
@@ -197,7 +194,9 @@ export class WebRTCService {
                     }
                 });
                 console.log('🎤 Local stream initialized with audio only');
-                toast.info('Video not available, continuing with audio only');
+                if (hasVideo) { // Only toast if video was attempted
+                    toast.info('Video not available, continuing with audio only');
+                }
             }
 
             this.localStream = stream;
@@ -237,8 +236,6 @@ export class WebRTCService {
                         this.onRemoteStream?.(event.streams[0]);
                     }, 100);
 
-                    // Set up audio processing for STT (audio will be muted from video element)
-                    this.setupRemoteAudioProcessing(event.streams[0]);
                 } else {
                     // Same stream, just log the track addition
                     console.log('🎵 Track added to existing remote stream:', event.track.kind);
@@ -275,49 +272,6 @@ export class WebRTCService {
         };
 
         return pc;
-    }
-
-    private setupRemoteAudioProcessing(stream: MediaStream): void {
-        try {
-            const audioTracks = stream.getAudioTracks();
-            if (audioTracks.length > 0) {
-                console.log('🎤 Setting up remote audio processing for STT');
-
-                // Create a new stream with only audio for STT processing
-                const audioOnlyStream = new MediaStream(audioTracks);
-
-                // Create hidden audio element for STT processing
-                const hiddenAudio = document.createElement('audio');
-                hiddenAudio.srcObject = audioOnlyStream;
-                hiddenAudio.autoplay = true;
-                hiddenAudio.muted = false; // Not muted for STT processing
-                hiddenAudio.volume = 0; // Silent but not muted
-                hiddenAudio.style.display = 'none';
-                document.body.appendChild(hiddenAudio);
-
-                // Play the hidden audio element
-                hiddenAudio.play().catch(e => {
-                    console.log('⚠️ Hidden audio autoplay prevented:', e);
-                    // Create a user interaction to enable audio
-                    const enableAudio = () => {
-                        hiddenAudio.play().then(() => {
-                            console.log('✅ Hidden audio enabled after user interaction');
-                            document.removeEventListener('click', enableAudio);
-                            document.removeEventListener('touchstart', enableAudio);
-                        });
-                    };
-                    document.addEventListener('click', enableAudio, { once: true });
-                    document.addEventListener('touchstart', enableAudio, { once: true });
-                });
-
-                // Trigger callback for STT setup
-                this.onRemoteAudioForSTT?.(audioOnlyStream);
-
-                console.log('✅ Remote audio processing setup complete');
-            }
-        } catch (error) {
-            console.error('❌ Failed to setup remote audio processing:', error);
-        }
     }
 
     async callUser(callUser: CallUser): Promise<void> {
@@ -418,16 +372,6 @@ export class WebRTCService {
 
     private handleCallEnd(): void {
         this.callActive = false;
-
-        // Clean up audio processing
-        if (this.remoteAudioSource) {
-            this.remoteAudioSource.disconnect();
-            this.remoteAudioSource = null;
-        }
-        if (this.remoteAudioContext) {
-            this.remoteAudioContext.close();
-            this.remoteAudioContext = null;
-        }
 
         // Close peer connection
         if (this.peerConnection) {

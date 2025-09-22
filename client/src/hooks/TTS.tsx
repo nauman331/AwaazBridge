@@ -11,6 +11,12 @@ const TTS = (text: string, options: TTSOptions = {}) => {
 
     if ('speechSynthesis' in window) {
         try {
+            // Cancel any ongoing speech before starting a new one
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+                console.log('⏹️ Canceled previous TTS playback');
+            }
+
             const utterance = new SpeechSynthesisUtterance(text);
 
             // Configure voice settings

@@ -47,7 +47,7 @@ const VideoCall: React.FC = () => {
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
     const webRTCRef = useRef<WebRTCService | null>(null);
     const localSttRef = useRef<any>(null);
-    const remoteSttRef = useRef<any>(null); // New STT for remote audio
+    const remoteSttRef = useRef<any>(null);
 
     // State
     const [callState, setCallState] = useState<CallState>({
@@ -200,8 +200,13 @@ const VideoCall: React.FC = () => {
         };
 
         // New handler for remote audio STT processing
-        webRTC.onRemoteAudioForSTT = () => {
-            console.log('🎤 Setting up STT for remote audio - stream received');
+        webRTC.onRemoteStream = (stream) => {
+            console.log('🎤 Setting up STT for remote audio - stream received:', stream);
+            if (remoteVideoRef.current) {
+                remoteVideoRef.current.srcObject = stream;
+                remoteVideoRef.current.muted = true; // Mute remote video to only hear TTS
+                remoteVideoRef.current.play().catch(e => console.log('⚠️ Remote video autoplay prevented:', e));
+            }
             // Note: Web Speech API doesn't work directly with MediaStream
             // We'll start remote listening when call is connected
             if (callState.isInCall) {
@@ -435,53 +440,35 @@ const VideoCall: React.FC = () => {
     const handleTranslationReceived = (data: TranslationData) => {
         console.log('📨 Translation received from server:', data);
 
-        // Check if this is for a real-time translation
-        const isRealTimeTranslation = translations.some(trans =>
-            trans.isRealTime &&
-            (trans.translated === '(Translating...)' || trans.translated === '(Processing via server...)') &&
-            trans.original === data.original
+        // Check if this is a confirmation of a message we sent
+        const isMyMessageConfirmation = translations.some(trans =>
+            trans.isFromMe &&
+            trans.original === data.original &&
+            trans.translated === '(Sending...)'
         );
 
-        if (isRealTimeTranslation) {
-            // Update the real-time translation
+        if (isMyMessageConfirmation) {
+            // Update the "Sending..." status with the translated text
             setTranslations(prev =>
                 prev.map(trans =>
-                    trans.isRealTime &&
-                        (trans.translated === '(Translating...)' || trans.translated === '(Processing via server...)') &&
-                        trans.original === data.original
+                    trans.isFromMe && trans.original === data.original
                         ? { ...trans, translated: data.translated }
                         : trans
                 )
             );
-        } else {
-            // Check for pending "Sending..." translations
-            let updated = false;
-            setTranslations(prev => {
-                const newTranslations = prev.map(trans => {
-                    if (trans.isFromMe &&
-                        trans.translated === '(Sending...)' &&
-                        trans.original === data.original) {
-                        updated = true;
-                        return { ...trans, translated: data.translated };
-                    }
-                    return trans;
-                });
-                return newTranslations;
-            });
-
-            // If no pending translation was updated, add as new entry
-            if (!updated) {
-                setTranslations(prev => [...prev, {
-                    original: data.original,
-                    translated: data.translated,
-                    timestamp: new Date(data.timestamp),
-                    isFromMe: false,
-                    isRealTime: false
-                }]);
-            }
+            return; // Don't process further or play TTS for our own message
         }
 
-        // Play translated audio
+        // If it's not our message, it's from the other user
+        setTranslations(prev => [...prev, {
+            original: data.original,
+            translated: data.translated,
+            timestamp: new Date(data.timestamp),
+            isFromMe: false,
+            isRealTime: false // All received translations are treated as final
+        }]);
+
+        // Play translated audio for the other user's message
         if (mediaState.isSpeakerEnabled && data.translated) {
             TTS(data.translated, {
                 language: languages.myOutputLang,
@@ -958,7 +945,7 @@ const VideoCall: React.FC = () => {
                                             autoPlay
                                             playsInline
                                             controls={false}
-                                            muted={false}
+                                            muted={true}
                                             className="w-full h-full object-cover"
                                             style={{
                                                 display: hasRemoteVideo && callState.connectionState === 'connected' ? 'block' : 'none'
