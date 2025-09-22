@@ -38,6 +38,8 @@ export class WebRTCService {
     private callActive = false;
     private remoteAudioContext: AudioContext | null = null;
     private remoteAudioSource: MediaStreamAudioSourceNode | null = null;
+    private reconnectAttempts = 0;
+    private maxReconnectAttempts = 5;
 
     // Event callbacks
     public onLocalStream?: (stream: MediaStream) => void;
@@ -63,6 +65,11 @@ export class WebRTCService {
         this.socket = io(socketUrl, {
             transports: ['websocket'],
             upgrade: true,
+            reconnection: true,
+            reconnectionAttempts: this.maxReconnectAttempts,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            timeout: 20000,
         });
         this.setupSocketListeners();
     }
@@ -70,11 +77,36 @@ export class WebRTCService {
     private setupSocketListeners(): void {
         this.socket.on('connect', () => {
             console.log('✅ Connected to signaling server');
+            this.reconnectAttempts = 0;
+            // Re-establish call state if needed
+            if (this.callActive && this.peerConnection?.connectionState === 'disconnected') {
+                console.log('🔄 Attempting to restore call connection...');
+                // Don't automatically end call on reconnect
+            }
         });
 
-        this.socket.on('disconnect', () => {
-            console.log('❌ Disconnected from signaling server');
-            this.handleCallEnd();
+        this.socket.on('disconnect', (reason) => {
+            console.log('❌ Disconnected from signaling server:', reason);
+            // Only handle call end if it's not a network issue
+            if (reason === 'io server disconnect') {
+                this.handleCallEnd();
+            } else {
+                console.log('🔄 Network disconnection, attempting to reconnect...');
+                this.reconnectAttempts++;
+                if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+                    console.log('❌ Max reconnection attempts reached');
+                    this.handleCallEnd();
+                }
+            }
+        });
+
+        this.socket.on('reconnect', (attemptNumber) => {
+            console.log(`✅ Reconnected to signaling server (attempt ${attemptNumber})`);
+            toast.success('Connection restored');
+        });
+
+        this.socket.on('reconnect_error', (error) => {
+            console.error('❌ Reconnection failed:', error);
         });
 
         this.socket.on('callUser', (data: CallData) => {
@@ -114,6 +146,12 @@ export class WebRTCService {
 
         this.socket.on('translation', (data: TranslationData) => {
             console.log('🌐 Translation received:', data);
+            this.onTranslationReceived?.(data);
+        });
+
+        // Add new socket listener for translation confirmations
+        this.socket.on('translationConfirmed', (data: TranslationData) => {
+            console.log('✅ Translation confirmed:', data);
             this.onTranslationReceived?.(data);
         });
 
@@ -247,6 +285,30 @@ export class WebRTCService {
 
                 // Create a new stream with only audio for STT processing
                 const audioOnlyStream = new MediaStream(audioTracks);
+
+                // Create hidden audio element for STT processing
+                const hiddenAudio = document.createElement('audio');
+                hiddenAudio.srcObject = audioOnlyStream;
+                hiddenAudio.autoplay = true;
+                hiddenAudio.muted = false; // Not muted for STT processing
+                hiddenAudio.volume = 0; // Silent but not muted
+                hiddenAudio.style.display = 'none';
+                document.body.appendChild(hiddenAudio);
+
+                // Play the hidden audio element
+                hiddenAudio.play().catch(e => {
+                    console.log('⚠️ Hidden audio autoplay prevented:', e);
+                    // Create a user interaction to enable audio
+                    const enableAudio = () => {
+                        hiddenAudio.play().then(() => {
+                            console.log('✅ Hidden audio enabled after user interaction');
+                            document.removeEventListener('click', enableAudio);
+                            document.removeEventListener('touchstart', enableAudio);
+                        });
+                    };
+                    document.addEventListener('click', enableAudio, { once: true });
+                    document.addEventListener('touchstart', enableAudio, { once: true });
+                });
 
                 // Trigger callback for STT setup
                 this.onRemoteAudioForSTT?.(audioOnlyStream);
@@ -391,6 +453,12 @@ export class WebRTCService {
             return;
         }
 
+        if (!this.socket.connected) {
+            console.warn('⚠️ Cannot send translation - socket not connected');
+            toast.warning('Connection lost. Trying to reconnect...');
+            return;
+        }
+
         this.socket.emit('translation', {
             text,
             fromLang,
@@ -415,6 +483,10 @@ export class WebRTCService {
 
     getRemoteStream(): MediaStream | null {
         return this.remoteStream;
+    }
+
+    isSocketConnected(): boolean {
+        return this.socket.connected;
     }
 
     destroy(): void {

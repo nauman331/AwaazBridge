@@ -115,11 +115,15 @@ export const SocketConnection = (io: Server) => {
 
                     // Also emit to sender for confirmation/display
                     socket.emit("translationConfirmed", translationData);
+
+                    console.log('✅ Translation completed and sent to both parties');
                 } catch (error) {
                     console.error("❌ Translation error:", error);
+
+                    // Send error to sender
                     socket.emit("error", "Translation failed");
 
-                    // Send fallback response
+                    // Send fallback response to both parties
                     const fallbackData = {
                         original: data.text,
                         translated: `[Translation failed] ${data.text}`,
@@ -128,7 +132,9 @@ export const SocketConnection = (io: Server) => {
                         timestamp: new Date(),
                         isInterim: data.isInterim || false
                     };
+
                     io.to(currentUser.peerId).emit("translation", fallbackData);
+                    socket.emit("translationConfirmed", fallbackData);
                 }
             } else {
                 console.warn('❌ Missing translation requirements:', {
@@ -138,6 +144,7 @@ export const SocketConnection = (io: Server) => {
                     hasFromLang: !!data.fromLang,
                     hasToLang: !!data.toLang
                 });
+                socket.emit("error", "Invalid translation request");
             }
         });
 

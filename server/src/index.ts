@@ -9,6 +9,7 @@ import { Server } from "socket.io";
 import { SocketConnection } from "./sockets/SocketConnection";
 import connectDB from "./config/connectDB";
 import authRoutes from "./routes/auth.route";
+import translateRoute from './routes/translateRoute';
 
 // Simplified CORS configuration for Express 4.x
 const corsOptions = {
@@ -40,6 +41,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Routes
 app.use("/api/v1/auth", authRoutes);
+app.use('/api/v1', translateRoute);
 
 app.get("/", (req, res) => {
     res.json({ msg: "Routes Working Perfectly" })
