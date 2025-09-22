@@ -36,10 +36,13 @@ export class WebRTCService {
     private remoteStream: MediaStream | null = null;
     private peerConnection: RTCPeerConnection | null = null;
     private callActive = false;
+    private remoteAudioContext: AudioContext | null = null;
+    private remoteAudioSource: MediaStreamAudioSourceNode | null = null;
 
     // Event callbacks
     public onLocalStream?: (stream: MediaStream) => void;
     public onRemoteStream?: (stream: MediaStream) => void;
+    public onRemoteAudioForSTT?: (stream: MediaStream) => void; // New callback for STT processing
     public onCallReceived?: (data: CallData) => void;
     public onCallAccepted?: () => void;
     public onCallRejected?: () => void;
@@ -191,10 +194,13 @@ export class WebRTCService {
                     this.remoteStream = event.streams[0];
                     console.log('📹 Setting remote stream for first time or new stream');
 
-                    // Call callback for new stream
+                    // Call callback for new stream (for video display)
                     setTimeout(() => {
                         this.onRemoteStream?.(event.streams[0]);
                     }, 100);
+
+                    // Set up audio processing for STT (audio will be muted from video element)
+                    this.setupRemoteAudioProcessing(event.streams[0]);
                 } else {
                     // Same stream, just log the track addition
                     console.log('🎵 Track added to existing remote stream:', event.track.kind);
@@ -231,6 +237,25 @@ export class WebRTCService {
         };
 
         return pc;
+    }
+
+    private setupRemoteAudioProcessing(stream: MediaStream): void {
+        try {
+            const audioTracks = stream.getAudioTracks();
+            if (audioTracks.length > 0) {
+                console.log('🎤 Setting up remote audio processing for STT');
+
+                // Create a new stream with only audio for STT processing
+                const audioOnlyStream = new MediaStream(audioTracks);
+
+                // Trigger callback for STT setup
+                this.onRemoteAudioForSTT?.(audioOnlyStream);
+
+                console.log('✅ Remote audio processing setup complete');
+            }
+        } catch (error) {
+            console.error('❌ Failed to setup remote audio processing:', error);
+        }
     }
 
     async callUser(callUser: CallUser): Promise<void> {
@@ -331,6 +356,16 @@ export class WebRTCService {
 
     private handleCallEnd(): void {
         this.callActive = false;
+
+        // Clean up audio processing
+        if (this.remoteAudioSource) {
+            this.remoteAudioSource.disconnect();
+            this.remoteAudioSource = null;
+        }
+        if (this.remoteAudioContext) {
+            this.remoteAudioContext.close();
+            this.remoteAudioContext = null;
+        }
 
         // Close peer connection
         if (this.peerConnection) {

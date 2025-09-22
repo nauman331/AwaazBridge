@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Phone, PhoneOff, Mic, MicOff, Video, VideoOff, Settings, Volume2, VolumeX, Copy, CheckCircle2, Users } from 'lucide-react';
+import { Phone, PhoneOff, Mic, MicOff, Video, VideoOff, Settings, Volume2, VolumeX, Copy, CheckCircle2, Users, MessageSquare } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { LanguageSelector } from '../../components/ui/language-selector';
@@ -38,6 +38,7 @@ interface TranslationDisplay {
     translated: string;
     timestamp: Date;
     isFromMe: boolean;
+    isRealTime?: boolean; // New field for real-time translations
 }
 
 const VideoCall: React.FC = () => {
@@ -45,7 +46,8 @@ const VideoCall: React.FC = () => {
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
     const webRTCRef = useRef<WebRTCService | null>(null);
-    const sttRef = useRef<any>(null);
+    const localSttRef = useRef<any>(null);
+    const remoteSttRef = useRef<any>(null); // New STT for remote audio
 
     // State
     const [callState, setCallState] = useState<CallState>({
@@ -76,7 +78,9 @@ const VideoCall: React.FC = () => {
     const [mySocketId, setMySocketId] = useState<string>('');
     const [isCopied, setIsCopied] = useState(false);
     const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
-    const [remoteVideoPlaying, setRemoteVideoPlaying] = useState(false);    // Initialize WebRTC service
+    const [remoteVideoPlaying, setRemoteVideoPlaying] = useState(false);
+    const [isRemoteListening, setIsRemoteListening] = useState(false);
+    const [remoteTranscript, setRemoteTranscript] = useState('');    // Initialize WebRTC service
     useEffect(() => {
         const webRTC = new WebRTCService();
         webRTCRef.current = webRTC;
@@ -146,6 +150,10 @@ const VideoCall: React.FC = () => {
                     }
                 }
 
+                // IMPORTANT: Mute the video element to prevent direct audio playback
+                remoteVideoRef.current.muted = true;
+                console.log('🔇 Remote video element muted - audio will be processed through STT+TTS');
+
                 // Handle video playback
                 const playRemoteVideo = async () => {
                     try {
@@ -159,7 +167,7 @@ const VideoCall: React.FC = () => {
 
                                 if (remoteVideoRef.current.readyState >= 2) { // HAVE_CURRENT_DATA
                                     await remoteVideoRef.current.play();
-                                    console.log('✅ Remote video playing');
+                                    console.log('✅ Remote video playing (muted)');
                                     setRemoteVideoPlaying(true);
                                 } else {
                                     console.log('⏳ Video not ready yet, will retry...');
@@ -167,7 +175,7 @@ const VideoCall: React.FC = () => {
                                     remoteVideoRef.current.addEventListener('loadedmetadata', async () => {
                                         try {
                                             await remoteVideoRef.current!.play();
-                                            console.log('✅ Remote video playing after metadata loaded');
+                                            console.log('✅ Remote video playing after metadata loaded (muted)');
                                             setRemoteVideoPlaying(true);
                                         } catch (retryError) {
                                             console.log('⚠️ Retry play failed:', retryError);
@@ -190,6 +198,12 @@ const VideoCall: React.FC = () => {
             }
         };
 
+        // New handler for remote audio STT processing
+        webRTC.onRemoteAudioForSTT = (audioStream) => {
+            console.log('🎤 Setting up STT for remote audio');
+            startRemoteListening(audioStream);
+        };
+
         webRTC.onCallReceived = (data) => {
             setCallState(prev => ({
                 ...prev,
@@ -204,7 +218,7 @@ const VideoCall: React.FC = () => {
                 isInCall: true,
                 isOutgoingCall: false,
             }));
-            startListening();
+            startLocalListening();
         };
 
         webRTC.onCallRejected = () => {
@@ -261,8 +275,8 @@ const VideoCall: React.FC = () => {
         };
     }, []);
 
-    // STT Setup
-    const startListening = useCallback(() => {
+    // Local STT Setup (for user's speech)
+    const startLocalListening = useCallback(() => {
         if (!callState.isInCall) return;
 
         const sttInstance = STT({
@@ -270,59 +284,168 @@ const VideoCall: React.FC = () => {
             continuous: true,
             interimResults: true,
             shouldContinue: () => callState.isInCall,
+            instanceId: 'local'
         }, {
             onResult: (result) => {
-                setCurrentTranscript(result.transcript);
+                if (result.instanceId === 'local') {
+                    setCurrentTranscript(result.transcript);
 
-                if (result.isFinal && result.transcript.trim()) {
-                    // Send translation to other user
-                    webRTCRef.current?.sendTranslation(
-                        result.transcript,
-                        languages.myInputLang,
-                        languages.theirOutputLang
-                    );
+                    if (result.isFinal && result.transcript.trim()) {
+                        // Send translation to other user
+                        webRTCRef.current?.sendTranslation(
+                            result.transcript,
+                            languages.myInputLang,
+                            languages.theirOutputLang
+                        );
 
-                    // Add to local display
-                    setTranslations(prev => [...prev, {
-                        original: result.transcript,
-                        translated: '(Sending...)',
-                        timestamp: new Date(),
-                        isFromMe: true,
-                    }]);
+                        // Add to local display
+                        setTranslations(prev => [...prev, {
+                            original: result.transcript,
+                            translated: '(Sending...)',
+                            timestamp: new Date(),
+                            isFromMe: true,
+                            isRealTime: false
+                        }]);
 
-                    setCurrentTranscript('');
+                        setCurrentTranscript('');
+                    }
                 }
             },
             onStart: () => setIsListening(true),
             onEnd: () => setIsListening(false),
             onError: (error) => {
-                console.error('STT Error:', error);
+                console.error('Local STT Error:', error);
                 setIsListening(false);
             }
         });
 
         if (sttInstance) {
-            sttRef.current = sttInstance;
+            localSttRef.current = sttInstance;
             sttInstance.start();
         }
     }, [callState.isInCall, languages]);
 
+    // Remote STT Setup (for remote user's speech - this is the key new functionality)
+    const startRemoteListening = useCallback((audioStream: MediaStream) => {
+        if (!callState.isInCall && !callState.isIncomingCall) return;
+
+        console.log('🎤 Starting remote STT with stream:', audioStream.getAudioTracks().length, 'audio tracks');
+
+        // Create a new audio element for STT processing (separate from video element)
+        const audioElement = new Audio();
+        audioElement.srcObject = audioStream;
+        audioElement.muted = true; // Muted for processing, not for playback
+        audioElement.play().catch(e => console.log('Audio element play for STT failed:', e));
+
+        const sttInstance = STT({
+            language: languages.theirInputLang,
+            continuous: true,
+            interimResults: true,
+            shouldContinue: () => callState.isInCall,
+            instanceId: 'remote'
+        }, {
+            onResult: (result) => {
+                if (result.instanceId === 'remote') {
+                    setRemoteTranscript(result.transcript);
+
+                    if (result.isFinal && result.transcript.trim()) {
+                        console.log('🌐 Remote speech detected:', result.transcript);
+
+                        // Create real-time translation entry
+                        const newTranslation: TranslationDisplay = {
+                            original: result.transcript,
+                            translated: '(Translating...)',
+                            timestamp: new Date(),
+                            isFromMe: false,
+                            isRealTime: true
+                        };
+
+                        setTranslations(prev => [...prev, newTranslation]);
+
+                        // Simulate translation (in real app, this would call your translation service)
+                        // For now, we'll use a simple mock translation
+                        setTimeout(() => {
+                            setTranslations(prev =>
+                                prev.map((trans, index) =>
+                                    index === prev.length - 1 && trans.isRealTime
+                                        ? { ...trans, translated: `[Translated] ${result.transcript}` }
+                                        : trans
+                                )
+                            );
+
+                            // Play the translated text
+                            if (mediaState.isSpeakerEnabled) {
+                                TTS(`[Translated] ${result.transcript}`, {
+                                    language: languages.myOutputLang,
+                                    gender: 'female',
+                                });
+                            }
+                        }, 1000);
+
+                        setRemoteTranscript('');
+                    }
+                }
+            },
+            onStart: () => {
+                console.log('🎤 Remote STT started');
+                setIsRemoteListening(true);
+            },
+            onEnd: () => {
+                console.log('🎤 Remote STT ended');
+                setIsRemoteListening(false);
+            },
+            onError: (error) => {
+                console.error('Remote STT Error:', error);
+                setIsRemoteListening(false);
+            }
+        });
+
+        if (sttInstance) {
+            remoteSttRef.current = sttInstance;
+            sttInstance.start();
+        }
+    }, [callState.isInCall, languages, mediaState.isSpeakerEnabled]);
+
     const stopListening = useCallback(() => {
-        if (sttRef.current) {
-            sttRef.current.stop();
-            sttRef.current = null;
+        if (localSttRef.current) {
+            localSttRef.current.stop();
+            localSttRef.current = null;
+        }
+        if (remoteSttRef.current) {
+            remoteSttRef.current.stop();
+            remoteSttRef.current = null;
         }
         setIsListening(false);
+        setIsRemoteListening(false);
         setCurrentTranscript('');
+        setRemoteTranscript('');
     }, []);
 
     const handleTranslationReceived = (data: TranslationData) => {
-        setTranslations(prev => [...prev, {
-            original: data.original,
-            translated: data.translated,
-            timestamp: data.timestamp,
-            isFromMe: false,
-        }]);
+        // Update the pending translation
+        setTranslations(prev =>
+            prev.map(trans =>
+                trans.isFromMe && trans.translated === '(Sending...)' &&
+                    Math.abs(new Date(trans.timestamp).getTime() - new Date(data.timestamp).getTime()) < 5000
+                    ? { ...trans, translated: data.translated }
+                    : trans
+            )
+        );
+
+        // Also add as a new entry if no pending translation found
+        const hasPendingTranslation = translations.some(trans =>
+            trans.isFromMe && trans.translated === '(Sending...)'
+        );
+
+        if (!hasPendingTranslation) {
+            setTranslations(prev => [...prev, {
+                original: data.original,
+                translated: data.translated,
+                timestamp: data.timestamp,
+                isFromMe: false,
+                isRealTime: false
+            }]);
+        }
 
         // Play translated audio
         if (mediaState.isSpeakerEnabled && data.translated) {
@@ -365,7 +488,7 @@ const VideoCall: React.FC = () => {
             }));
 
             await webRTCRef.current?.answerCall(callState.incomingCallData);
-            startListening();
+            startLocalListening(); // Only start local listening, remote will start when audio stream is received
         } catch (error) {
             console.error('Failed to answer call:', error);
             toast.error('Failed to answer call');
@@ -701,15 +824,23 @@ const VideoCall: React.FC = () => {
                     <div className="space-y-6">
                         {/* Connection Status */}
                         <Alert>
-                            <AlertDescription className="flex items-center gap-2">
+                            <AlertDescription className="flex items-center gap-2 flex-wrap">
                                 <Badge variant={callState.connectionState === 'connected' ? 'default' : 'secondary'}>
                                     {callState.connectionState}
                                 </Badge>
                                 {isListening && (
-                                    <Badge variant="outline" className="bg-red-50 text-red-700">
-                                        🎤 Listening...
+                                    <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                                        🎤 Your Mic: Listening...
                                     </Badge>
                                 )}
+                                {isRemoteListening && (
+                                    <Badge variant="outline" className="bg-green-50 text-green-700">
+                                        🎧 Remote Audio: Processing...
+                                    </Badge>
+                                )}
+                                <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                                    🔇 Remote Audio: Muted (TTS Only)
+                                </Badge>
                             </AlertDescription>
                         </Alert>
 
@@ -863,6 +994,34 @@ const VideoCall: React.FC = () => {
                             </Card>
                         </div>
 
+                        {/* Current Speech - Enhanced */}
+                        {(currentTranscript || remoteTranscript) && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {currentTranscript && (
+                                    <Card className="border-blue-500 bg-blue-50">
+                                        <CardContent className="pt-4">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Mic className="h-4 w-4 text-blue-600" />
+                                                <p className="text-sm font-medium text-blue-800">You're speaking:</p>
+                                            </div>
+                                            <p className="font-medium text-blue-900">{currentTranscript}</p>
+                                        </CardContent>
+                                    </Card>
+                                )}
+                                {remoteTranscript && (
+                                    <Card className="border-green-500 bg-green-50">
+                                        <CardContent className="pt-4">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <MessageSquare className="h-4 w-4 text-green-600" />
+                                                <p className="text-sm font-medium text-green-800">They're speaking:</p>
+                                            </div>
+                                            <p className="font-medium text-green-900">{remoteTranscript}</p>
+                                        </CardContent>
+                                    </Card>
+                                )}
+                            </div>
+                        )}
+
                         {/* Call Controls */}
                         <Card>
                             <CardContent className="pt-6">
@@ -915,20 +1074,16 @@ const VideoCall: React.FC = () => {
                             </CardContent>
                         </Card>
 
-                        {/* Current Speech */}
-                        {currentTranscript && (
-                            <Card className="border-blue-500 bg-blue-50">
-                                <CardContent className="pt-6">
-                                    <p className="text-sm text-gray-600">Speaking:</p>
-                                    <p className="font-medium">{currentTranscript}</p>
-                                </CardContent>
-                            </Card>
-                        )}
-
-                        {/* Translation History */}
+                        {/* Translation History - Enhanced */}
                         <Card>
                             <CardHeader>
-                                <CardTitle>Translation History</CardTitle>
+                                <CardTitle className="flex items-center gap-2">
+                                    <MessageSquare className="h-5 w-5" />
+                                    Real-time Translation History
+                                    <Badge variant="outline" className="text-xs">
+                                        {translations.filter(t => t.isRealTime).length} real-time • {translations.filter(t => !t.isRealTime).length} manual
+                                    </Badge>
+                                </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4 max-h-96 overflow-y-auto">
@@ -936,28 +1091,45 @@ const VideoCall: React.FC = () => {
                                         <div
                                             key={index}
                                             className={cn(
-                                                "p-4 rounded-lg",
-                                                translation.isFromMe ? "bg-blue-50 ml-8" : "bg-green-50 mr-8"
+                                                "p-4 rounded-lg border-l-4",
+                                                translation.isFromMe
+                                                    ? "bg-blue-50 ml-8 border-l-blue-500"
+                                                    : translation.isRealTime
+                                                        ? "bg-green-50 mr-8 border-l-green-500"
+                                                        : "bg-gray-50 mr-8 border-l-gray-400"
                                             )}
                                         >
                                             <div className="flex justify-between items-start mb-2">
-                                                <Badge variant={translation.isFromMe ? "default" : "secondary"}>
-                                                    {translation.isFromMe ? "You" : "Them"}
-                                                </Badge>
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant={translation.isFromMe ? "default" : "secondary"}>
+                                                        {translation.isFromMe ? "You" : "Them"}
+                                                    </Badge>
+                                                    {translation.isRealTime && (
+                                                        <Badge variant="outline" className="text-xs bg-green-100 text-green-700">
+                                                            Real-time
+                                                        </Badge>
+                                                    )}
+                                                </div>
                                                 <span className="text-xs text-gray-500">
                                                     {translation.timestamp.toLocaleTimeString()}
                                                 </span>
                                             </div>
                                             <div className="space-y-1">
                                                 <p className="text-sm text-gray-600">
-                                                    Original: {translation.original}
+                                                    <span className="font-medium">Original:</span> {translation.original}
                                                 </p>
                                                 <p className="font-medium">
-                                                    Translated: {translation.translated}
+                                                    <span className="text-sm text-gray-600">Translated:</span> {translation.translated}
                                                 </p>
                                             </div>
                                         </div>
                                     ))}
+                                    {translations.length === 0 && (
+                                        <div className="text-center py-8 text-gray-500">
+                                            <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                                            <p>No translations yet. Start speaking to see real-time translations!</p>
+                                        </div>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
@@ -968,4 +1140,4 @@ const VideoCall: React.FC = () => {
     );
 };
 
-export default VideoCall
+export default VideoCall;

@@ -113,11 +113,22 @@ export const SocketConnection = (io: Server) => {
                     console.log('📤 Sending translation to peer:', currentUser.peerId);
                     io.to(currentUser.peerId).emit("translation", translationData);
 
-                    // Optional: also emit to sender for confirmation
-                    socket.emit("translationSent", translationData);
+                    // Also emit to sender for confirmation/display
+                    socket.emit("translationConfirmed", translationData);
                 } catch (error) {
                     console.error("❌ Translation error:", error);
                     socket.emit("error", "Translation failed");
+
+                    // Send fallback response
+                    const fallbackData = {
+                        original: data.text,
+                        translated: `[Translation failed] ${data.text}`,
+                        fromLang: data.fromLang,
+                        toLang: data.toLang,
+                        timestamp: new Date(),
+                        isInterim: data.isInterim || false
+                    };
+                    io.to(currentUser.peerId).emit("translation", fallbackData);
                 }
             } else {
                 console.warn('❌ Missing translation requirements:', {
