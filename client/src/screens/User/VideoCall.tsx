@@ -81,8 +81,6 @@ const VideoCall: React.FC = () => {
     const [remoteVideoPlaying, setRemoteVideoPlaying] = useState(false);
     const [isRemoteListening, setIsRemoteListening] = useState(false);
     const [remoteTranscript, setRemoteTranscript] = useState('');
-    const [isTranslationServiceWorking, setIsTranslationServiceWorking] = useState(true);
-
     // Initialize WebRTC service
     useEffect(() => {
         const webRTC = new WebRTCService();
@@ -202,7 +200,7 @@ const VideoCall: React.FC = () => {
         };
 
         // New handler for remote audio STT processing
-        webRTC.onRemoteAudioForSTT = (audioStream) => {
+        webRTC.onRemoteAudioForSTT = () => {
             console.log('🎤 Setting up STT for remote audio - stream received');
             // Note: Web Speech API doesn't work directly with MediaStream
             // We'll start remote listening when call is connected
@@ -886,11 +884,6 @@ const VideoCall: React.FC = () => {
                                 {isRemoteListening && (
                                     <Badge variant="outline" className="bg-green-50 text-green-700">
                                         🎧 Remote Audio: Processing...
-                                    </Badge>
-                                )}
-                                {!isTranslationServiceWorking && (
-                                    <Badge variant="destructive" className="text-xs">
-                                        ⚠️ Translation Service Unavailable
                                     </Badge>
                                 )}
                                 <Badge variant="outline" className="bg-purple-50 text-purple-700 text-xs">
