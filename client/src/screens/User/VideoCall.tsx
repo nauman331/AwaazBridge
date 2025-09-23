@@ -81,6 +81,7 @@ const VideoCall: React.FC = () => {
     const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
     const [isRemoteListening, setIsRemoteListening] = useState(false);
     const [remoteTranscript, setRemoteTranscript] = useState('');
+    const [sttRetryDelay, setSttRetryDelay] = useState(1000); // Initial retry delay of 1s
     // Initialize WebRTC service
     useEffect(() => {
         const webRTC = new WebRTCService();
@@ -303,6 +304,7 @@ const VideoCall: React.FC = () => {
             onStart: () => {
                 console.log('🎤 Remote STT started');
                 setIsRemoteListening(true);
+                setSttRetryDelay(1000); // Reset retry delay on successful start
             },
             onEnd: () => {
                 console.log('🎤 Remote STT ended');
@@ -311,6 +313,18 @@ const VideoCall: React.FC = () => {
             onError: (error) => {
                 console.error('Remote STT Error:', error);
                 setIsRemoteListening(false);
+
+                // Implement exponential backoff for network errors
+                if (error.includes('network') && callState.isInCall) {
+                    const nextDelay = Math.min(sttRetryDelay * 2, 30000); // Max 30s delay
+                    console.log(`Retrying remote STT in ${nextDelay / 1000}s due to network error...`);
+                    setTimeout(() => {
+                        if (webRTCRef.current?.isCallActive()) {
+                            startRemoteListening();
+                        }
+                    }, nextDelay);
+                    setSttRetryDelay(nextDelay);
+                }
             }
         });
 
