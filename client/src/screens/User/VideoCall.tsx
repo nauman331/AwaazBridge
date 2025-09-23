@@ -8,7 +8,7 @@ import { Badge } from '../../components/ui/badge';
 import WebRTCService from '../../services/WebRTCService';
 import type { CallData, TranslationData } from '../../services/WebRTCService';
 import STT from '../../hooks/STT';
-import TTS from '../../hooks/TTS';
+import { AudioPlayer } from '../../components/ui/AudioPlayer'; // Import the new AudioPlayer
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
 
@@ -42,13 +42,17 @@ interface TranslationDisplay {
     isRealTime?: boolean; // New field for real-time translations
 }
 
+interface TTSRequest {
+    text: string;
+    language: string;
+}
+
 const VideoCall: React.FC = () => {
     // Refs
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
     const webRTCRef = useRef<WebRTCService | null>(null);
     const localSttRef = useRef<any>(null);
-    const remoteSttRef = useRef<any>(null);
 
     // State
     const [callState, setCallState] = useState<CallState>({
@@ -79,9 +83,10 @@ const VideoCall: React.FC = () => {
     const [mySocketId, setMySocketId] = useState<string>('');
     const [isCopied, setIsCopied] = useState(false);
     const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
-    const [isRemoteListening, setIsRemoteListening] = useState(false);
-    const [remoteTranscript, setRemoteTranscript] = useState('');
-    const [sttRetryDelay, setSttRetryDelay] = useState(1000); // Initial retry delay of 1s
+    const [ttsRequestQueue, setTtsRequestQueue] = useState<TTSRequest[]>([]);
+    const [currentAudioSrc, setCurrentAudioSrc] = useState<string | null>(null);
+    const [isTtsPlaying, setIsTtsPlaying] = useState(false);
+
     // Initialize WebRTC service
     useEffect(() => {
         const webRTC = new WebRTCService();
@@ -94,16 +99,15 @@ const VideoCall: React.FC = () => {
                 localVideoRef.current.srcObject = stream;
             }
 
-            if (stream) {
-                // Update media state based on available tracks
-                const videoTrack = stream.getVideoTracks()[0];
-                const audioTrack = stream.getAudioTracks()[0];
-                setMediaState(prev => ({
-                    ...prev,
-                    isVideoEnabled: videoTrack ? videoTrack.enabled : false,
-                    isAudioEnabled: audioTrack ? audioTrack.enabled : true,
-                }));
-            }
+            // This logic is now more robust
+            const hasVideo = !!stream?.getVideoTracks().some(track => track.readyState === 'live');
+            const hasAudio = !!stream?.getAudioTracks().some(track => track.readyState === 'live');
+
+            setMediaState(prev => ({
+                ...prev,
+                isVideoEnabled: hasVideo,
+                isAudioEnabled: hasAudio,
+            }));
         };
 
         webRTC.onRemoteStream = (stream) => {
@@ -131,9 +135,6 @@ const VideoCall: React.FC = () => {
                 isOutgoingCall: false,
             }));
             startLocalListening();
-
-            // Start remote listening after a delay to ensure connection is stable
-            setTimeout(startRemoteListening, 2000);
         };
 
         webRTC.onCallRejected = () => {
@@ -158,6 +159,19 @@ const VideoCall: React.FC = () => {
         webRTC.onTranslationConfirmed = (data) => {
             handleTranslationConfirmed(data);
         };
+
+        // Listen for incoming TTS audio data from the server
+        webRTC.on('tts-audio-data', (audioBuffer: ArrayBuffer) => {
+            if (audioBuffer) {
+                const blob = new Blob([audioBuffer], { type: 'audio/mpeg' });
+                const url = URL.createObjectURL(blob);
+                setCurrentAudioSrc(url);
+                setIsTtsPlaying(true);
+            } else {
+                // If something fails, move to the next item in the queue
+                setIsTtsPlaying(false);
+            }
+        });
 
         webRTC.onConnectionStateChange = (state) => {
             setCallState(prev => ({ ...prev, connectionState: state }));
@@ -246,106 +260,13 @@ const VideoCall: React.FC = () => {
         }
     }, [callState.isInCall, languages]);
 
-    // Enhanced Remote STT Setup using SpeechRecognition API properly
-    const startRemoteListening = useCallback(() => {
-        if (!callState.isInCall) {
-            console.log('⚠️ Cannot start remote STT - call not active');
-            return;
+    // Effect to process the TTS queue
+    useEffect(() => {
+        if (!isTtsPlaying && ttsRequestQueue.length > 0) {
+            const request = ttsRequestQueue[0];
+            webRTCRef.current?.emit('get-tts-audio', request);
         }
-
-        // Web Speech API doesn't work with MediaStream directly
-        // Instead, we'll use continuous recognition for remote audio detection
-        console.log('🎤 Starting remote STT (using continuous recognition)');
-
-        const sttInstance = STT({
-            language: languages.theirInputLang,
-            continuous: true,
-            interimResults: true,
-            shouldContinue: () => callState.isInCall,
-            instanceId: 'remote'
-        }, {
-            onResult: (result) => {
-                if (result.instanceId === 'remote') {
-                    setRemoteTranscript(result.transcript);
-
-                    if (result.isFinal && result.transcript.trim()) {
-                        console.log('🌐 Remote speech detected:', result.transcript);
-
-                        // Create real-time translation entry
-                        const newTranslation: TranslationDisplay = {
-                            original: result.transcript,
-                            translated: '(Translating...)',
-                            timestamp: new Date(),
-                            isFromMe: false,
-                            isRealTime: true
-                        };
-
-                        setTranslations(prev => [...prev, newTranslation]);
-
-                        // Send translation request via Socket.IO (not HTTP API)
-                        webRTCRef.current?.sendTranslation(
-                            result.transcript,
-                            languages.theirInputLang,
-                            languages.myOutputLang
-                        );
-
-                        // Update the translation entry to show it's being processed
-                        setTimeout(() => {
-                            setTranslations(prev =>
-                                prev.map(trans =>
-                                    trans.isRealTime &&
-                                        trans.translated === '(Translating...)' &&
-                                        Math.abs(new Date(trans.timestamp).getTime() - newTranslation.timestamp.getTime()) < 2000
-                                        ? { ...trans, translated: '(Processing via server...)' }
-                                        : trans
-                                )
-                            );
-                        }, 1000);
-
-                        setRemoteTranscript('');
-                    }
-                }
-            },
-            onStart: () => {
-                console.log('🎤 Remote STT started');
-                setIsRemoteListening(true);
-                setSttRetryDelay(1000); // Reset retry delay on successful start
-            },
-            onEnd: () => {
-                console.log('🎤 Remote STT ended');
-                setIsRemoteListening(false);
-            },
-            onError: (error) => {
-                console.error('Remote STT Error:', error);
-                setIsRemoteListening(false);
-
-                // Handle specific, unrecoverable errors by notifying the user.
-                if (error.includes('not-allowed')) {
-                    toast.error("Microphone permission denied for translation service. Please enable it in your browser's site settings.", {
-                        duration: Infinity, // Keep the toast visible until dismissed
-                    });
-                    return; // Stop retry attempts for permission errors
-                }
-
-                // Implement exponential backoff for network errors
-                if (error.includes('network') && callState.isInCall) {
-                    const nextDelay = Math.min(sttRetryDelay * 2, 30000); // Max 30s delay
-                    console.log(`Retrying remote STT in ${nextDelay / 1000}s due to network error...`);
-                    setTimeout(() => {
-                        if (webRTCRef.current?.isCallActive()) {
-                            startRemoteListening();
-                        }
-                    }, nextDelay);
-                    setSttRetryDelay(nextDelay);
-                }
-            }
-        });
-
-        if (sttInstance) {
-            remoteSttRef.current = sttInstance;
-            sttInstance.start();
-        }
-    }, [callState.isInCall, languages]);
+    }, [ttsRequestQueue, isTtsPlaying]);
 
     // Add the missing stopListening function
     const stopListening = useCallback(() => {
@@ -353,14 +274,8 @@ const VideoCall: React.FC = () => {
             localSttRef.current.stop();
             localSttRef.current = null;
         }
-        if (remoteSttRef.current) {
-            remoteSttRef.current.stop();
-            remoteSttRef.current = null;
-        }
         setIsListening(false);
-        setIsRemoteListening(false);
         setCurrentTranscript('');
-        setRemoteTranscript('');
     }, []);
 
     // New handler for self-sent message confirmations
@@ -387,13 +302,10 @@ const VideoCall: React.FC = () => {
             isFromMe: false,
         };
 
-        // Play translated audio for the other user's message
+        // Add the translated text to the TTS queue if speaker is enabled
         if (mediaState.isSpeakerEnabled && data.translated) {
-            console.log('🔊 Playing TTS for received translation.');
-            TTS(data.translated, {
-                language: languages.myOutputLang,
-                gender: 'female',
-            });
+            console.log('🔊 Adding to TTS queue:', data.translated);
+            setTtsRequestQueue(prev => [...prev, { text: data.translated, language: languages.myOutputLang }]);
         } else {
             console.warn('🔇 TTS playback skipped: Speaker is disabled or translation is empty.');
         }
@@ -441,9 +353,6 @@ const VideoCall: React.FC = () => {
             await webRTCRef.current?.answerCall(callState.incomingCallData);
             startLocalListening();
 
-            // Start remote listening for incoming calls with a longer delay
-            setTimeout(startRemoteListening, 3000); // Increased delay to ensure connection is stable
-
         } catch (error) {
             console.error('Failed to answer call:', error);
             toast.error('Failed to answer call');
@@ -478,6 +387,16 @@ const VideoCall: React.FC = () => {
         setTranslations([]);
         setCurrentTranscript('');
         setHasRemoteVideo(false);
+        setTtsRequestQueue([]); // Clear TTS queue on call end
+        setCurrentAudioSrc(null);
+        setIsTtsPlaying(false);
+
+        // Reset media state
+        setMediaState({
+            isAudioEnabled: true,
+            isVideoEnabled: true,
+            isSpeakerEnabled: true,
+        });
 
         // Clear video elements
         if (localVideoRef.current) {
@@ -772,6 +691,19 @@ const VideoCall: React.FC = () => {
                 {/* Video Call Interface */}
                 {callState.isInCall && (
                     <div className="space-y-6">
+                        {/* Add the Audio Player to the DOM */}
+                        <AudioPlayer
+                            audioSrc={currentAudioSrc}
+                            onEnded={() => {
+                                if (currentAudioSrc) {
+                                    URL.revokeObjectURL(currentAudioSrc);
+                                }
+                                setCurrentAudioSrc(null);
+                                setIsTtsPlaying(false);
+                                setTtsRequestQueue(prev => prev.slice(1));
+                            }}
+                        />
+
                         {/* Enhanced Connection Status */}
                         <Alert>
                             <AlertDescription className="flex items-center gap-2 flex-wrap">
@@ -786,16 +718,8 @@ const VideoCall: React.FC = () => {
                                         🎤 Your Mic: Listening...
                                     </Badge>
                                 )}
-                                {isRemoteListening && (
-                                    <Badge variant="outline" className="bg-green-50 text-green-700">
-                                        🎧 Remote Audio: Processing...
-                                    </Badge>
-                                )}
                                 <Badge variant="outline" className="bg-purple-50 text-purple-700 text-xs">
                                     🔇 Remote Audio: Muted (TTS Only)
-                                </Badge>
-                                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 text-xs">
-                                    ℹ️ Note: Both users need to speak for STT detection
                                 </Badge>
                             </AlertDescription>
                         </Alert>
@@ -940,7 +864,7 @@ const VideoCall: React.FC = () => {
                         </div>
 
                         {/* Current Speech - Enhanced */}
-                        {(currentTranscript || remoteTranscript) && (
+                        {currentTranscript && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {currentTranscript && (
                                     <Card className="border-blue-500 bg-blue-50">
@@ -950,17 +874,6 @@ const VideoCall: React.FC = () => {
                                                 <p className="text-sm font-medium text-blue-800">You're speaking:</p>
                                             </div>
                                             <p className="font-medium text-blue-900">{currentTranscript}</p>
-                                        </CardContent>
-                                    </Card>
-                                )}
-                                {remoteTranscript && (
-                                    <Card className="border-green-500 bg-green-50">
-                                        <CardContent className="pt-4">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <MessageSquare className="h-4 w-4 text-green-600" />
-                                                <p className="text-sm font-medium text-green-800">They're speaking:</p>
-                                            </div>
-                                            <p className="font-medium text-green-900">{remoteTranscript}</p>
                                         </CardContent>
                                     </Card>
                                 )}
@@ -996,25 +909,6 @@ const VideoCall: React.FC = () => {
                                         title={mediaState.isSpeakerEnabled ? "Mute speaker" : "Unmute speaker"}
                                     >
                                         {mediaState.isSpeakerEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
-                                    </Button>
-
-                                    <Button
-                                        onClick={() => {
-                                            if (!isRemoteListening) {
-                                                startRemoteListening();
-                                                toast.info('Started remote audio processing');
-                                            } else {
-                                                if (remoteSttRef.current) {
-                                                    remoteSttRef.current.stop();
-                                                    toast.info('Stopped remote audio processing');
-                                                }
-                                            }
-                                        }}
-                                        variant={isRemoteListening ? "default" : "outline"}
-                                        size="lg"
-                                        title="Toggle remote audio processing"
-                                    >
-                                        {isRemoteListening ? "🎧 ON" : "🎧 OFF"}
                                     </Button>
 
                                     <Button

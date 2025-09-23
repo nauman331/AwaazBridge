@@ -163,6 +163,58 @@ export const SocketConnection = (io: Server) => {
             }
         });
 
+        // New handler for TTS requests
+        socket.on("get-tts-audio", async (data) => {
+            const { text, language } = data;
+
+            if (!text || !language) {
+                socket.emit("error", "TTS request missing text or language");
+                return;
+            }
+
+            const voiceMap: Record<string, string> = {
+                'en': 's3://voice-cloning-zero-shot/d9ff78ba-d016-47f6-b046-520000000001/voice.wav', // English
+                'ur': 's3://peregrine-voices/ur-PK-male-2/manifest.json', // Urdu
+            };
+
+            const voiceId = voiceMap[language];
+            if (!voiceId) {
+                socket.emit("error", `Unsupported TTS language: ${language}`);
+                return;
+            }
+
+            try {
+                const response = await fetch('https://api.play.ht/api/v2/tts/stream', {
+                    method: 'POST',
+                    headers: {
+                        'accept': 'audio/mpeg',
+                        'content-type': 'application/json',
+                        'AUTHORIZATION': process.env.PLAYHT_API_KEY || '',
+                        'X-USER-ID': process.env.PLAYHT_USER_ID || ''
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        voice: voiceId,
+                        output_format: 'mp3',
+                        sample_rate: 24000,
+                        speed: 1,
+                    }),
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    throw new Error(`Play.ht API failed with status ${response.status}: ${errorBody}`);
+                }
+
+                const audioBuffer = await response.arrayBuffer();
+                socket.emit("tts-audio-data", audioBuffer);
+
+            } catch (error: any) {
+                console.error('❌ Play.ht TTS Error:', error.message);
+                socket.emit("error", "Failed to generate speech audio.");
+            }
+        });
+
         // Add heartbeat mechanism to maintain connection
         socket.on("heartbeat", () => {
             const currentUser = users.get(socket.id);

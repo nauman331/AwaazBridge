@@ -234,7 +234,7 @@ const STT = (options: STTOptions = {}, callbacks: STTCallbacks = {}) => {
         };
 
     } catch (error) {
-        const errorMsg = `Failed to initialize speech recognition [${instanceId}]`;
+        const errorMsg = `Failed to initialize speech recognition`;
         console.error(errorMsg, error);
         if (instanceId === 'local') {
             toast.error(errorMsg);

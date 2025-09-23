@@ -166,6 +166,16 @@ export class WebRTCService {
         });
     }
 
+    // Generic method to listen to any socket event
+    public on(event: string, listener: (...args: any[]) => void): void {
+        this.socket.on(event, listener);
+    }
+
+    // Generic method to emit any socket event
+    public emit(event: string, data: any): void {
+        this.socket.emit(event, data);
+    }
+
     async initializeLocalStream(constraints: MediaStreamConstraints = { video: true, audio: true }): Promise<MediaStream> {
         try {
             // Try with video first, fallback to audio only
