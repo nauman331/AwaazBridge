@@ -162,8 +162,8 @@ const STT = (options: STTOptions = {}, callbacks: STTCallbacks = {}) => {
             const errorMsg = `Speech recognition error [${instanceId}]: ${event.error}`;
             console.error(errorMsg);
 
-            // For network errors, we stop manual restart attempts to allow for backoff.
-            if (event.error === 'network') {
+            // For critical permission or network errors, stop restart attempts to allow for specific handling.
+            if (event.error === 'network' || event.error === 'not-allowed') {
                 isManuallyStopped = true;
             }
 

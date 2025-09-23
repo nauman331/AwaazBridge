@@ -314,6 +314,14 @@ const VideoCall: React.FC = () => {
                 console.error('Remote STT Error:', error);
                 setIsRemoteListening(false);
 
+                // Handle specific, unrecoverable errors by notifying the user.
+                if (error.includes('not-allowed')) {
+                    toast.error("Microphone permission denied for translation service. Please enable it in your browser's site settings.", {
+                        duration: Infinity, // Keep the toast visible until dismissed
+                    });
+                    return; // Stop retry attempts for permission errors
+                }
+
                 // Implement exponential backoff for network errors
                 if (error.includes('network') && callState.isInCall) {
                     const nextDelay = Math.min(sttRetryDelay * 2, 30000); // Max 30s delay
