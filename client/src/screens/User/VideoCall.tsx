@@ -154,6 +154,11 @@ const VideoCall: React.FC = () => {
             handleTranslationReceived(data);
         };
 
+        // New handler for confirmed translations
+        webRTC.onTranslationConfirmed = (data) => {
+            handleTranslationConfirmed(data);
+        };
+
         webRTC.onConnectionStateChange = (state) => {
             setCallState(prev => ({ ...prev, connectionState: state }));
 
@@ -358,42 +363,42 @@ const VideoCall: React.FC = () => {
         setRemoteTranscript('');
     }, []);
 
-    // Modified handleTranslationReceived to work with server translations
-    const handleTranslationReceived = (data: TranslationData) => {
-        console.log('📨 Translation received from server:', data);
-
-        let wasMyMessageConfirmation = false;
-
-        setTranslations(prev => {
-            const updatedTranslations = prev.map(trans => {
-                // Find the message we sent that is waiting for confirmation
+    // New handler for self-sent message confirmations
+    const handleTranslationConfirmed = (data: TranslationData) => {
+        setTranslations(prev =>
+            prev.map(trans => {
+                // Find the message we sent that is waiting for confirmation and update it
                 if (trans.isFromMe && trans.isSending && trans.original === data.original) {
-                    wasMyMessageConfirmation = true;
                     return { ...trans, translated: data.translated, isSending: false };
                 }
                 return trans;
-            });
+            })
+        );
+    };
 
-            if (wasMyMessageConfirmation) {
-                return updatedTranslations;
-            } else {
-                // It's a new message from the other user
-                const newTranslation: TranslationDisplay = {
-                    original: data.original,
-                    translated: data.translated,
-                    timestamp: new Date(data.timestamp),
-                    isFromMe: false,
-                };
-                // Play translated audio for the other user's message
-                if (mediaState.isSpeakerEnabled && data.translated) {
-                    TTS(data.translated, {
-                        language: languages.myOutputLang,
-                        gender: 'female',
-                    });
-                }
-                return [...prev, newTranslation];
-            }
-        });
+    // Simplified handler for incoming messages from the other user
+    const handleTranslationReceived = (data: TranslationData) => {
+        console.log('📨 New message from peer:', data);
+
+        const newTranslation: TranslationDisplay = {
+            original: data.original,
+            translated: data.translated,
+            timestamp: new Date(data.timestamp),
+            isFromMe: false,
+        };
+
+        // Play translated audio for the other user's message
+        if (mediaState.isSpeakerEnabled && data.translated) {
+            console.log('🔊 Playing TTS for received translation.');
+            TTS(data.translated, {
+                language: languages.myOutputLang,
+                gender: 'female',
+            });
+        } else {
+            console.warn('🔇 TTS playback skipped: Speaker is disabled or translation is empty.');
+        }
+
+        setTranslations(prev => [...prev, newTranslation]);
     };
 
     // Enhanced call handling

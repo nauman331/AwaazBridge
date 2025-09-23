@@ -47,6 +47,7 @@ export class WebRTCService {
     public onCallRejected?: () => void;
     public onCallEnded?: () => void;
     public onTranslationReceived?: (data: TranslationData) => void;
+    public onTranslationConfirmed?: (data: TranslationData) => void; // New callback
     public onError?: (error: string) => void;
     public onConnectionStateChange?: (state: RTCPeerConnectionState) => void;
 
@@ -148,14 +149,14 @@ export class WebRTCService {
         });
 
         this.socket.on('translation', (data: TranslationData) => {
-            console.log('🌐 Translation received:', data);
+            console.log('🌐 Translation received from peer:', data);
             this.onTranslationReceived?.(data);
         });
 
-        // Add new socket listener for translation confirmations
+        // Use the new callback for confirmed translations
         this.socket.on('translationConfirmed', (data: TranslationData) => {
-            console.log('✅ Translation confirmed:', data);
-            this.onTranslationReceived?.(data);
+            console.log('✅ Translation confirmed for my message:', data);
+            this.onTranslationConfirmed?.(data);
         });
 
         this.socket.on('error', (error: string) => {
