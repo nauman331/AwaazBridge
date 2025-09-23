@@ -11,13 +11,9 @@ import connectDB from "./config/connectDB";
 import authRoutes from "./routes/auth.route";
 import translateRoute from './routes/translateRoute';
 
-// Simplified CORS configuration for Express 4.x
+
 const corsOptions = {
-    origin: [
-        'http://localhost:5173',
-        'https://awaazbridge-frontend.onrender.com',
-        'https://awaazbridge.vercel.app'
-    ],
+    origin: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: [
         "Origin",
@@ -32,14 +28,12 @@ const corsOptions = {
     optionsSuccessStatus: 200
 };
 
-// Apply CORS middleware
 app.use(cors(corsOptions));
 
-// Basic middleware
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Routes
 app.use("/api/v1/auth", authRoutes);
 app.use('/api/v1', translateRoute);
 
@@ -53,11 +47,7 @@ connectDB();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: [
-            'http://localhost:5173',
-            'https://awaazbridge-frontend.onrender.com',
-            'https://awaazbridge.vercel.app'
-        ],
+        origin: true,
         methods: ["GET", "POST"],
         credentials: true,
     }
