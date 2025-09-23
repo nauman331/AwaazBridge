@@ -18,7 +18,13 @@ export const SocketConnection = (io: Server) => {
             console.log(`User disconnected: ${socket.id}`);
             const disconnectedUser = users.get(socket.id);
             if (disconnectedUser && disconnectedUser.peerId) {
-                io.to(disconnectedUser.peerId).emit("callEnded");
+                const peer = users.get(disconnectedUser.peerId);
+                if (peer) {
+                    // Notify the peer that the call has ended
+                    io.to(disconnectedUser.peerId).emit("callEnded");
+                    // Clean up the peer's state
+                    peer.peerId = undefined;
+                }
             }
             users.delete(socket.id);
         });
@@ -61,9 +67,8 @@ export const SocketConnection = (io: Server) => {
                 caller.peerId = callee.id;
                 callee.peerId = caller.id;
 
-                // Send success confirmation to both parties
+                // Send success confirmation to the original caller
                 io.to(data.to).emit("callAccepted", data.signal);
-                socket.emit("callAnswered", { success: true });
 
                 console.log(`📞 Call established between ${caller.id} and ${callee.id}`);
             }
@@ -125,21 +130,8 @@ export const SocketConnection = (io: Server) => {
                 } catch (error) {
                     console.error("❌ Translation error:", error);
 
-                    // Send error to sender
-                    socket.emit("error", "Translation failed");
-
-                    // Send fallback response to both parties
-                    const fallbackData = {
-                        original: data.text,
-                        translated: `[Translation failed] ${data.text}`,
-                        fromLang: data.fromLang,
-                        toLang: data.toLang,
-                        timestamp: new Date(),
-                        isInterim: data.isInterim || false
-                    };
-
-                    io.to(currentUser.peerId).emit("translation", fallbackData);
-                    socket.emit("translationConfirmed", fallbackData);
+                    // Notify only the sender about the failure
+                    socket.emit("error", "Translation failed. Please try again.");
                 }
             } else {
                 console.warn('❌ Missing translation requirements:', {
@@ -159,7 +151,10 @@ export const SocketConnection = (io: Server) => {
                 const peerId = currentUser.peerId;
                 console.log(`📵 Call ended between ${socket.id} and ${peerId}`);
 
+                // Notify the other user that the call has ended
                 io.to(peerId).emit("callEnded");
+
+                // Clean up peerId for both users
                 const peer = users.get(peerId);
                 if (peer) {
                     peer.peerId = undefined;

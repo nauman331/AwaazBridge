@@ -105,6 +105,7 @@ const STT = (options: STTOptions = {}, callbacks: STTCallbacks = {}) => {
 
     try {
         const recognition = new SpeechRecognitionConstructor();
+        let isManuallyStopped = false;
 
         recognition.lang = languageMap[language] || `${language}-US`;
         recognition.continuous = continuous;
@@ -139,18 +140,21 @@ const STT = (options: STTOptions = {}, callbacks: STTCallbacks = {}) => {
             console.log(`Speech recognition ended [${instanceId}]`);
             onEnd?.();
 
-            // Auto-restart for continuous recognition if needed and allowed
-            if (continuous && recognition && (!shouldContinue || shouldContinue())) {
+            // Auto-restart for continuous recognition if not manually stopped
+            if (continuous && !isManuallyStopped && (!shouldContinue || shouldContinue())) {
                 setTimeout(() => {
                     try {
                         console.log(`🔄 Auto-restarting speech recognition [${instanceId}]`);
                         recognition.start();
-                    } catch (error) {
-                        console.log(`⏹️ Recognition already running or cannot restart [${instanceId}]`);
+                    } catch (error: any) {
+                        // This can happen if start() is called while it's already starting.
+                        if (error.name !== 'InvalidStateError') {
+                            console.error(`❌ Failed to auto-restart STT [${instanceId}]:`, error);
+                        }
                     }
-                }, 100);
-            } else if (shouldContinue && !shouldContinue()) {
-                console.log(`⏹️ STT auto-restart stopped - shouldContinue returned false [${instanceId}]`);
+                }, 100); // A short delay to prevent frantic restarting
+            } else {
+                console.log(`⏹️ STT auto-restart prevented. Manual stop: ${isManuallyStopped}, Should continue: ${shouldContinue ? shouldContinue() : 'N/A'} [${instanceId}]`);
             }
         };
 
@@ -158,35 +162,32 @@ const STT = (options: STTOptions = {}, callbacks: STTCallbacks = {}) => {
             const errorMsg = `Speech recognition error [${instanceId}]: ${event.error}`;
             console.error(errorMsg);
 
-            let userFriendlyError = "Speech recognition failed";
-            let shouldShowToast = true;
-
-            switch (event.error) {
-                case 'no-speech':
-                    userFriendlyError = `No speech detected [${instanceId}]. Listening...`;
-                    shouldShowToast = false; // Don't spam user with no-speech errors
-                    break;
-                case 'audio-capture':
-                    userFriendlyError = `Microphone access denied or unavailable [${instanceId}].`;
-                    break;
-                case 'not-allowed':
-                    userFriendlyError = `Microphone permission denied [${instanceId}].`;
-                    break;
-                case 'network':
-                    userFriendlyError = `Network error [${instanceId}]. Please check your connection.`;
-                    break;
-                case 'language-not-supported':
-                    userFriendlyError = `Selected language is not supported [${instanceId}].`;
-                    break;
-                case 'aborted':
-                    userFriendlyError = `Speech recognition was stopped [${instanceId}].`;
-                    shouldShowToast = false; // Do not show toast for intentional stops
-                    break;
-                default:
-                    userFriendlyError = errorMsg;
+            // Avoid showing toasts for common, non-critical errors
+            if (event.error === 'no-speech' || event.error === 'aborted') {
+                onError?.(event.error);
+                return;
             }
 
-            if (shouldShowToast && instanceId === 'local') { // Only show toasts for local STT to avoid spam
+            let userFriendlyError = "An unknown speech recognition error occurred.";
+
+            switch (event.error) {
+                case 'audio-capture':
+                    userFriendlyError = `Microphone access denied or unavailable.`;
+                    break;
+                case 'not-allowed':
+                    userFriendlyError = `Microphone permission has been denied.`;
+                    break;
+                case 'network':
+                    userFriendlyError = `A network error occurred during speech recognition.`;
+                    break;
+                case 'language-not-supported':
+                    userFriendlyError = `The selected language is not supported.`;
+                    break;
+                default:
+                    userFriendlyError = `Speech recognition error: ${event.error}`;
+            }
+
+            if (instanceId === 'local') { // Only show toasts for the user's own STT
                 toast.error(userFriendlyError);
             }
             onError?.(userFriendlyError);
@@ -195,16 +196,23 @@ const STT = (options: STTOptions = {}, callbacks: STTCallbacks = {}) => {
         return {
             start: () => {
                 try {
+                    isManuallyStopped = false;
                     recognition.start();
-                } catch (error) {
-                    const errorMsg = "Failed to start speech recognition";
-                    console.error(errorMsg, error);
-                    toast.error(errorMsg);
-                    onError?.(errorMsg);
+                } catch (error: any) {
+                    // Prevent crashing if start is called in an invalid state
+                    if (error.name === 'InvalidStateError') {
+                        console.warn(`⚠️ STT start() called in an invalid state [${instanceId}]. It might already be running.`);
+                    } else {
+                        const errorMsg = "Failed to start speech recognition";
+                        console.error(errorMsg, error);
+                        toast.error(errorMsg);
+                        onError?.(errorMsg);
+                    }
                 }
             },
             stop: () => {
                 try {
+                    isManuallyStopped = true;
                     recognition.stop();
                 } catch (error) {
                     console.error("Failed to stop speech recognition", error);
@@ -212,6 +220,7 @@ const STT = (options: STTOptions = {}, callbacks: STTCallbacks = {}) => {
             },
             abort: () => {
                 try {
+                    isManuallyStopped = true;
                     recognition.abort();
                 } catch (error) {
                     console.error("Failed to abort speech recognition", error);

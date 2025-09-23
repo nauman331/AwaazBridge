@@ -40,8 +40,8 @@ export class WebRTCService {
     private maxReconnectAttempts = 5;
 
     // Event callbacks
-    public onLocalStream?: (stream: MediaStream) => void;
-    public onRemoteStream?: (stream: MediaStream) => void;
+    public onLocalStream?: (stream: MediaStream | null) => void;
+    public onRemoteStream?: (stream: MediaStream | null) => void;
     public onCallReceived?: (data: CallData) => void;
     public onCallAccepted?: () => void;
     public onCallRejected?: () => void;
@@ -55,6 +55,12 @@ export class WebRTCService {
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
             { urls: 'stun:stun2.l.google.com:19302' },
+            // Add your TURN server configuration here for better connectivity
+            // {
+            //   urls: 'turn:your-turn-server.com:3478',
+            //   username: 'user',
+            //   credential: 'password'
+            // }
         ]
     };
 
@@ -168,8 +174,12 @@ export class WebRTCService {
             try {
                 if (hasVideo) {
                     // First attempt: try with video if requested
+                    const videoConstraints = typeof hasVideo === 'object' ? hasVideo : {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    };
                     stream = await navigator.mediaDevices.getUserMedia({
-                        video: typeof hasVideo === 'object' ? hasVideo : true,
+                        video: videoConstraints,
                         audio: {
                             echoCancellation: true,
                             noiseSuppression: true,
@@ -200,10 +210,8 @@ export class WebRTCService {
             }
 
             this.localStream = stream;
-            // Ensure callback is called immediately
-            setTimeout(() => {
-                this.onLocalStream?.(stream);
-            }, 0);
+            // Call callback directly instead of using setTimeout
+            this.onLocalStream?.(stream);
             return stream;
         } catch (error) {
             console.error('❌ Failed to get local stream:', error);
@@ -224,30 +232,11 @@ export class WebRTCService {
 
         pc.ontrack = (event) => {
             console.log('🎵 Remote track received:', event.track.kind, 'Stream ID:', event.streams[0]?.id);
-
             if (event.streams && event.streams[0]) {
-                // If this is the first stream or a different stream
-                if (!this.remoteStream || this.remoteStream.id !== event.streams[0].id) {
-                    this.remoteStream = event.streams[0];
-                    console.log('📹 Setting remote stream for first time or new stream');
-
-                    // Call callback for new stream (for video display)
-                    setTimeout(() => {
-                        this.onRemoteStream?.(event.streams[0]);
-                    }, 100);
-
-                } else {
-                    // Same stream, just log the track addition
-                    console.log('🎵 Track added to existing remote stream:', event.track.kind);
-
-                    // For existing streams, we might need to trigger a refresh if video track is added
-                    if (event.track.kind === 'video' && this.remoteStream) {
-                        console.log('📹 Video track added to existing stream - triggering refresh');
-                        setTimeout(() => {
-                            this.onRemoteStream?.(this.remoteStream!);
-                        }, 200);
-                    }
-                }
+                this.remoteStream = event.streams[0];
+                console.log('📹 Updated remote stream');
+                // Always fire the callback with the latest stream object to ensure UI updates
+                this.onRemoteStream?.(this.remoteStream);
             }
         };
 
@@ -258,17 +247,20 @@ export class WebRTCService {
             if (pc.connectionState === 'connected') {
                 this.callActive = true;
                 toast.success('Call connected successfully!');
-            } else if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+            } else if (pc.connectionState === 'disconnected') {
+                // Don't end the call immediately. WebRTC might be trying to reconnect.
+                console.log('🔌 Peer connection disconnected. Waiting for potential reconnection...');
+                toast.warning('Connection unstable, attempting to reconnect...');
+            } else if (pc.connectionState === 'failed') {
+                // The connection has failed and will not recover.
                 this.handleCallEnd();
+                toast.error('Connection failed. Please try again.');
             }
         };
 
         pc.oniceconnectionstatechange = () => {
             console.log('🧊 ICE connection state:', pc.iceConnectionState);
-            if (pc.iceConnectionState === 'failed') {
-                this.handleCallEnd();
-                toast.error('Connection failed. Please try again.');
-            }
+            // The 'failed' state is better handled by onconnectionstatechange
         };
 
         return pc;
@@ -276,6 +268,12 @@ export class WebRTCService {
 
     async callUser(callUser: CallUser): Promise<void> {
         try {
+            if (this.callActive || this.peerConnection) {
+                console.warn('⚠️ Cannot initiate call, another call is already active.');
+                toast.warning('A call is already in progress.');
+                return;
+            }
+
             if (!this.localStream) {
                 // Initialize with video preference but audio required
                 await this.initializeLocalStream({ video: true, audio: true });
@@ -319,6 +317,11 @@ export class WebRTCService {
         }
     } async answerCall(callData: CallData): Promise<void> {
         try {
+            if (this.peerConnection) {
+                console.warn('⚠️ Cannot answer call, a peer connection already exists.');
+                return;
+            }
+
             if (!this.localStream) {
                 // Initialize with video preference but audio required
                 await this.initializeLocalStream({ video: true, audio: true });
@@ -379,14 +382,18 @@ export class WebRTCService {
             this.peerConnection = null;
         }
 
-        // Stop local stream
+        // Stop local stream and notify UI
         if (this.localStream) {
             this.localStream.getTracks().forEach(track => track.stop());
             this.localStream = null;
+            this.onLocalStream?.(null);
         }
 
-        // Clear remote stream
-        this.remoteStream = null;
+        // Clear remote stream and notify UI
+        if (this.remoteStream) {
+            this.remoteStream = null;
+            this.onRemoteStream?.(null);
+        }
 
         this.onCallEnded?.();
     }

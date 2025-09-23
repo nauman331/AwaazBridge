@@ -73,8 +73,8 @@ EXAMPLES:
         const translated = response.choices[0]?.message?.content?.trim();
 
         if (!translated) {
-            console.error('❌ Empty translation received from AI');
-            return text; // Fallback to original text
+            console.error('❌ Empty translation received from AI, falling back...');
+            throw new Error("Empty translation from AI"); // Trigger the catch block for fallback
         }
 
         console.log(`✅ Translation successful: "${translated.substring(0, 50)}..."`);

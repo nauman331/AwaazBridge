@@ -6,7 +6,21 @@ interface TTSOptions {
     language?: string; // Changed to string to support more language codes
 }
 
-const TTS = (text: string, options: TTSOptions = {}) => {
+// Helper to get voices asynchronously
+const getVoices = (): Promise<SpeechSynthesisVoice[]> => {
+    return new Promise((resolve) => {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length) {
+            resolve(voices);
+            return;
+        }
+        window.speechSynthesis.onvoiceschanged = () => {
+            resolve(window.speechSynthesis.getVoices());
+        };
+    });
+};
+
+const TTS = async (text: string, options: TTSOptions = {}) => {
     const { gender = 'female', language = 'en' } = options;
 
     if ('speechSynthesis' in window) {
@@ -20,64 +34,61 @@ const TTS = (text: string, options: TTSOptions = {}) => {
             const utterance = new SpeechSynthesisUtterance(text);
 
             // Configure voice settings
-            utterance.rate = 0.9;
-            utterance.pitch = gender === 'female' ? 1.2 : 0.8;
+            utterance.rate = 1.0; // Use a more natural rate
+            utterance.pitch = 1.0;
             utterance.volume = 1.0; // Maximum volume for translations
 
-            // Use language map if available, otherwise use the language directly
-            utterance.lang = languageMap[language] || `${language}-US`;
+            // Use language map if available, otherwise use the language code directly
+            utterance.lang = languageMap[language] || language;
 
-            // Try to find a voice that matches gender and language preferences
-            const voices = window.speechSynthesis.getVoices();
-
-            let preferredVoice = voices.find(voice => {
-                const voiceLang = voice.lang.toLowerCase();
-                const voiceName = voice.name.toLowerCase();
-                const matchesLanguage = voiceLang.startsWith(language.toLowerCase());
-                const matchesGender = gender === 'female'
-                    ? voiceName.includes('female') || voiceName.includes('woman') || !voiceName.includes('male')
-                    : voiceName.includes('male') || voiceName.includes('man');
-
-                return matchesLanguage && matchesGender;
-            });
-
-            // Fallback: find any voice that matches the language
-            if (!preferredVoice) {
-                preferredVoice = voices.find(voice =>
-                    voice.lang.toLowerCase().startsWith(language.toLowerCase())
-                );
+            const voices = await getVoices();
+            if (voices.length === 0) {
+                console.warn('⚠️ No voices available for speech synthesis.');
+                // Speak with the default voice if none are found
+                window.speechSynthesis.speak(utterance);
+                return;
             }
 
-            // Final fallback: find any voice for common languages
-            if (!preferredVoice && ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'zh'].includes(language)) {
-                preferredVoice = voices.find(voice => {
-                    const voiceName = voice.name.toLowerCase();
-                    const voiceLang = voice.lang.toLowerCase();
-                    const matchesLanguage = voiceLang.includes(language) || voiceLang.startsWith(language);
-                    const matchesGender = gender === 'female'
-                        ? !voiceName.includes('male') || voiceName.includes('female')
-                        : voiceName.includes('male');
+            // Simplified and more robust voice selection
+            const langCode = (languageMap[language] || language).toLowerCase();
 
-                    return matchesLanguage && matchesGender;
-                });
-            }
+            let preferredVoices = voices.filter(voice =>
+                voice.lang.toLowerCase().startsWith(langCode)
+            );
 
-            if (preferredVoice) {
-                utterance.voice = preferredVoice;
+            if (preferredVoices.length > 0) {
+                const genderMatch = gender === 'female' ? /female|woman/i : /male|man/i;
+                let genderedVoices = preferredVoices.filter(v => genderMatch.test(v.name));
+
+                // If no gender match, use any voice for the language
+                if (genderedVoices.length === 0) {
+                    genderedVoices = preferredVoices;
+                }
+
+                // Prioritize higher quality or default voices
+                const selectedVoice = genderedVoices.find(v => v.default) || genderedVoices[0];
+                utterance.voice = selectedVoice;
+
                 console.log('🎤 Selected TTS voice:', {
-                    name: preferredVoice.name,
-                    lang: preferredVoice.lang,
-                    gender: gender,
+                    name: selectedVoice.name,
+                    lang: selectedVoice.lang,
+                    default: selectedVoice.default,
                     textLength: text.length
                 });
             } else {
-                console.warn('⚠️ No preferred voice found for language:', language);
+                console.warn(`⚠️ No voice found for language code: ${langCode}. Using browser default.`);
             }
 
             // Add event listeners for debugging
             utterance.onstart = () => console.log('🎵 TTS started speaking');
             utterance.onend = () => console.log('✅ TTS finished speaking');
-            utterance.onerror = (event) => console.error('❌ TTS error:', event.error);
+            utterance.onerror = (event) => {
+                console.error('❌ TTS error:', event.error);
+                // Don't toast on 'interrupted' as we do it manually
+                if (event.error !== 'interrupted') {
+                    toast.error(`Speech error: ${event.error}`);
+                }
+            };
 
             console.log('🔊 Starting TTS playback:', text.substring(0, 50) + '...');
             window.speechSynthesis.speak(utterance);
@@ -90,6 +101,6 @@ const TTS = (text: string, options: TTSOptions = {}) => {
         console.warn("No TTS service available");
         toast.error("Text-to-speech is not supported in this browser");
     }
-}
+};
 
 export default TTS;
