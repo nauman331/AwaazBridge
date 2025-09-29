@@ -1,4 +1,6 @@
-# 🚀 AwazBridge Development Setup
+# � Trading Platform - Zoi Trade
+
+A modern trading platform similar to Quotex, built with React Native for mobile and Node.js for the backend.
 
 ## Quick Start Instructions
 
@@ -12,15 +14,16 @@ npm run dev
 
 The server will start on `http://localhost:5000`
 
-### 2. Frontend Client Setup
+### 2. Mobile App Setup
 
 ```bash
-cd client
+cd mobile-app
 npm install
-npm run dev
+# For iOS
+npx react-native run-ios
+# For Android
+npx react-native run-android
 ```
-
-The client will start on `http://localhost:5173`
 
 ### 3. Environment Variables
 
@@ -28,93 +31,183 @@ Create a `.env` file in the server directory:
 
 ```env
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/awaazbridge
-OPENAI_API_KEY=your_openrouter_api_key_here
+MONGODB_URI=mongodb://localhost:27017/tradingplatform
 JWT_SECRET=your_jwt_secret_here
+COMMISSION_RATE=0.1
+PLATFORM_PAYOUT_RATIO=0.7
 ```
 
 ### 4. Test the Application
 
-1. Open two browser windows/tabs to `http://localhost:5173`
-2. Navigate to Video Call section in both windows
-3. Set language preferences:
-   - User 1: I speak English, I want to hear Urdu
-   - User 2: I speak Urdu, I want to hear English
-4. Copy the socket ID from one window and paste in the other to make a call
-5. Start speaking and watch real-time translation!
+1. Register a new user account through the mobile app
+2. Login with your credentials
+3. Fund your account (demo mode available)
+4. Start trading with various assets
+5. Monitor your positions and portfolio in real-time
 
 ## Features Implemented ✅
 
-### Real-time Voice Translation
+### Trading Core Features
 
-- Speech Recognition (STT) with Web Speech API
-- AI-powered translation using OpenAI GPT-4o-mini
-- Text-to-Speech (TTS) playback
-- Support for 15+ languages including Urdu, English, Arabic, Hindi
+- **User Authentication & Authorization** - JWT-based secure login/signup
+- **Real-time Price Feeds** - Live market data via Socket.io
+- **Trade Execution** - Buy/Sell orders with commission calculations
+- **Portfolio Management** - Track positions, balance, and equity
+- **Risk Management** - Platform payout ratios and commission structures
 
-### Video Calling
+### Account Management
 
-- WebRTC peer-to-peer video calls
-- Audio/video controls (mute/unmute, camera on/off)
+- User registration and profile management
+- Account balance and equity tracking
+- Transaction history and trade logs
+- Admin panel for user management
+
+### Real-time Features
+
+- Live price updates via WebSockets
+- Real-time portfolio updates
+- Instant trade execution notifications
 - Connection state monitoring
-- Proper cleanup on call end
 
-### UI/UX
+### Security & Compliance
 
-- Modern shadcn/ui components
-- Responsive design with Tailwind CSS
-- Real-time translation history display
-- Language selector with flags
-- Beautiful gradients and animations
-
-### Backend Services
-
-- Socket.io for real-time communication
-- Enhanced translation service with fallbacks
-- Error handling and logging
-- MongoDB integration ready
+- JWT authentication middleware
+- Input validation with Zod
+- Password hashing with bcryptjs
+- Role-based access control (Admin/User)
+- OTP verification for enhanced security
 
 ## How It Works
 
-1. **Call Initiation**: User A calls User B using socket ID
-2. **Language Setup**: Both users select their input/output languages
-3. **Speech Recognition**: When User A speaks, STT converts speech to text
-4. **Translation**: Text is sent to backend, translated via AI
-5. **Audio Playback**: Translated text is converted to speech for User B
-6. **Bidirectional**: Same process works in reverse for User B
+1. **User Registration**: New users sign up with email/phone verification
+2. **Account Funding**: Users deposit funds to their trading account
+3. **Market Analysis**: Real-time price feeds help users analyze market trends
+4. **Trade Execution**: Users place buy/sell orders on various assets
+5. **Position Management**: System tracks open positions and calculates P&L
+6. **Settlement**: Completed trades update user balance with commission deductions
 
 ## Technical Architecture
 
 ```
-Frontend (React + TypeScript)
-├── WebRTC Service (Peer-to-peer calls)
-├── STT Hook (Speech recognition)
-├── TTS Hook (Text-to-speech)
-├── Socket.io Client (Real-time messaging)
-└── shadcn/ui Components
+Mobile App (React Native + TypeScript)
+├── NativeWind (Tailwind CSS for React Native)
+├── Redux Toolkit (State Management)
+├── AsyncStorage (Local Data Persistence)
+├── Socket.io Client (Real-time Updates)
+└── Secure Authentication
 
-Backend (Node.js + Express)
-├── Socket.io Server (Real-time events)
-├── OpenAI Translation Service
-├── MongoDB Models
-└── Authentication (JWT)
+Backend (Node.js + Express + TypeScript)
+├── Socket.io Server (Real-time Price Feeds)
+├── MongoDB (User Data & Trades)
+├── JWT Authentication
+├── Trading Engine (Order Processing)
+├── Commission Calculator
+└── Admin Management Panel
 ```
+
+## API Endpoints
+
+### Authentication Routes
+
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `POST /api/auth/verify-otp` - OTP verification
+- `GET /api/auth/profile` - Get user profile
+- `PUT /api/auth/profile` - Update user profile
+
+### Trading Routes
+
+- `POST /api/trades/buy` - Execute buy order
+- `POST /api/trades/sell` - Execute sell order
+- `GET /api/trades/positions` - Get user positions
+- `GET /api/trades/history` - Get trade history
+- `DELETE /api/trades/:id` - Close position
+
+### Admin Routes
+
+- `GET /api/admin/users` - Get all users
+- `PUT /api/admin/users/:id` - Update user status
+- `GET /api/admin/trades` - Get all trades
+- `GET /api/admin/analytics` - Platform analytics
+
+## Database Models
+
+### User Model
+
+```typescript
+interface IUser {
+  name: string;
+  email: string;
+  password?: string;
+  role: "Admin" | "User";
+  balance: number;
+  equity: number;
+  phone?: string;
+  isActive: boolean;
+}
+```
+
+### Trade Model (To be implemented)
+
+```typescript
+interface ITrade {
+  userId: string;
+  asset: string;
+  type: "buy" | "sell";
+  amount: number;
+  price: number;
+  commission: number;
+  status: "open" | "closed";
+  pnl?: number;
+}
+```
+
+## Mobile App Tech Stack
+
+- **React Native** - Cross-platform mobile development
+- **NativeWind** - Tailwind CSS for React Native styling
+- **Redux Toolkit (RTK)** - State management with async actions
+- **AsyncStorage** - Local storage for user preferences and offline data
+- **Socket.io Client** - Real-time price updates and notifications
+- **React Navigation** - Navigation between screens
+- **React Hook Form** - Form handling and validation
 
 ## Development Notes
 
-- The system supports real-time continuous speech recognition
-- Translation happens only for final speech results to avoid spam
-- Fallback to Google Translate if OpenAI fails
-- Automatic speech recognition restart for continuous listening
-- Proper WebRTC cleanup prevents memory leaks
+- Commission rate is configurable via environment variables (default: 10%)
+- Platform payout ratio ensures house edge (default: 70%)
+- Real-time price feeds via Socket.io for instant market updates
+- JWT tokens for secure API authentication
+- MongoDB for scalable data storage
+- TypeScript for type safety across the entire stack
 
 ## Next Steps for Production
 
-1. Add user authentication and registration
-2. Implement call recording and transcript storage
-3. Add mobile app support
-4. Implement TURN servers for better connectivity
-5. Add call quality metrics and analytics
-6. Implement group calling features
+### Backend Enhancements
 
-Happy coding! 🎉
+1. Complete implementation of Trade and Position models
+2. Add real-time market data integration (Alpha Vantage, Yahoo Finance, etc.)
+3. Implement advanced order types (limit orders, stop-loss, take-profit)
+4. Add trading analytics and reporting features
+5. Implement KYC (Know Your Customer) verification
+6. Add payment gateway integration for deposits/withdrawals
+
+### Mobile App Development
+
+1. Build authentication screens with OTP verification
+2. Create trading dashboard with charts and indicators
+3. Implement real-time portfolio tracking
+4. Add push notifications for trade alerts
+5. Build settings and profile management screens
+6. Implement biometric authentication for enhanced security
+
+### Infrastructure & Security
+
+1. Set up production environment with load balancing
+2. Implement comprehensive logging and monitoring
+3. Add rate limiting and DDoS protection
+4. Set up automated testing and CI/CD pipelines
+5. Implement data encryption for sensitive information
+6. Add backup and disaster recovery procedures
+
+Happy trading! 📈💰

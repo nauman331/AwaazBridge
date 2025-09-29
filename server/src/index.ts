@@ -6,7 +6,7 @@ const PORT = process.env.PORT || 5000;
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
-import { SocketConnection } from "./sockets/SocketConnection";
+import { priceSocket } from "./sockets/priceSocket";
 import connectDB from "./config/connectDB";
 import authRoutes from "./routes/auth.route";
 
@@ -51,7 +51,7 @@ const io = new Server(server, {
     }
 });
 
-SocketConnection(io);
+priceSocket(io);
 
 server.listen(PORT, () => {
     console.log(`🚀 Server is running on port ${PORT}`);

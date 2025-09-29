@@ -4,7 +4,7 @@ export interface IUser extends Document {
     name: string;
     email: string;
     password?: string;
-    role: "Admin" | "User" | "Moderator";
+    role: "Admin" | "User";
     otp: string | null;
     otpExpiresAt: Date | null;
     isActive: boolean;
@@ -13,14 +13,15 @@ export interface IUser extends Document {
     picture?: string;
     googleId: string | null;
     phone?: string | null;
-    language: string;
+    balance?: number;
+    equity?: number;
 }
 
 const userSchema = new Schema<IUser>({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, default: null, minlength: 6 },
-    role: { type: String, enum: ["Admin", "User", "Moderator"], required: true, default: "User" },
+    role: { type: String, enum: ["Admin", "User"], required: true, default: "User" },
     otp: { type: String, default: null },
     otpExpiresAt: { type: Date, default: null },
     isActive: { type: Boolean, default: true },
@@ -29,7 +30,8 @@ const userSchema = new Schema<IUser>({
     picture: { type: String, default: null },
     googleId: { type: String, default: null },
     phone: { type: String, default: null, unique: true },
-    language: { type: String, default: "en" },
+    balance: { type: Number, default: 0 },
+    equity: { type: Number, default: 0 },
 }, { timestamps: true });
 
 export const User = mongoose.model<IUser>("User", userSchema);
