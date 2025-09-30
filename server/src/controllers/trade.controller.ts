@@ -28,11 +28,9 @@ const placeTrade = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Insufficient balance" });
         }
 
-        // Deduct only the stake amount from user balance (no commission)
+
         user.balance = Number(user.balance - stakeAmount);
         await user.save();
-
-        // Create the trade with payout ratio from finance constants
         const trade: ITrade = new Trade({
             userId,
             asset,
