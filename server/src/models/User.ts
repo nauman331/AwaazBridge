@@ -13,8 +13,11 @@ export interface IUser extends Document {
     picture?: string;
     googleId: string | null;
     phone?: string | null;
-    balance?: number;
+    balance: number;
     equity?: number;
+    kycStatus?: "none" | "pending" | "verified" | "rejected";
+    kycDocuments?: Object | null;
+    withdrawalAddress?: string | null;
 }
 
 const userSchema = new Schema<IUser>({
@@ -32,6 +35,9 @@ const userSchema = new Schema<IUser>({
     phone: { type: String, default: null, unique: true },
     balance: { type: Number, default: 0 },
     equity: { type: Number, default: 0 },
+    withdrawalAddress: { type: String, default: null },
+    kycDocuments: { type: Object, default: null },
+    kycStatus: { type: String, enum: ["none", "pending", "approved", "rejected"], default: "none" },
 }, { timestamps: true });
 
 export const User = mongoose.model<IUser>("User", userSchema);

@@ -9,6 +9,8 @@ import { Server } from "socket.io";
 import { priceSocket } from "./sockets/priceSocket";
 import connectDB from "./config/connectDB";
 import authRoutes from "./routes/auth.route";
+import tradeRoutes from "./routes/trade.route";
+import "./cronjobs/tradeTime";
 
 
 const corsOptions = {
@@ -34,6 +36,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/trade", tradeRoutes);
 
 app.get("/", (req, res) => {
     res.json({ msg: "Routes Working Perfectly" })
