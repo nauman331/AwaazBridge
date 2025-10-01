@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Test Client</title>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #log {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .status {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <h1>Socket.IO Test Client for PlaceTrade</h1>
+    
+    <div id="status" class="status disconnected">Disconnected</div>
+    
+    <form id="tradeForm">
+        <div class="form-group">
+            <label for="userId">User ID:</label>
+            <input type="text" id="userId" value="650a1b2c3d4e5f6789abcdef" placeholder="Enter user ID">
+        </div>
+        
+        <div class="form-group">
+            <label for="asset">Asset:</label>
+            <input type="text" id="asset" value="BTC" placeholder="e.g., BTC, ETH">
+        </div>
+        
+        <div class="form-group">
+            <label for="side">Side:</label>
+            <select id="side">
+                <option value="call">Call</option>
+                <option value="put">Put</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="stakeAmount">Stake Amount:</label>
+            <input type="number" id="stakeAmount" value="100" min="1" step="0.01">
+        </div>
+        
+        <div class="form-group">
+            <label for="expiryDuration">Expiry Duration (ms):</label>
+            <input type="number" id="expiryDuration" value="300000" placeholder="300000 = 5 minutes">
+        </div>
+        
+        <button type="submit">Place Trade</button>
+    </form>
+    
+    <div id="log"></div>
+
+    <script>
+        const socket = io('http://localhost:5000');
+        const statusElement = document.getElementById('status');
+        const logElement = document.getElementById('log');
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${timestamp}] ${message}<br>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        socket.on('connect', () => {
+            statusElement.textContent = 'Connected to Socket.IO server';
+            statusElement.className = 'status connected';
+            log('✅ Connected to server with ID: ' + socket.id);
+        });
+
+        socket.on('disconnect', () => {
+            statusElement.textContent = 'Disconnected from Socket.IO server';
+            statusElement.className = 'status disconnected';
+            log('❌ Disconnected from server');
+        });
+
+        socket.on('tradePlaced', (response) => {
+            log('📈 Trade response received: ' + JSON.stringify(response, null, 2));
+        });
+
+        socket.on('connect_error', (error) => {
+            log('❌ Connection error: ' + error.message);
+        });
+
+        document.getElementById('tradeForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const tradeData = {
+                userId: document.getElementById('userId').value,
+                asset: document.getElementById('asset').value,
+                side: document.getElementById('side').value,
+                stakeAmount: parseFloat(document.getElementById('stakeAmount').value),
+                expiryDuration: parseInt(document.getElementById('expiryDuration').value)
+            };
+
+            log('📤 Sending placeTrade event: ' + JSON.stringify(tradeData, null, 2));
+            socket.emit('placeTrade', tradeData);
+        });
+
+        // Test connection on page load
+        log('🔄 Attempting to connect to Socket.IO server...');
+    </script>
+</body>
+</html>

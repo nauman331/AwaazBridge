@@ -5,12 +5,12 @@ const app: Express = express();
 const PORT = process.env.PORT || 5000;
 import cors from "cors";
 import http from "http";
-import { Server } from "socket.io";
-import { priceSocket } from "./sockets/priceSocket";
+import { placeTrade } from "./SocketControllers/placeTrade";
 import connectDB from "./config/connectDB";
 import authRoutes from "./routes/auth.route";
 import tradeRoutes from "./routes/trade.route";
-import "./cronjobs/tradeTime";
+import { Server, Socket } from "socket.io";
+// import "./cronjobs/tradeTime";
 
 
 const corsOptions = {
@@ -54,7 +54,20 @@ const io = new Server(server, {
     }
 });
 
-priceSocket(io);
+io.on("connection", (socket: Socket) => {
+    console.log(`🔌 New client connected: ${socket.id}`);
+
+
+    socket.on("placeTrade", async (data) => {
+        const response = await placeTrade(data);
+        io.emit("tradePlaced", response);
+    });
+
+
+    socket.on("disconnect", () => {
+        console.log(`❌ Client disconnected: ${socket.id}`);
+    });
+});
 
 server.listen(PORT, () => {
     console.log(`🚀 Server is running on port ${PORT}`);

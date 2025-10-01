@@ -1,4 +1,4 @@
-import { schedule } from "node-cron";
+import { schedule, ScheduledTask } from "node-cron";
 import { Trade } from "../models/Trade";
 import { User } from "../models/User";
 import { Transaction } from "../models/Transaction";
@@ -6,6 +6,7 @@ import {
     calculateBinaryOptionsPayout,
     PLATFORM_PAYOUT_RATIO
 } from "../utils/finance";
+import { getCoinPrice } from "../services/getcoins";
 
 schedule("*/10 * * * * *", async () => {
     console.log("Checking for expired trades...");
@@ -20,9 +21,11 @@ schedule("*/10 * * * * *", async () => {
         const user = await User.findById(trade.userId);
         if (!user) continue;
 
-        // Get current price using CoinGecko or other API
-        // For demo, using random price
-        const currentPrice = Math.random() * 100;
+        const currentPrice = await getCoinPrice(trade.asset);
+        if (!currentPrice) {
+            console.error(`Failed to fetch price for ${trade.asset}`);
+            continue;
+        }
 
         let isWin = false;
         let result: "win" | "loss" = "loss";

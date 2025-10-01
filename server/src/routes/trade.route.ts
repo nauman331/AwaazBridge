@@ -1,9 +1,11 @@
 import { Router } from "express";
-import { placeTrade } from "../controllers/trade.controller";
+import { getTradesByUserId, placeTradeREST } from "../controllers/trade.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 
 const router = Router();
 
-router.post("/placetrade", authMiddleware, placeTrade);
+router.get("/getcurrenttrades/:userId", authMiddleware, getTradesByUserId);
+router.post("/placetrade", placeTradeREST);
+
 
 export default router;
